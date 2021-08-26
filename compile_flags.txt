@@ -1,0 +1,8 @@
+-std=c++17
+-Wall
+-Wextra
+-Wshadow
+-Wduplicated-cond
+-pedantic
+-Wlogical-op
+-Iinclude
