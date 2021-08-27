@@ -10,7 +10,7 @@ using std::cout;
 using std::endl;
 using std::string;
 
-extern std::chrono::system_clock::time_point t_start;
+extern std::chrono::high_resolution_clock::time_point t_start;
 
 int clean_up(int first_time) {
   std::filesystem::remove("solution");

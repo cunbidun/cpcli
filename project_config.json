@@ -1,0 +1,6 @@
+{
+    "use_cache": true, 
+    "use_precompiled_header": true, 
+    "include_dir": "/Users/miccahvi/competitive_programming/task/libs",
+    "use_cache": "/Users/miccahvi/competitive_programming/task/libs",
+}

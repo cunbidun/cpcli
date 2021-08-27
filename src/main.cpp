@@ -44,7 +44,7 @@ void print_usage() {
   exit(0);
 }
 
-std::chrono::system_clock::time_point t_start;
+std::chrono::high_resolution_clock::time_point t_start;
 
 // TODO add return code
 int main(int argc, char *argv[]) {
@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
   }
 
   t_start = std::chrono::high_resolution_clock::now();
+
   root_dir = fs::absolute(argv[1]);            // set the root directory to argv[1]
   project_config_path = fs::absolute(argv[2]); // set the root directory to argv[2]
 
