@@ -4,6 +4,7 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <set>
+#include <signal.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -39,6 +40,7 @@ void print_usage() {
   cout << "usage: cpcli <path/to/folder> <path/to/project_config.json> [op_num]" << endl;
   cout << "op_num = 0 (default):  run normally" << endl;
   cout << "op_num = 1:            run with debug flags " << endl;
+  cout << "op_num = 2:            run with terminal" << endl;
   exit(0);
 }
 
@@ -46,32 +48,57 @@ std::chrono::system_clock::time_point t_start;
 
 // TODO add return code
 int main(int argc, char *argv[]) {
+  // TODO implement SIGINT
+  signal(SIGINT, [](int sig) {
+    sigint();
+  });
 
   if (argc != 3 && argc != 4) {
     print_usage();
   }
 
   t_start = std::chrono::high_resolution_clock::now();
-  root_dir = std::filesystem::absolute(argv[1]);            // set the root directory to argv[1]
-  project_config_path = std::filesystem::absolute(argv[2]); // set the root directory to argv[2]
+  root_dir = fs::absolute(argv[1]);            // set the root directory to argv[1]
+  project_config_path = fs::absolute(argv[2]); // set the root directory to argv[2]
 
   check_dir(root_dir, "root directory not found!"); // check if the root_dir exists
-  std::filesystem::current_path(root_dir);          // change directory to root_dir
-  clean_up(1);                                  // clean up the root directory for the first time
+  fs::current_path(root_dir);                       // change directory to root_dir
+  clean_up(1);                                      // clean up the root directory for the first time
 
   project_config = read_project_config(project_config_path); // reade the project config into a json object
   validate_project_config(project_config);
 
-  // TODO pass as K-V args
-  if (argc == 4) {
-    compiler_flags = "cpp_debug_flag";
-    project_config["use_cache"] = 0; // don't use cache for debuging
+  {
+    string include_dir = "\"" + project_config["include_dir"].get<string>() + "\"";
+    project_config["cpp_compile_flag"] = project_config["cpp_compile_flag"].get<string>() + " " + "-I" + include_dir;
+    project_config["cpp_debug_flag"] = project_config["cpp_debug_flag"].get<string>() + " " + "-I" + include_dir;
   }
 
-  output_dir = std::filesystem::absolute(project_config["output_dir"]);
+  output_dir = fs::absolute(project_config["output_dir"]);
   check_dir(output_dir, "output directory not found!"); // check if the output exists
 
-  binary_dir = std::filesystem::absolute(project_config["binary_dir"]);
+  // TODO pass as K-V args
+  if (argc == 4) {
+    if (argv[3] == string("1")) {          // run with debug flags
+      project_config["use_cache"] = false; // don't use cache for debuging
+      compiler_flags = "cpp_debug_flag";
+    } else if (argv[3] == string("2")) {              // run with terminal
+      solution_file_path = root_dir / "solution.cpp"; // NOTE support c++ for now
+      check_file(solution_file_path, "solution file not found");
+      compile_cpp(root_dir, false, solution_file_path, project_config[compiler_flags], "solution");
+      copy_file(solution_file_path, output_dir / "solution.cpp", fs::copy_options::overwrite_existing); // copy solution file to output dir for submission
+      int status = system_wraper("./solution");
+      if (status != 0) {
+        cout << termcolor::red << "[Process exited " << status << "]" << termcolor::reset << "\n";
+      } else {
+        cout << "[Process exited 0]\n";
+      }
+      clean_up();
+      return 0;
+    }
+  }
+
+  binary_dir = fs::absolute(project_config["binary_dir"]);
   check_dir(binary_dir, "binary_dir not found!");
 
   if (project_config["use_precompiled_header"]) {
@@ -83,93 +110,97 @@ int main(int argc, char *argv[]) {
       exit(1);
     }
 
-    fs::path precompiled_dir = std::filesystem::absolute(project_config["precompiled_header_dir"]);
+    fs::path precompiled_dir = fs::absolute(project_config["precompiled_header_dir"]);
 
     // TODO revamp precompiled_dir structure
+    // TODO add precompiled to makefile
     fs::path precompiled_path = precompiled_dir / "stdc++.h";
     check_file(precompiled_dir / "stdc++.h.gch", "precompiled header not found!");
 
     fs::path precompiled_debug_path = precompiled_dir / "debug" / "stdc++.h";
     check_file(precompiled_dir / "debug" / "stdc++.h.gch", "precompiled debug header not found!");
 
-    project_config["cpp_compile_flag"] = project_config["cpp_compile_flag"].get<string>() + " " + "-include" + " " + precompiled_path.string();
-    project_config["cpp_debug_flag"] = project_config["cpp_debug_flag"].get<string>() + " " + "-include" + " " + precompiled_debug_path.string();
+    project_config["cpp_compile_flag"] = project_config["cpp_compile_flag"].get<string>() + " " + "-include" + " \"" + precompiled_path.string() + "\"";
+    project_config["cpp_debug_flag"] = project_config["cpp_debug_flag"].get<string>() + " " + "-include" + " \"" + precompiled_debug_path.string() + "\"";
   }
 
   check_file(project_config_path, "project config file not found"); // check if the project_config.json exists
 
   problem_config_path = root_dir / "config.json";
-  check_file(problem_config_path, "problem config file not found");
-  config = read_problem_config(problem_config_path); // reade the project config into a json object
+
+  // TODO check if template exists
+  fs::path temp_config_path = fs::absolute(project_config["template_dir"].get<string>()) / "config.template";
+  config = read_problem_config(problem_config_path, temp_config_path); // reade the project config into a json object
   validate_problem_config(config);
 
   // ----------------------------- COMPILE START ----------------------------
+  {
+    auto t0 = std::chrono::high_resolution_clock::now();
+    fs::path cache_dir = "";
 
-  fs::path cache_dir = "";
-
-  bool use_cache = project_config["use_cache"];
-  if (use_cache) {
-    cache_dir = std::filesystem::absolute("/tmp/cpcli") / to_string(std::hash<std::string>()(root_dir));
-    if (mkdir(cache_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-      if (errno == EEXIST) {
-      } else {
-        // something else
-        cout << termcolor::red << "cannot create cache folder: " << strerror(errno) << std::endl;
-        throw std::runtime_error(strerror(errno));
-      }
+    bool use_cache = project_config["use_cache"];
+    if (use_cache) {
+      cache_dir = fs::absolute("/tmp/cpcli") / to_string(std::hash<std::string>()(root_dir));
+      fs::create_directories(cache_dir);
     }
-  }
 
-  // use slow solution for generate correct output
-  // requre slow.cpp
-  if (config["knowGenAns"]) {
-    fs::path slow_file_path = root_dir / "slow.cpp";
-    check_file(slow_file_path, "brute force solution file not found!");
-    compile_cpp(cache_dir, use_cache, slow_file_path, project_config[compiler_flags], "slow");
-  }
-
-  if (config["interactive"]) {
-    fs::path interactor_file_path = root_dir / "slow.cpp";
-    check_file(interactor_file_path, "interactor file not found!");
-    compile_cpp(cache_dir, use_cache, interactor_file_path, project_config[compiler_flags], "interactor");
-  } else {
-    if (config["checker"] != "custom") {
-      fs::path checker_bin_path = binary_dir / "checker" / config["checker"];
-      check_file(checker_bin_path, "checker binary not found!");
-      copy_file(checker_bin_path, root_dir / "checker");
+    if (config["interactive"]) {
+      config["knowGenAns"] = false;
+      fs::path interactor_file_path = root_dir / "interactor.cpp";
+      check_file(interactor_file_path, "interactor file not found!");
+      compile_cpp(cache_dir, use_cache, interactor_file_path, project_config[compiler_flags], "interactor");
+      cout << termcolor::cyan << termcolor::bold << "Interactive task" << termcolor::reset << '\n';
     } else {
-      fs::path checker_file_path = root_dir / "slow.cpp";
-      check_file(checker_file_path, "checker file not found!");
-      compile_cpp(cache_dir, use_cache, checker_file_path, project_config["cpp_compile_flag"], "checker");
+      if (config["checker"] != "custom") {
+        fs::path checker_bin_path = binary_dir / "checker" / config["checker"];
+        check_file(checker_bin_path, "checker binary not found!");
+        copy_file(checker_bin_path, root_dir / "checker");
+      } else {
+        fs::path checker_file_path = root_dir / "slow.cpp";
+        check_file(checker_file_path, "checker file not found!");
+        compile_cpp(cache_dir, use_cache, checker_file_path, project_config["cpp_compile_flag"], "checker");
+      }
+      cout << termcolor::cyan << termcolor::bold << "Using " << config["checker"].get<string>() << " checker!" << termcolor::reset << '\n';
     }
-    cout << termcolor::cyan << termcolor::bold << "Using " << config["checker"].get<string>() << " checker!" << termcolor::reset << '\n';
-  }
 
-  if (config["useGeneration"]) {
-    fs::path gen_file_path = root_dir / "gen.cpp";
-    check_file(gen_file_path, "gen file not found!");
-    compile_cpp(cache_dir, use_cache, gen_file_path, project_config["cpp_compile_flag"], "gen");
-    generator_seed = config["generatorSeed"];
-    if (config["generatorSeed"].get<string>().size() == 0) {
-      generator_seed = gen_string_length_20();
+    // use slow solution for generate correct output
+    // requre slow.cpp
+    if (config["knowGenAns"]) {
+      fs::path slow_file_path = root_dir / "slow.cpp";
+      check_file(slow_file_path, "brute force solution file not found!");
+      compile_cpp(cache_dir, use_cache, slow_file_path, project_config[compiler_flags], "slow");
     }
-    cout << termcolor::yellow << termcolor::bold << "Stress testing with seed \'" << generator_seed << "\'" << termcolor::reset << '\n';
+
+    if (config["useGeneration"]) {
+      fs::path gen_file_path = root_dir / "gen.cpp";
+      check_file(gen_file_path, "gen file not found!");
+      compile_cpp(cache_dir, use_cache, gen_file_path, project_config["cpp_compile_flag"], "gen");
+      generator_seed = config["generatorSeed"];
+      if (config["generatorSeed"].get<string>().size() == 0) {
+        generator_seed = gen_string_length_20();
+      }
+      cout << termcolor::yellow << termcolor::bold << "Stress testing with seed \'" << generator_seed << "\'" << termcolor::reset << '\n';
+    }
+
+    solution_file_path = root_dir / "solution.cpp"; // NOTE support c++ for now
+    check_file(solution_file_path, "solution file not found");
+    compile_cpp(cache_dir, use_cache, solution_file_path, project_config[compiler_flags], "solution");
+    copy_file(solution_file_path, output_dir / "solution.cpp", fs::copy_options::overwrite_existing); // copy solution file to output dir for submission
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    long long time = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+    cout << termcolor::magenta << termcolor::bold << "Compilation finished in " << time << " ms" << endl;
+
+    cout << DASH_SEPERATOR << '\n';
   }
-
-  solution_file_path = root_dir / "solution.cpp"; // NOTE support c++ for now
-  check_file(solution_file_path, "solution file not found");
-  compile_cpp(cache_dir, use_cache, solution_file_path, project_config[compiler_flags], "solution");
-  copy_file(solution_file_path, output_dir / "solution.cpp", fs::copy_options::overwrite_existing); // copy solution file to output dir for submission
-
-  cout << DASH_SEPERATOR << '\n';
   // ------------------------------ COMPILE END -----------------------------
 
   // ------------------------ GENERATING TESTS START ------------------------
 
   {
-    std::filesystem::current_path(root_dir);
+    fs::current_path(root_dir);
     mkdir("___test_case", 0777);
-    std::filesystem::current_path("___test_case");
+    fs::current_path("___test_case");
     for (json test : config["tests"]) {
       if (test["active"]) {
         if (test["input"] != nullptr) {
@@ -185,8 +216,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (config["useGeneration"]) {
-      string command = (root_dir / "gen").string() + " " + generator_seed + " " + to_string(config["numTest"].get<int>());
-      int status = std::system(command.c_str());
+      string command = "../gen " + generator_seed + " " + to_string(config["numTest"].get<int>());
+      int status = system_wraper(command);
       if (status != 0) {
         cout << termcolor::red << termcolor::bold << "generator run time error" << termcolor::reset << endl;
         clean_up();
@@ -201,20 +232,28 @@ int main(int argc, char *argv[]) {
 
   // ----------------------------- TESTS START ------------------------------
   {
-    std::filesystem::current_path(root_dir);
+    fs::current_path(root_dir);
     long long time_limit = config["timeLimit"].get<long long>();
-    auto tests_folder_dir = std::filesystem::path("___test_case"); // set the root directory to argv[1]
+    auto tests_folder_dir = fs::path("___test_case"); // set the root directory to argv[1]
     create_empty_file(tests_folder_dir / "___na___");
-    //--- filenames are unique so we can use a set
-    std::set<fs::path> sorted_by_name;
 
+    std::vector<std::pair<int, fs::path>> sorted_by_name;
     for (auto &entry : fs::directory_iterator(tests_folder_dir)) {
       if (entry.path().extension() == ".in") {
-        sorted_by_name.insert(entry.path());
+        const auto test_id = entry.path().stem().string();
+        int num = 0;
+        if (test_id[0] == 'S') {
+          num = 1000000000 + std::stoi(test_id.substr(1)); // funny trick to ensure stress tests come after
+        } else {
+          num = std::stoi(test_id);
+        }
+        sorted_by_name.push_back({num, entry.path()});
       }
     }
+    sort(sorted_by_name.begin(), sorted_by_name.end());
 
-    for (const auto &entry : sorted_by_name) {
+    for (const auto &set_entry : sorted_by_name) {
+      auto entry = set_entry.second;
       bool passed = 1, undecided = 0, rte = 0, tle = 0, wa = 0;
       long long runtime = 0;
       const auto test_id = entry.stem().string();
@@ -231,48 +270,59 @@ int main(int argc, char *argv[]) {
         cout << termcolor::yellow << termcolor::bold << "Test #" << test_id << ": " << termcolor::reset;
       }
 
-      {
-        string command = "./solution < " + entry.string() + " > " + actual_file.string();
-
-        auto t0 = std::chrono::high_resolution_clock::now();
-        int status = system(command.c_str());
-        auto t1 = std::chrono::high_resolution_clock::now();
-
-        runtime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-        tle = (runtime > time_limit);
-
-        if (status != 0) {
-          rte = 1;
-          passed = 0;
-        }
-      }
-      if (config["knowGenAns"]) {
-        string command = "./slow < " + entry.string() + " > " + out_file.string();
-        int status = system(command.c_str());
-        if (status != 0) {
-          cout << termcolor::red << termcolor::bold << "slow solution run time error" << termcolor::reset << endl;
-          clean_up();
-          exit(1);
-        }
-      }
-
-      {
-        string out_file_str = out_file.string();
-        if (!check_file(out_file, "")) {
-          out_file_str = tests_folder_dir / "___na___";
-        }
-
-        string command = "./checker " + entry.string() + "  " + out_file_str + " " + actual_file.string() + " " + res_file.string() + " > /dev/null 2>&1";
-        int status = WEXITSTATUS(system(command.c_str()));
+      if (config["interactive"]) {
+        string command = "./interactor " + entry.string() + " " + actual_file.string() + " " + res_file.string();
+        int status = system_wraper(command);
         if (status != 0) {
           passed = 0;
-        }
-        if (status == 3) {
-          undecided = 1;
+          if (status != 1) {
+            rte = 1;
+          }
         }
         wa = !passed && !undecided;
-      }
+      } else {
+        {
+          string command = "./solution < " + entry.string() + " > " + actual_file.string();
 
+          auto t0 = std::chrono::high_resolution_clock::now();
+          int status = system_wraper(command);
+          auto t1 = std::chrono::high_resolution_clock::now();
+          runtime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+          tle = (runtime > time_limit);
+          if (status != 0) {
+            rte = 1;
+            passed = 0;
+          }
+        }
+
+        {
+          if (config["knowGenAns"]) {
+            string command = "./slow < " + entry.string() + " > " + out_file.string();
+            int status = system_wraper(command);
+            if (status != 0) {
+              cout << termcolor::red << termcolor::bold << "slow solution run time error" << termcolor::reset << endl;
+              clean_up();
+              exit(1);
+            }
+          }
+        }
+
+        {
+          string out_file_str = out_file.string();
+          if (!check_file(out_file, "")) {
+            out_file_str = tests_folder_dir / "___na___";
+          }
+          string command = "./checker " + entry.string() + "  " + out_file_str + " " + actual_file.string() + " " + res_file.string() + " > /dev/null 2>&1";
+          int status = system_wraper(command);
+          if (status != 0) {
+            passed = 0;
+          }
+          if (status == 3) {
+            undecided = 1;
+          }
+          wa = !passed && !undecided;
+        }
+      }
       all_passed &= passed;
       all_rte |= rte;
       all_tle |= tle;
@@ -303,9 +353,12 @@ int main(int argc, char *argv[]) {
 
         // --------- Verdict --------------
         print_report("Verdict", passed, rte, tle, wa, runtime);
+        if (wa) {
+          print_file(res_file, false);
+        }
       }
       cout << DASH_SEPERATOR << '\n';
-      std::filesystem::current_path(root_dir);
+      fs::current_path(root_dir);
 
       if (config["stopAtWrongAnswer"] && (wa || rte || tle)) {
         print_report("Fail detected", all_passed, all_rte, all_tle, all_wa, all_runtime);
@@ -322,6 +375,5 @@ int main(int argc, char *argv[]) {
     print_report("Results", all_passed, all_rte, all_tle, all_wa, all_runtime);
     clean_up();
   }
-
   // ------------------------------ PRINT REPORT END -------------------------------
 }

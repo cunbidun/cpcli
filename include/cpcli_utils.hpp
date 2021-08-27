@@ -37,6 +37,7 @@ static inline void rtrim(string &s) {
   s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
 }
 
+// TODO add docs
 bool create_empty_file(const string &path);
 
 // trim from end (copying)
@@ -45,7 +46,12 @@ static inline string rtrim_copy(string s) {
   return s;
 }
 
+// TODO add docs
 void print_file(string path, bool truncate);
 
+// TODO add docs
 bool compare_files(const std::filesystem::path &filename1, const std::filesystem::path &filename2);
+
+// TODO add docs
+int system_wraper(const string &command);
 #endif

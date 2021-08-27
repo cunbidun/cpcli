@@ -2,7 +2,8 @@ _DEPS = cpcli_utils.hpp \
 				cpcli_operations.hpp \
 				cpcli_project_config.hpp \
 				cpcli_problem_config.hpp \
-				color.hpp
+				color.hpp \
+				testlib.h
 
 _OBJ = main.o \
 			 cpcli_utils.o \
@@ -17,26 +18,27 @@ CC = g++
 CFLAGS = -I$(IDIR) -Wall -Wextra -g -std=c++17
 ODIR = obj
 SDIR = src
-CHECKER_DIR = checker
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
-$(ODIR)/%.o: $(SDIR)/%.cpp $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+CHECKER_DIR = binary/checker
+CHECKER_SCR = $(wildcard $(CHECKER_DIR)/*.cpp)
+CHECKER_BIN = $(patsubst %.cpp,%,$(CHECKER_SCR))
 
-$(ODIR)/%.o: $(TDIR)/%.cpp $(DEPS)
+$(ODIR)/%.o: $(SDIR)/%.cpp $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(APPBIN): $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 
-$(CHECKER_DIR)/binary/%:$(CHECKER_DIR)/src/%.cpp
+%: %.cpp
 	$(CC) -o $@ $^ $(CFLAGS)
 
-all: $(APPBIN)
+all: $(APPBIN) $(CHECKER_BIN) 
 
 .PHONY: clean
 
 clean:
 	rm -f $(ODIR)/*.o 
 	rm -f $(APPBIN) $(TESTBIN)
+	find $(CHECKER_DIR) -type f ! -name "*.cpp" -exec rm {} \;

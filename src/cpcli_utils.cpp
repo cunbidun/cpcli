@@ -1,4 +1,5 @@
 #include <iostream>
+#include <signal.h>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
@@ -77,8 +78,9 @@ template <typename InputIterator1, typename InputIterator2>
 bool range_equal(InputIterator1 first1, InputIterator1 last1,
                  InputIterator2 first2, InputIterator2 last2) {
   while (first1 != last1 && first2 != last2) {
-    if (*first1 != *first2)
+    if (*first1 != *first2) {
       return false;
+    }
     ++first1;
     ++first2;
   }
@@ -98,4 +100,12 @@ bool compare_files(const std::filesystem::path &filename1, const std::filesystem
   std::istreambuf_iterator<char> end;
 
   return range_equal(begin1, end, begin2, end);
+}
+
+int system_wraper(const string &command) {
+  int status = std::system(command.c_str());
+  if (WIFSIGNALED(status) && (WTERMSIG(status) == SIGINT)) {
+    sigint();
+  }
+  return WEXITSTATUS(status);
 }

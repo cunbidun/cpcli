@@ -5,8 +5,9 @@ using namespace std;
 int main(int argc, char *argv[]) {
   registerTestlibCmd(argc, argv);
   if (argv[2] == std::string("___test_case/___na___")) {
-    quitf(_fail, "");
+    quitf(_fail, "undecided");
   }
+
   int i = 0;
   while (!ans.seekEof() && !ouf.seekEof()) {
     ++i;
@@ -21,5 +22,5 @@ int main(int argc, char *argv[]) {
   if (!ans.seekEof() || !ouf.seekEof()) {
     quitf(_wa, "number of token differs");
   }
-  quitf(_ok, "");
+  quitf(_ok, "passed");
 }

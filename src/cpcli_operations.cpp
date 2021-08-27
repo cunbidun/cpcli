@@ -42,7 +42,7 @@ int compile_cpp(std::filesystem::path &cache_dir, bool use_cache, std::filesyste
 
   std::filesystem::current_path(path.parent_path());
   std::vector<string> command;
-  system("pwd");
+
   // build command
   command.push_back("g++");
   command.push_back(compiler_flags);
@@ -50,15 +50,17 @@ int compile_cpp(std::filesystem::path &cache_dir, bool use_cache, std::filesyste
   command.push_back(binary_name);
   command.push_back("\"" + path.string() + "\"");
 
-  int status = std::system(join(command).c_str());
+  int status = system_wraper(join(command));
 
   if (status != 0) {
     clean_up();
     exit(1); // TODO set correct return code
   }
 
-  copy_file(path.parent_path() / binary_name, binary_cache_dir, std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for submission
-  copy_file(path, file_cache_dir, std::filesystem::copy_options::overwrite_existing);                               // copy solution file to output dir for submission
+  if (use_cache) {
+    copy_file(path.parent_path() / binary_name, binary_cache_dir, std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for submission
+    copy_file(path, file_cache_dir, std::filesystem::copy_options::overwrite_existing);                               // copy solution file to output dir for submission
+  }
   return status;
 }
 
@@ -81,4 +83,11 @@ void print_report(const string report_name, bool passed, bool rte, bool tle, boo
     }
     cout << " in " << run_time_color << termcolor::bold << runtime << termcolor::reset << " ms\n";
   }
+}
+
+void sigint() {
+  cout << endl;
+  cout << termcolor::red << termcolor::bold << "SIGINT encoutered\n";
+  clean_up();
+  exit(0);
 }

@@ -14,4 +14,7 @@ int clean_up(int first_time = 0);
 // TODO add docs
 void print_report(const string report_name, bool passed, bool rte, bool tle, bool wa, long long runtime);
 
+// TODO add docs
+void sigint();
+
 #endif
