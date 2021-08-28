@@ -67,24 +67,23 @@ int main(int argc, char *argv[]) {
     project_config = read_project_config(project_config_path); // reade the project config into a json object
     validate_project_config(project_config);
     fs::path task_dir = fs::absolute(project_config["task_dir"].get<string>());
-    fs::path template_dir = fs::absolute(project_config["template_dir"].get<string>());
     fs::path frontend_path = fs::absolute(project_config["frontend_path"].get<string>());
-    fs::path temp_dir = fs::absolute(project_config["template_dir"].get<string>());
-    fs::path temp_config_path = fs::absolute(project_config["template_dir"].get<string>()) / "config.template";
+    fs::path template_dir = fs::absolute(project_config["template_dir"].get<string>());
 
     fs::create_directory(task_dir / new_task);
     fs::current_path(task_dir / new_task);
     root_dir = fs::current_path();
 
-    fs::copy_file(temp_dir / "solution.template", root_dir / "solution.cpp", fs::copy_options::overwrite_existing);
-    fs::copy_file(temp_dir / "config.template", root_dir / "config.json", fs::copy_options::overwrite_existing);
+    fs::copy_file(template_dir / "solution.template", root_dir / "solution.cpp", fs::copy_options::overwrite_existing);
+    fs::copy_file(template_dir / "config.template", root_dir / "config.json", fs::copy_options::overwrite_existing);
     edit_config(task_dir / new_task, template_dir, frontend_path);
-    config = read_problem_config(root_dir / "config.json", temp_config_path); // reade the project config into a json object
+    config = read_problem_config(root_dir / "config.json", template_dir / "config.template"); // reade the project config into a json object
     validate_problem_config(config);
     string name = config["name"].get<string>();
 
     fs::current_path(root_dir.parent_path());
-    if (name.size() == 0 || !check_dir(root_dir / name, "")) {
+
+    if (name.size() == 0 || check_dir(name, "")) {
       fs::remove_all(new_task);
     } else {
       fs::rename(new_task, name);
@@ -133,12 +132,12 @@ int main(int argc, char *argv[]) {
       }
       clean_up();
       return 0;
-    } else if (argv[3] == string("3")) {
+    } else if (argv[3] == string("3")) { // edit config
       fs::path template_dir = fs::absolute(project_config["template_dir"].get<string>());
       fs::path frontend_path = fs::absolute(project_config["frontend_path"].get<string>());
       edit_config(root_dir, template_dir, frontend_path);
       return 0;
-    } else if (argv[3] == string("4")) {
+    } else if (argv[3] == string("4")) { // archive
       fs::path temp_config_path = fs::absolute(project_config["template_dir"].get<string>()) / "config.template";
       problem_config_path = root_dir / "config.json";
       config = read_problem_config(problem_config_path, temp_config_path); // reade the project config into a json object
@@ -155,6 +154,10 @@ int main(int argc, char *argv[]) {
         fs::create_directories(archive_dir / group / name);
         fs::copy(name, archive_dir / group / name, fs::copy_options::recursive | fs::copy_options::update_existing);
       }
+      fs::remove_all(name);
+      return 0;
+    } else {
+      cout << termcolor::red << "[cpcli] unknown operation" << endl;
       return 0;
     }
   }

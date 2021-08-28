@@ -96,17 +96,15 @@ void sigint() {
 void edit_config(std::filesystem::path root_dir, std::filesystem::path &template_dir, std::filesystem::path &frontend_path) {
 
   namespace fs = std::filesystem;
-  fs::path temp_config_path = template_dir / "config.template";
 
-  auto problem_config_path = root_dir / "config.json";
-  auto config = read_problem_config(problem_config_path, temp_config_path); // reade the project config into a json object
+  auto config = read_problem_config(root_dir / "config.json", template_dir / "config.template"); // reade the project config into a json object
   validate_problem_config(config);
   string old_name = config["name"].get<string>();
 
   string command = "java -jar \"" + frontend_path.string() + "\" \"" + root_dir.string() + "\"/";
   system_wraper(command);
 
-  config = read_problem_config(problem_config_path, temp_config_path);
+  config = read_problem_config(root_dir / "config.json", template_dir / "config.template");
   string name = trim_copy(config["name"].get<string>());
   // TODO check if template exists
   if (config["useGeneration"]) {
