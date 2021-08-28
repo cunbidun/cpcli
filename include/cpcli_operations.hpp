@@ -17,4 +17,7 @@ void print_report(const string report_name, bool passed, bool rte, bool tle, boo
 // TODO add docs
 void sigint();
 
+// TODO add docs
+void edit_config(std::filesystem::path root_dir, std::filesystem::path &template_dir, std::filesystem::path& frontend_path);
+
 #endif

@@ -34,7 +34,11 @@ $(APPBIN): $(OBJ)
 %: %.cpp
 	$(CC) -o $@ $^ $(CFLAGS)
 
-all: $(APPBIN) $(CHECKER_BIN) 
+precompiled_headers:
+	@echo "compile headers..."
+	binary/precompiled_headers/gen.sh ./project_config.json
+
+all: $(APPBIN) $(CHECKER_BIN) precompiled_headers
 
 .PHONY: clean
 

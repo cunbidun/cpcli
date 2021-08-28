@@ -9,10 +9,9 @@
 
 using std::cout, std::endl, std::string;
 
-bool check_dir(const string &path, const string &error_message) {
-  struct stat buffer;
-  if (stat(path.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
-    return true;
+bool check_dir(std::filesystem::path path, const string &error_message) {
+  if (std::filesystem::exists(path)) {
+    return 1;
   } else {
     if (error_message != "") {
       cout << error_message << endl;
@@ -23,10 +22,9 @@ bool check_dir(const string &path, const string &error_message) {
   }
 }
 
-bool check_file(const string &name, const string &error_message) {
-  struct stat buffer;
-  if (stat(name.c_str(), &buffer) == 0) {
-    return true;
+bool check_file(std::filesystem::path path, const string &error_message) {
+  if (std::filesystem::exists(path)) {
+    return 1;
   } else {
     if (error_message != "") {
       cout << error_message << endl;

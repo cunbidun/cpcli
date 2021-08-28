@@ -1,5 +1,6 @@
 #include "color.hpp"
 #include "cpcli_operations.hpp"
+#include "cpcli_problem_config.hpp"
 #include "cpcli_utils.hpp"
 
 #include <filesystem>
@@ -90,4 +91,41 @@ void sigint() {
   cout << termcolor::red << termcolor::bold << "SIGINT encoutered\n";
   clean_up();
   exit(0);
+}
+
+void edit_config(std::filesystem::path root_dir, std::filesystem::path &template_dir, std::filesystem::path &frontend_path) {
+
+  namespace fs = std::filesystem;
+  fs::path temp_config_path = template_dir / "config.template";
+
+  auto problem_config_path = root_dir / "config.json";
+  auto config = read_problem_config(problem_config_path, temp_config_path); // reade the project config into a json object
+  validate_problem_config(config);
+  string old_name = config["name"].get<string>();
+
+  string command = "java -jar \"" + frontend_path.string() + "\" \"" + root_dir.string() + "\"/";
+  system_wraper(command);
+
+  config = read_problem_config(problem_config_path, temp_config_path);
+  string name = trim_copy(config["name"].get<string>());
+  // TODO check if template exists
+  if (config["useGeneration"]) {
+    copy_file(template_dir / "gen.template", root_dir / "gen.cpp", fs::copy_options::skip_existing);
+  }
+  if (config["interactive"]) {
+    copy_file(template_dir / "interactor.template", root_dir / "interactor.cpp", fs::copy_options::skip_existing);
+  }
+  if (config["knowGenAns"]) {
+    copy_file(template_dir / "slow.template", root_dir / "slow.cpp", fs::copy_options::skip_existing);
+  }
+  if (config["checker"].get<string>() == "custom") {
+    copy_file(template_dir / "checker.template", root_dir / "checker.cpp", fs::copy_options::skip_existing);
+  }
+  if (name != old_name && name.size() != 0) {
+    if (old_name.size() == 0) { // new task!!!
+    } else {
+      fs::current_path(root_dir.parent_path());
+      fs::rename(old_name, name);
+    }
+  }
 }
