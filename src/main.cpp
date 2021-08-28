@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   project_config = read_project_config(project_config_path); // reade the project config into a json object
   validate_project_config(project_config);
 
-  cpcli_dir = fs::absolute(project_config["cpcli_dir"]);
+  cpcli_dir = fs::absolute(std::getenv("CPCLI_PATH"));
   output_dir = fs::absolute(project_config["output_dir"]);
 
   if (project_config["include_dir"] != nullptr && project_config["include_dir"].get<string>().size() != 0) {
