@@ -17,7 +17,7 @@ This project is in the early stage of development, so there is a lot of room for
 3. [optional] [clang](https://www.archlinux.org/packages/extra/x86_64/clang/)
 4. [optional] [dev] [nlohmann-json] (https://www.archlinux.org/packages/community/any/nlohmann-json/files/)
 
-### Step by step installation (with vscode)
+### Step by step installation 
 
 1. Clone the repo. Note that the `<clone path>` is path to your repo folders
 2. Export the `<clone path>` to `CPCLI_PATH`. This repo, for example, we can add `export CPS_PATH="<clone path>/competitive_programming/cpcli/` to `.zshrc`
@@ -150,7 +150,7 @@ The `archive` folder is for storing completed codes. For example, problem `A - P
 
 `archive` / `AtCoder - AtCoder Regular Contest 104` / `A - Plus Minus` /
 
-Please take a look at the `archive` folder for more information.
+Please take a look at the [archive](https://github.com/cunbidun/competitive_programming/tree/master/archive) folder for more information.
 
 ### Supported Verdicts
 
@@ -159,74 +159,14 @@ Please take a look at the `archive` folder for more information.
 3. `time limited exceed`
 4. `runtime error`
 
-### Sample key blind for vscode
+### Sample key blind
 
-1. Start [Competitive Companion](https://github.com/jmerle/competitive-companion) (port 8080): Crtl + Alt + C
-2. New Task: Ctrl + Alt + N
-3. Archive: Ctrl + Alt + A
-4. Task Configuration: Ctrl + Alt + T
-5. Compile and Run: Ctrl + Alt + B
-6. Compile and Run with DEBUG flag: Ctrl + Alt + E
-7. Compile with terminal: Ctrl + Alt + Shift + B
-
-```
-[
-  {
-    "key": "ctrl+alt+b",
-    "command": "workbench.action.terminal.sendSequence",
-    "args": {
-      "text": "${CPS_PATH}/main.sh \"${fileDirname}\"/ 0\u000D"
-    },
-    "when": "resourceExtname == .cpp"
-  },
-  {
-    "key": "ctrl+alt+e",
-    "command": "workbench.action.terminal.sendSequence",
-    "args": {
-      "text": "${CPS_PATH}/main.sh \"${fileDirname}\"/ 1\u000D"
-    },
-    "when": "resourceExtname == .cpp"
-  },
-  {
-    "key": "ctrl+alt+shift+b",
-    "command": "workbench.action.terminal.sendSequence",
-    "args": {
-      "text": "${CPS_PATH}/main.sh \"${fileDirname}\"/ 2\u000D"
-    },
-    "when": "resourceExtname == .cpp"
-  },
-  {
-    "key": "ctrl+alt+t",
-    "command": "workbench.action.terminal.sendSequence",
-    "args": {
-      "text": "${CPS_PATH}/main.sh \"${fileDirname}\"/ 3\u000D"
-    },
-    "when": "resourceExtname == .cpp"
-  },
-  {
-    "key": "ctrl+alt+a",
-    "command": "workbench.action.terminal.sendSequence",
-    "args": {
-      "text": "${CPS_PATH}/main.sh \"${fileDirname}\"/ 4\u000D"
-    },
-    "when": "resourceExtname == .cpp"
-  },
-  {
-    "key": "ctrl+alt+n",
-    "command": "workbench.action.terminal.sendSequence",
-    "args": {
-      "text": "${CPS_PATH}/main.sh \"${fileDirname}\"/ 5\u000D"
-    }
-  },
-  {
-    "key": "ctrl+alt+c",
-    "command": "workbench.action.terminal.sendSequence",
-    "args": {
-      "text": "cd ${workspaceFolder}/../CC/ && npm start\u000D"
-    }
-  },
-]
-```
+1. Compile and Run: Ctrl + Alt + B (`"$CPCLI_PATH/main.sh" "<task_dir>" 0`)
+2. Compile and Run with DEBUG flag: Ctrl + Alt + E (`"$CPCLI_PATH/main.sh" "<task_dir>" 1`)
+3. Compile with terminal: Ctrl + Alt + Shift + B (`"$CPCLI_PATH/main.sh" "<task_dir>" 2`)
+4. Task Configuration: Ctrl + Alt + T (`"$CPCLI_PATH/main.sh" "<task_dir>" 3`)
+5. Archive: Ctrl + Alt + A (`"$CPCLI_PATH/main.sh" "<task_dir>" 4`)
+6. New Task: Ctrl + Alt + N (`"$CPCLI_PATH/main.sh"`)
 
 ## Credits
 
