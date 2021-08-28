@@ -116,7 +116,9 @@ int main(int argc, char *argv[]) {
 
   // TODO pass as K-V args
   if (argc == 4) {
-    if (argv[3] == string("1")) {          // run with debug flags
+    if (argv[3] == string("0")) {
+      // do nothing
+    } else if (argv[3] == string("1")) {   // run with debug flags
       project_config["use_cache"] = false; // don't use cache for debuging
       compiler_flags = "cpp_debug_flag";
     } else if (argv[3] == string("2")) {              // run with terminal
