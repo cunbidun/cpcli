@@ -101,7 +101,7 @@ void edit_config(std::filesystem::path root_dir, std::filesystem::path &template
   validate_problem_config(config);
   string old_name = config["name"].get<string>();
 
-  string command = "java -jar \"" + frontend_path.string() + "\" \"" + root_dir.string() + "\"/";
+  string command = "java -jar \"" + frontend_path.string() + "\" \"" + root_dir.string() + "\"";
   system_wraper(command);
 
   config = read_problem_config(root_dir / "config.json", template_dir / "config.template");

@@ -191,6 +191,11 @@ int main(int argc, char *argv[]) {
   config = read_problem_config(problem_config_path, temp_config_path); // reade the project config into a json object
   validate_problem_config(config);
 
+  if (config["group"] != nullptr && config["group"].get<string>().size() != 0) {
+    cout << config["group"].get<string>() << '\n';
+  }
+  cout << config["name"].get<string>() << '\n';
+
   // ----------------------------- COMPILE START ----------------------------
   {
     auto t0 = std::chrono::high_resolution_clock::now();
@@ -318,6 +323,7 @@ int main(int argc, char *argv[]) {
       const auto actual_file = tests_folder_dir / (test_id + ".actual");
       const auto out_file = tests_folder_dir / (test_id + ".out");
       const auto res_file = tests_folder_dir / (test_id + ".res");
+      bool truncate = config["truncateLongTest"].get<bool>();
 
       create_empty_file(res_file);
 
@@ -346,7 +352,10 @@ int main(int argc, char *argv[]) {
           int status = system_wraper(command);
           auto t1 = std::chrono::high_resolution_clock::now();
           runtime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-          tle = (runtime > time_limit);
+          if (runtime > time_limit) {
+            tle = 1;
+            passed = 0;
+          }
           if (status != 0) {
             rte = 1;
             passed = 0;
@@ -358,6 +367,10 @@ int main(int argc, char *argv[]) {
             string command = "./slow < " + entry.string() + " > " + out_file.string();
             int status = system_wraper(command);
             if (status != 0) {
+              cout << "Input:" << '\n';
+              print_file(entry.string(), truncate);
+              cout.flush();
+              cout << DASH_SEPERATOR << '\n';
               cout << termcolor::red << termcolor::bold << "slow solution run time error" << termcolor::reset << endl;
               clean_up();
               exit(1);
@@ -370,7 +383,8 @@ int main(int argc, char *argv[]) {
           if (!check_file(out_file, "")) {
             out_file_str = tests_folder_dir / "___na___";
           }
-          string command = "./checker " + entry.string() + "  " + out_file_str + " " + actual_file.string() + " " + res_file.string() + " > /dev/null 2>&1";
+          // ./checker <input> <pout> <jans> <res>
+          string command = "./checker " + entry.string() + "  " + actual_file.string() + " " + out_file_str + " " + res_file.string() + " > /dev/null 2>&1";
           int status = system_wraper(command);
           if (status != 0) {
             passed = 0;
@@ -378,7 +392,7 @@ int main(int argc, char *argv[]) {
           if (status == 3) {
             undecided = 1;
           }
-          wa = !passed && !undecided;
+          wa = !passed && !undecided && !tle && !rte;
         }
       }
       all_passed &= passed;
@@ -389,7 +403,6 @@ int main(int argc, char *argv[]) {
       if (passed && config["hideAcceptedTest"]) {
         cout << termcolor::green << termcolor::bold << "accepted" << termcolor::reset << '\n';
       } else {
-        bool truncate = config["truncateLongTest"].get<bool>();
         cout << '\n';
         // --------- input --------------
         cout << "Input:" << '\n';
