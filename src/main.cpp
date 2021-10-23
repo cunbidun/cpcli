@@ -2,7 +2,6 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <nlohmann/json.hpp>
 #include <set>
 #include <signal.h>
 #include <stdlib.h>
@@ -12,6 +11,7 @@
 
 namespace fs = std::filesystem;
 
+#include "nlohmann/json.hpp"
 #include "color.hpp"
 #include "cpcli_operations.hpp"
 #include "cpcli_problem_config.hpp"
@@ -32,6 +32,7 @@ fs::path project_config_path, problem_config_path, solution_file_path;
 
 json project_config, config;
 
+string testlib_compiler_flag;
 string compiler_flags = "cpp_compile_flag";
 string generator_seed;
 
@@ -108,10 +109,10 @@ int main(int argc, char *argv[]) {
   cpcli_dir = fs::absolute(std::getenv("CPCLI_PATH"));
   output_dir = fs::absolute(project_config["output_dir"]);
 
+  testlib_compiler_flag = project_config["cpp_compile_flag"].get<string>();
   if (project_config["include_dir"] != nullptr && project_config["include_dir"].get<string>().size() != 0) {
     string include_dir = "\"" + project_config["include_dir"].get<string>() + "\"";
-    project_config["cpp_compile_flag"] = project_config["cpp_compile_flag"].get<string>() + " " + "-I" + include_dir;
-    project_config["cpp_debug_flag"] = project_config["cpp_debug_flag"].get<string>() + " " + "-I" + include_dir;
+    testlib_compiler_flag = project_config["cpp_compile_flag"].get<string>() + " " + "-I" + include_dir;
   }
 
   // TODO pass as K-V args
@@ -179,7 +180,9 @@ int main(int argc, char *argv[]) {
     check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch", "precompiled debug header not found!");
 
     project_config["cpp_compile_flag"] = project_config["cpp_compile_flag"].get<string>() + " " + "-include" + " \"" + precompiled_path.string() + "\"";
+    testlib_compiler_flag = testlib_compiler_flag + " " + "-include" + " \"" + precompiled_path.string() + "\"";
     project_config["cpp_debug_flag"] = project_config["cpp_debug_flag"].get<string>() + " " + "-include" + " \"" + precompiled_debug_path.string() + "\"";
+
   }
 
   check_file(project_config_path, "project config file not found"); // check if the project_config.json exists
@@ -221,7 +224,7 @@ int main(int argc, char *argv[]) {
       } else {
         fs::path checker_file_path = root_dir / "checker.cpp";
         check_file(checker_file_path, "checker file not found!");
-        compile_cpp(cache_dir, use_cache, checker_file_path, project_config["cpp_compile_flag"], "checker");
+        compile_cpp(cache_dir, use_cache, checker_file_path, testlib_compiler_flag, "checker");
       }
       cout << termcolor::cyan << termcolor::bold << "Using " << config["checker"].get<string>() << " checker!" << termcolor::reset << '\n';
     }
@@ -237,7 +240,7 @@ int main(int argc, char *argv[]) {
     if (config["useGeneration"]) {
       fs::path gen_file_path = root_dir / "gen.cpp";
       check_file(gen_file_path, "gen file not found!");
-      compile_cpp(cache_dir, use_cache, gen_file_path, project_config["cpp_compile_flag"], "gen");
+      compile_cpp(cache_dir, use_cache, gen_file_path, testlib_compiler_flag, "gen");
       generator_seed = config["generatorSeed"];
       if (config["generatorSeed"].get<string>().size() == 0) {
         generator_seed = gen_string_length_20();
@@ -245,6 +248,7 @@ int main(int argc, char *argv[]) {
       cout << termcolor::yellow << termcolor::bold << "Stress testing with seed \'" << generator_seed << "\'" << termcolor::reset << '\n';
     }
 
+    // compile solution file
     solution_file_path = root_dir / "solution.cpp"; // NOTE support c++ for now
     check_file(solution_file_path, "solution file not found");
     compile_cpp(cache_dir, use_cache, solution_file_path, project_config[compiler_flags], "solution");
