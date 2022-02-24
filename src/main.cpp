@@ -11,7 +11,6 @@
 
 namespace fs = std::filesystem;
 
-#include "nlohmann/json.hpp"
 #include "color.hpp"
 #include "cpcli_operations.hpp"
 #include "cpcli_problem_config.hpp"
@@ -123,9 +122,12 @@ int main(int argc, char *argv[]) {
   output_dir = fs::absolute(project_config["output_dir"]);
 
   testlib_compiler_flag = project_config["cpp_compile_flag"].get<string>();
-  if (project_config["include_dir"] != nullptr && project_config["include_dir"].get<string>().size() != 0) {
-    string include_dir = "\"" + project_config["include_dir"].get<string>() + "\"";
-    testlib_compiler_flag = project_config["cpp_compile_flag"].get<string>() + " " + "-I" + include_dir;
+  if (project_config["include_dir"] != nullptr &&
+      project_config["include_dir"].get<string>().size() != 0) {
+    string include_dir =
+        "\"" + project_config["include_dir"].get<string>() + "\"";
+    testlib_compiler_flag = project_config["cpp_compile_flag"].get<string>() +
+                            " " + "-I" + include_dir;
   }
 
   // TODO pass as K-V args
@@ -135,17 +137,21 @@ int main(int argc, char *argv[]) {
     } else if (argv[3] == string("1")) {   // run with debug flags
       project_config["use_cache"] = false; // don't use cache for debuging
       compiler_flags = "cpp_debug_flag";
-    } else if (argv[3] == string("2")) { // run with terminal
+    } else if (argv[3] == string("2")) {
+      /*
+        Run with terminal. This option only uses the project config file for
+        compiler flags. No problem config will be used.
+      */
       solution_file_path =
           root_dir / "solution.cpp"; // NOTE support c++ for now
       check_file(solution_file_path, "solution file not found");
       compile_cpp(root_dir, false, solution_file_path,
                   project_config[compiler_flags], "solution");
-      copy_file(
-          solution_file_path, output_dir / "solution.cpp",
-          fs::copy_options::overwrite_existing); // copy solution file to output
-                                                 // dir for submission
+      // copy solution file to output dir for submission
+      copy_file(solution_file_path, output_dir / "solution.cpp",
+                fs::copy_options::overwrite_existing);
       int status = system_wraper("./solution");
+      cout << '\n'; // empty line before printing the status
       if (status != 0) {
         cout << termcolor::red << "[Process exited " << status << "]"
              << termcolor::reset << "\n";
@@ -203,16 +209,24 @@ int main(int argc, char *argv[]) {
 
     fs::path precompiled_dir = binary_dir / "precompiled_headers";
 
-    fs::path precompiled_path = precompiled_dir / "cpp_compile_flag" / "stdc++.h";
-    check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch", "precompiled header not found!");
+    fs::path precompiled_path =
+        precompiled_dir / "cpp_compile_flag" / "stdc++.h";
+    check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch",
+               "precompiled header not found!");
 
-    fs::path precompiled_debug_path = precompiled_dir / "cpp_debug_flag" / "stdc++.h";
-    check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch", "precompiled debug header not found!");
+    fs::path precompiled_debug_path =
+        precompiled_dir / "cpp_debug_flag" / "stdc++.h";
+    check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch",
+               "precompiled debug header not found!");
 
-    project_config["cpp_compile_flag"] = project_config["cpp_compile_flag"].get<string>() + " " + "-include" + " \"" + precompiled_path.string() + "\"";
-    testlib_compiler_flag = testlib_compiler_flag + " " + "-include" + " \"" + precompiled_path.string() + "\"";
-    project_config["cpp_debug_flag"] = project_config["cpp_debug_flag"].get<string>() + " " + "-include" + " \"" + precompiled_debug_path.string() + "\"";
-
+    project_config["cpp_compile_flag"] =
+        project_config["cpp_compile_flag"].get<string>() + " " + "-include" +
+        " \"" + precompiled_path.string() + "\"";
+    testlib_compiler_flag = testlib_compiler_flag + " " + "-include" + " \"" +
+                            precompiled_path.string() + "\"";
+    project_config["cpp_debug_flag"] =
+        project_config["cpp_debug_flag"].get<string>() + " " + "-include" +
+        " \"" + precompiled_debug_path.string() + "\"";
   }
 
   check_file(project_config_path,
@@ -264,7 +278,8 @@ int main(int argc, char *argv[]) {
       } else {
         fs::path checker_file_path = root_dir / "checker.cpp";
         check_file(checker_file_path, "checker file not found!");
-        compile_cpp(cache_dir, use_cache, checker_file_path, testlib_compiler_flag, "checker");
+        compile_cpp(cache_dir, use_cache, checker_file_path,
+                    testlib_compiler_flag, "checker");
       }
       cout << termcolor::cyan << termcolor::bold << "Using "
            << config["checker"].get<string>() << " checker!" << termcolor::reset
@@ -283,7 +298,8 @@ int main(int argc, char *argv[]) {
     if (config["useGeneration"]) {
       fs::path gen_file_path = root_dir / "gen.cpp";
       check_file(gen_file_path, "gen file not found!");
-      compile_cpp(cache_dir, use_cache, gen_file_path, testlib_compiler_flag, "gen");
+      compile_cpp(cache_dir, use_cache, gen_file_path, testlib_compiler_flag,
+                  "gen");
       generator_seed = config["generatorSeed"];
       if (config["generatorSeed"].get<string>().size() == 0) {
         generator_seed = gen_string_length_20();

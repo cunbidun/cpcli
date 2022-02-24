@@ -25,7 +25,7 @@ int clean_up(int first_time) {
   if (!first_time) {
     auto t_end = std::chrono::high_resolution_clock::now();
     long long total_time = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
-    cout << termcolor::magenta << termcolor::bold << "All testing finished in " << total_time << " ms" << endl;
+    cout << termcolor::magenta << termcolor::bold << "All testing finished in " << total_time << " ms" << termcolor::reset << endl;
   }
   return 0;
 }

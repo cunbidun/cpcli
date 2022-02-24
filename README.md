@@ -10,14 +10,14 @@ This project is in the early stage of development, so there is a lot of room for
 
 ## Install
 
-### Requirements:
+### Requirements
 
 1. `java`
 2. [jq](https://www.archlinux.org/packages/community/x86_64/jq/)
 3. [optional] [clang](https://www.archlinux.org/packages/extra/x86_64/clang/)
-4. [optional] [dev] [nlohmann-json] (https://www.archlinux.org/packages/community/any/nlohmann-json/files/)
+4. [optional] [dev] [nlohmann-json] (<https://www.archlinux.org/packages/community/any/nlohmann-json/files/>)
 
-### Step by step installation 
+### Step by step installation
 
 1. Clone the repo. Note that the `<clone path>` is path to your repo folders
 2. Export the `<clone path>` to `CPCLI_PATH`. This repo, for example, we can add `export CPS_PATH="<clone path>/competitive_programming/cpcli/` to `.zshrc`
