@@ -1,5 +1,5 @@
-#include "color.hpp"
 #include "cpcli_operations.hpp"
+#include "color.hpp"
 #include "cpcli_problem_config.hpp"
 #include "cpcli_utils.hpp"
 
@@ -25,18 +25,27 @@ int clean_up(int first_time) {
   if (!first_time) {
     auto t_end = std::chrono::high_resolution_clock::now();
     long long total_time = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
-    cout << termcolor::magenta << termcolor::bold << "All testing finished in " << total_time << " ms" << termcolor::reset << endl;
+    cout << termcolor::magenta << termcolor::bold << "All testing finished in " << total_time << " ms"
+         << termcolor::reset << endl;
   }
   return 0;
 }
 
-int compile_cpp(std::filesystem::path &cache_dir, bool use_cache, std::filesystem::path &path, const string &compiler_flags, const string &binary_name) {
+int compile_cpp(std::filesystem::path &cache_dir,
+                bool use_cache,
+                const string &c_complier,
+                std::filesystem::path &path,
+                const string &compiler_flags,
+                const string &binary_name) {
   std::filesystem::path binary_cache_dir = cache_dir / binary_name;
   std::filesystem::path file_cache_dir = cache_dir / path.filename();
 
   if (use_cache) {
     if (check_file(binary_cache_dir, "") && compare_files(path, file_cache_dir)) {
-      copy_file(binary_cache_dir, path.parent_path() / binary_name, std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for submission
+      copy_file(binary_cache_dir,
+                path.parent_path() / binary_name,
+                std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for
+                                                                    // submission
       return 0;
     }
   }
@@ -45,7 +54,7 @@ int compile_cpp(std::filesystem::path &cache_dir, bool use_cache, std::filesyste
   std::vector<string> command;
 
   // build command
-  command.push_back("g++");
+  command.push_back(c_complier);
   command.push_back(compiler_flags);
   command.push_back("-o");
   command.push_back(binary_name);
@@ -59,8 +68,14 @@ int compile_cpp(std::filesystem::path &cache_dir, bool use_cache, std::filesyste
   }
 
   if (use_cache) {
-    copy_file(path.parent_path() / binary_name, binary_cache_dir, std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for submission
-    copy_file(path, file_cache_dir, std::filesystem::copy_options::overwrite_existing);                               // copy solution file to output dir for submission
+    copy_file(path.parent_path() / binary_name,
+              binary_cache_dir,
+              std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for
+                                                                  // submission
+    copy_file(path,
+              file_cache_dir,
+              std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for
+                                                                  // submission
   }
   return status;
 }
@@ -93,11 +108,14 @@ void sigint() {
   exit(0);
 }
 
-void edit_config(std::filesystem::path root_dir, std::filesystem::path &template_dir, std::filesystem::path &frontend_path) {
+void edit_config(std::filesystem::path root_dir,
+                 std::filesystem::path &template_dir,
+                 std::filesystem::path &frontend_path) {
 
   namespace fs = std::filesystem;
 
-  auto config = read_problem_config(root_dir / "config.json", template_dir / "config.template"); // reade the project config into a json object
+  auto config = read_problem_config(root_dir / "config.json",
+                                    template_dir / "config.template"); // reade the project config into a json object
   validate_problem_config(config);
   string old_name = config["name"].get<string>();
 
