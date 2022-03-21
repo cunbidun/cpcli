@@ -47,9 +47,16 @@ int main(int argc, char *argv[]) {
   fs::path output_dir; // where source will be put for submission
   fs::path binary_dir;
   fs::path cpcli_dir;
-  fs::path project_config_path, problem_config_path, solution_file_path;
 
-  json project_config, config;
+  // project_config path and project_config json object
+  fs::path project_config_path;
+  json project_config;
+
+  // config path and config json object
+  fs::path config_path;
+  json config;
+
+  fs::path solution_file_path;
 
   string testlib_compiler_flag;
   string compiler_flags = "cpp_compile_flag";
@@ -153,8 +160,8 @@ int main(int argc, char *argv[]) {
       return 0;
     } else if (argv[3] == string("4")) { // archive
       fs::path temp_config_path = fs::absolute(project_config["template_dir"].get<string>()) / "config.template";
-      problem_config_path = root_dir / "config.json";
-      config = read_problem_config(problem_config_path,
+      config_path = root_dir / "config.json";
+      config = read_problem_config(config_path,
                                    temp_config_path); // reade the project config into a json object
       validate_problem_config(config);
       string name = config["name"].get<string>();
@@ -203,11 +210,11 @@ int main(int argc, char *argv[]) {
              "project config file not found"); // check if the
                                                // project_config.json exists
 
-  problem_config_path = root_dir / "config.json";
+  config_path = root_dir / "config.json";
 
   // TODO check if template exists
   fs::path temp_config_path = fs::absolute(project_config["template_dir"].get<string>()) / "config.template";
-  config = read_problem_config(problem_config_path,
+  config = read_problem_config(config_path,
                                temp_config_path); // reade the project config into a json object
   validate_problem_config(config);
 

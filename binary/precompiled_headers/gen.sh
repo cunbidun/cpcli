@@ -9,7 +9,8 @@ mkdir cpp_compile_flag
 mkdir cpp_debug_flag
 
 use_precompiled_header=$(jq <"$project_config" -r .use_precompiled_header)
-if [ $use_precompiled_header ]; then
+if [ $use_precompiled_header = false ]; then
+  echo "'use_precompiled_header' is set to false. Returning"
   exit 0
 fi
 

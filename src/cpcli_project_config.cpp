@@ -10,7 +10,5 @@ nlohmann::json read_project_config(const string &path) {
   return j;
 }
 
-bool validate_project_config(const nlohmann::json &obj) {
-  // TODO implement this method
-  return true;
-}
+// TODO implement this method
+bool validate_project_config(const nlohmann::json &obj) { return true; }
