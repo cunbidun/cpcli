@@ -1,27 +1,39 @@
-#include "cpcli_operations.hpp"
-#include "color.hpp"
-#include "cpcli_problem_config.hpp"
-#include "cpcli_utils.hpp"
-
-#include <filesystem>
-#include <unistd.h>
-#include <vector>
+#include "operations.hpp"
+#include "config.hpp"
+#include "util/color.hpp"
+#include "util/util.hpp"
 
 using std::cout;
 using std::endl;
-using std::string;
 
+// TODO remove this
 extern std::chrono::high_resolution_clock::time_point t_start;
 
-int clean_up(int first_time) {
-  std::filesystem::remove("solution");
-  std::filesystem::remove("checker");
-  std::filesystem::remove("gen");
-  std::filesystem::remove("slow");
-  std::filesystem::remove("interactor");
-  std::filesystem::remove("printer");
-  std::filesystem::remove_all("___test_case");
+void print_usage() {
+  cout << "the number of parmameter is not correct!" << endl;
+  cout << "usage: cpcli <path/to/folder> <path/to/project_config.json> [op_num]" << endl;
+  cout << "op_num = 0 (default):  run normally" << endl;
+  cout << "op_num = 1:            run with debug flags " << endl;
+  cout << "op_num = 2:            run with terminal" << endl;
+  cout << "op_num = 3:            test frontend" << endl;
+  cout << "op_num = 4:            archive task" << endl;
+  cout << endl;
 
+  cout << "usage: cpcli <path/to/project_config.json> (for create new task)" << endl;
+  exit(0);
+}
+
+int clean_up(int first_time) {
+  // Remove binary and ___test_case directory everytime
+  fs::remove("solution");
+  fs::remove("checker");
+  fs::remove("gen");
+  fs::remove("slow");
+  fs::remove("interactor");
+  fs::remove("printer");
+  fs::remove_all("___test_case");
+
+  // if not the first_time, assume that testing is done
   if (!first_time) {
     auto t_end = std::chrono::high_resolution_clock::now();
     long long total_time = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
@@ -31,26 +43,26 @@ int clean_up(int first_time) {
   return 0;
 }
 
-int compile_cpp(std::filesystem::path &cache_dir,
+int compile_cpp(fs::path &cache_dir,
                 bool use_cache,
                 const string &c_complier,
-                std::filesystem::path &path,
+                fs::path &path,
                 const string &compiler_flags,
                 const string &binary_name) {
-  std::filesystem::path binary_cache_dir = cache_dir / binary_name;
-  std::filesystem::path file_cache_dir = cache_dir / path.filename();
+  fs::path binary_cache_dir = cache_dir / binary_name;
+  fs::path file_cache_dir = cache_dir / path.filename();
 
   if (use_cache) {
     if (check_file(binary_cache_dir, "") && compare_files(path, file_cache_dir)) {
       copy_file(binary_cache_dir,
                 path.parent_path() / binary_name,
-                std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for
-                                                                    // submission
+                fs::copy_options::overwrite_existing); // copy solution file to output dir for
+                                                       // submission
       return 0;
     }
   }
 
-  std::filesystem::current_path(path.parent_path());
+  fs::current_path(path.parent_path());
   std::vector<string> command;
 
   // build command
@@ -70,12 +82,12 @@ int compile_cpp(std::filesystem::path &cache_dir,
   if (use_cache) {
     copy_file(path.parent_path() / binary_name,
               binary_cache_dir,
-              std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for
-                                                                  // submission
+              fs::copy_options::overwrite_existing); // copy solution file to output dir for
+                                                     // submission
     copy_file(path,
               file_cache_dir,
-              std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for
-                                                                  // submission
+              fs::copy_options::overwrite_existing); // copy solution file to output dir for
+                                                     // submission
   }
   return status;
 }
@@ -108,17 +120,16 @@ void sigint() {
   exit(0);
 }
 
-void edit_config(std::filesystem::path root_dir,
-                 std::filesystem::path &template_dir,
-                 std::filesystem::path &frontend_path) {
+void edit_config(fs::path root_dir, fs::path &template_dir, fs::path &frontend_path) {
 
-  namespace fs = std::filesystem;
+  namespace fs = fs;
 
   auto config = read_problem_config(root_dir / "config.json",
                                     template_dir / "config.template"); // reade the project config into a json object
   validate_problem_config(config);
   string old_name = config["name"].get<string>();
 
+  // TODO pass this from env varibale
   string command = "java -jar \"" + frontend_path.string() + "\" \"" + root_dir.string() + "\"";
   system_wraper(command);
 

@@ -9,52 +9,38 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-namespace fs = std::filesystem;
-
-#include "color.hpp"
-#include "cpcli_operations.hpp"
-#include "cpcli_problem_config.hpp"
-#include "cpcli_project_config.hpp"
-#include "cpcli_utils.hpp"
+#include "config.hpp"
+#include "constant.hpp"
 #include "nlohmann/json.hpp"
+#include "operations.hpp"
+#include "util/color.hpp"
+#include "util/util.hpp"
 
+namespace fs = std::filesystem;
 using std::cout;
 using std::endl;
 using std::string;
 using std::to_string;
 using json = nlohmann::json;
 
-// TODO add actual usage
-void print_usage() {
-  cout << "the number of parmameter is not correct!" << endl;
-  cout << "usage: cpcli <path/to/folder> <path/to/project_config.json> [op_num]" << endl;
-  cout << "op_num = 0 (default):  run normally" << endl;
-  cout << "op_num = 1:            run with debug flags " << endl;
-  cout << "op_num = 2:            run with terminal" << endl;
-  cout << "op_num = 3:            test frontend" << endl;
-  cout << "op_num = 4:            archive task" << endl;
-  cout << endl;
-
-  cout << "usage: cpcli <path/to/project_config.json> (for create new task)" << endl;
-  exit(0);
-}
-
 std::chrono::high_resolution_clock::time_point t_start;
 
 // TODO add return code
 int main(int argc, char *argv[]) {
+  signal(SIGINT, [](int) { sigint(); }); // implement SIGINT
+
   fs::path root_dir;   // where source files and problem_config file located
   fs::path output_dir; // where source will be put for submission
   fs::path binary_dir;
   fs::path cpcli_dir;
 
-  // project_config path and project_config json object
-  fs::path project_config_path;
-  json project_config;
+  // project_config's path and project_config json object
+  fs::path project_conf_path;
+  json project_conf;
 
-  // config path and config json object
-  fs::path config_path;
-  json config;
+  // problem's config path and config json object
+  fs::path problem_conf_path;
+  json problem_conf;
 
   fs::path solution_file_path;
 
@@ -62,19 +48,16 @@ int main(int argc, char *argv[]) {
   string compiler_flags = "cpp_compile_flag";
   string generator_seed;
 
-  // TODO implement SIGINT
-  signal(SIGINT, [](int sig) { sigint(); });
-
   t_start = std::chrono::high_resolution_clock::now();
 
   if (argc == 2) { // create new task
     string new_task = "___n3w_t4sk";
-    project_config_path = fs::absolute(argv[1]);               // set the root directory to argv[2]
-    project_config = read_project_config(project_config_path); // reade the project config into a json object
-    validate_project_config(project_config);
-    fs::path task_dir = fs::absolute(project_config["task_dir"].get<string>());
-    fs::path frontend_path = fs::absolute(project_config["frontend_path"].get<string>());
-    fs::path template_dir = fs::absolute(project_config["template_dir"].get<string>());
+    project_conf_path = fs::absolute(argv[1]);             // set the root directory to argv[2]
+    project_conf = read_project_config(project_conf_path); // reade the project config into a json object
+    validate_project_config(project_conf);
+    fs::path task_dir = fs::absolute(project_conf["task_dir"].get<string>());
+    fs::path frontend_path = fs::absolute(project_conf["frontend_path"].get<string>());
+    fs::path template_dir = fs::absolute(project_conf["template_dir"].get<string>());
 
     fs::create_directory(task_dir / new_task);
     fs::current_path(task_dir / new_task);
@@ -83,10 +66,10 @@ int main(int argc, char *argv[]) {
     fs::copy_file(template_dir / "solution.template", root_dir / "solution.cpp", fs::copy_options::overwrite_existing);
     fs::copy_file(template_dir / "config.template", root_dir / "config.json", fs::copy_options::overwrite_existing);
     edit_config(task_dir / new_task, template_dir, frontend_path);
-    config = read_problem_config(root_dir / "config.json",
-                                 template_dir / "config.template"); // reade the project config into a json object
-    validate_problem_config(config);
-    string name = config["name"].get<string>();
+    problem_conf = read_problem_config(root_dir / "config.json",
+                                       template_dir / "config.template"); // reade the project config into a json object
+    validate_problem_config(problem_conf);
+    string name = problem_conf["name"].get<string>();
 
     fs::current_path(root_dir.parent_path());
 
@@ -102,46 +85,40 @@ int main(int argc, char *argv[]) {
     print_usage();
   }
 
-  root_dir = fs::absolute(argv[1]);            // set the root directory to argv[1]
-  project_config_path = fs::absolute(argv[2]); // set the root directory to argv[2]
+  root_dir = fs::absolute(argv[1]);          // set the root directory to argv[1]
+  project_conf_path = fs::absolute(argv[2]); // set the project config path to argv[2]
 
-  check_dir(root_dir,
-            "root directory not found!"); // check if the root_dir exists
-  fs::current_path(root_dir);             // change directory to root_dir
-  clean_up(1);                            // clean up the root directory for the first time
+  check_dir(root_dir, "root directory not found!"); // check if the root_dir exists
+  fs::current_path(root_dir);                       // change directory to root_dir
+  clean_up(1);                                      // clean up the root directory for the first time
 
-  project_config = read_project_config(project_config_path); // reade the project config into a json object
-  validate_project_config(project_config);
+  project_conf = read_project_config(project_conf_path); // reade the project config into a json object
+  validate_project_config(project_conf);
 
   cpcli_dir = fs::absolute(std::getenv("CPCLI_PATH"));
-  output_dir = fs::absolute(project_config["output_dir"]);
+  output_dir = fs::absolute(project_conf["output_dir"]);
 
-  testlib_compiler_flag = project_config["cpp_compile_flag"].get<string>();
-  if (project_config["include_dir"] != nullptr && project_config["include_dir"].get<string>().size() != 0) {
-    string include_dir = "\"" + project_config["include_dir"].get<string>() + "\"";
-    testlib_compiler_flag = project_config["cpp_compile_flag"].get<string>() + " " + "-I" + include_dir;
+  testlib_compiler_flag = project_conf["cpp_compile_flag"].get<string>();
+  if (project_conf["include_dir"] != nullptr && project_conf["include_dir"].get<string>().size() != 0) {
+    string include_dir = "\"" + project_conf["include_dir"].get<string>() + "\"";
+    testlib_compiler_flag = project_conf["cpp_compile_flag"].get<string>() + " " + "-I" + include_dir;
   }
 
   // TODO pass as K-V args
   if (argc == 4) {
     if (argv[3] == string("0")) {
       // do nothing
-    } else if (argv[3] == string("1")) {   // run with debug flags
-      project_config["use_cache"] = false; // don't use cache for debuging
+      // argv[3] = 0 mean run normally
+    } else if (argv[3] == string("1")) { // run with debug flags
+      project_conf["use_cache"] = false; // don't use cache for debuging
       compiler_flags = "cpp_debug_flag";
     } else if (argv[3] == string("2")) {
-      /*
-        Run with terminal. This option only uses the project config file for
-        compiler flags. No problem config will be used.
-      */
+      // Run with terminal. This option only uses the project config file for
+      // compiler flags. No problem config will be used.
       solution_file_path = root_dir / "solution.cpp"; // NOTE support c++ for now
       check_file(solution_file_path, "solution file not found");
-      compile_cpp(root_dir,
-                  false,
-                  project_config["cpp_compiler"],
-                  solution_file_path,
-                  project_config[compiler_flags],
-                  "solution");
+      compile_cpp(
+          root_dir, false, project_conf["cpp_compiler"], solution_file_path, project_conf[compiler_flags], "solution");
       // copy solution file to output dir for submission
       copy_file(solution_file_path, output_dir / "solution.cpp", fs::copy_options::overwrite_existing);
       int status = system_wraper("./solution");
@@ -154,21 +131,21 @@ int main(int argc, char *argv[]) {
       clean_up();
       return 0;
     } else if (argv[3] == string("3")) { // edit config
-      fs::path template_dir = fs::absolute(project_config["template_dir"].get<string>());
-      fs::path frontend_path = fs::absolute(project_config["frontend_path"].get<string>());
+      fs::path template_dir = fs::absolute(project_conf["template_dir"].get<string>());
+      fs::path frontend_path = fs::absolute(project_conf["frontend_path"].get<string>());
       edit_config(root_dir, template_dir, frontend_path);
       return 0;
     } else if (argv[3] == string("4")) { // archive
-      fs::path temp_config_path = fs::absolute(project_config["template_dir"].get<string>()) / "config.template";
-      config_path = root_dir / "config.json";
-      config = read_problem_config(config_path,
-                                   temp_config_path); // reade the project config into a json object
-      validate_problem_config(config);
-      string name = config["name"].get<string>();
-      string group = config["group"].get<string>();
+      fs::path temp_config_path = fs::absolute(project_conf["template_dir"].get<string>()) / "config.template";
+      problem_conf_path = root_dir / "config.json";
+      problem_conf = read_problem_config(problem_conf_path,
+                                         temp_config_path); // reade the project config into a json object
+      validate_problem_config(problem_conf);
+      string name = problem_conf["name"].get<string>();
+      string group = problem_conf["group"].get<string>();
       fs::current_path(root_dir.parent_path());
 
-      fs::path archive_dir = fs::absolute(project_config["archive_dir"].get<string>());
+      fs::path archive_dir = fs::absolute(project_conf["archive_dir"].get<string>());
       if (group.size() == 0) {
         fs::create_directories(archive_dir / "Unsorted" / name);
         fs::copy(
@@ -188,7 +165,7 @@ int main(int argc, char *argv[]) {
   binary_dir = cpcli_dir / "binary";
   check_dir(binary_dir, "binary_dir not found!");
 
-  if (project_config["use_precompiled_header"]) {
+  if (project_conf["use_precompiled_header"]) {
     // TODO validate precompiled_header
 
     fs::path precompiled_dir = binary_dir / "precompiled_headers";
@@ -199,82 +176,82 @@ int main(int argc, char *argv[]) {
     fs::path precompiled_debug_path = precompiled_dir / "cpp_debug_flag" / "stdc++.h";
     check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch", "precompiled debug header not found!");
 
-    project_config["cpp_compile_flag"] =
-        project_config["cpp_compile_flag"].get<string>() + " " + "-include" + " \"" + precompiled_path.string() + "\"";
+    project_conf["cpp_compile_flag"] =
+        project_conf["cpp_compile_flag"].get<string>() + " " + "-include" + " \"" + precompiled_path.string() + "\"";
     testlib_compiler_flag = testlib_compiler_flag + " " + "-include" + " \"" + precompiled_path.string() + "\"";
-    project_config["cpp_debug_flag"] = project_config["cpp_debug_flag"].get<string>() + " " + "-include" + " \"" +
-                                       precompiled_debug_path.string() + "\"";
+    project_conf["cpp_debug_flag"] = project_conf["cpp_debug_flag"].get<string>() + " " + "-include" + " \"" +
+                                     precompiled_debug_path.string() + "\"";
   }
 
-  check_file(project_config_path,
-             "project config file not found"); // check if the
-                                               // project_config.json exists
+  check_file(project_conf_path, "project config file not found"); // check if the
+                                                                  // project_config.json exists
 
-  config_path = root_dir / "config.json";
+  problem_conf_path = root_dir / "config.json";
 
   // TODO check if template exists
-  fs::path temp_config_path = fs::absolute(project_config["template_dir"].get<string>()) / "config.template";
-  config = read_problem_config(config_path,
-                               temp_config_path); // reade the project config into a json object
-  validate_problem_config(config);
+  fs::path temp_config_path = fs::absolute(project_conf["template_dir"].get<string>()) / "config.template";
+  problem_conf =
+      read_problem_config(problem_conf_path, temp_config_path); // reade the project config into a json object
+  validate_problem_config(problem_conf);
 
-  if (config["group"] != nullptr && config["group"].get<string>().size() != 0) {
-    cout << config["group"].get<string>() << '\n';
+  if (problem_conf["group"] != nullptr && problem_conf["group"].get<string>().size() != 0) {
+    cout << problem_conf["group"].get<string>() << '\n';
   }
-  cout << config["name"].get<string>() << '\n';
+  cout << problem_conf["name"].get<string>() << '\n';
 
   // ----------------------------- COMPILE START ----------------------------
   {
     auto t0 = std::chrono::high_resolution_clock::now();
     fs::path cache_dir = "";
 
-    bool use_cache = project_config["use_cache"];
+    bool use_cache = project_conf["use_cache"];
     if (use_cache) {
+      // TODO using a tempdir library instead of hard codeing the path
       cache_dir = fs::absolute("/tmp/cpcli") / to_string(std::hash<std::string>()(root_dir));
       fs::create_directories(cache_dir);
     }
 
-    if (config["interactive"]) {
-      config["knowGenAns"] = false;
+    if (problem_conf["interactive"]) {
+      problem_conf["knowGenAns"] = false;
       fs::path interactor_file_path = root_dir / "interactor.cpp";
       check_file(interactor_file_path, "interactor file not found!");
       compile_cpp(cache_dir,
                   use_cache,
-                  project_config["cpp_compiler"],
+                  project_conf["cpp_compiler"],
                   interactor_file_path,
-                  project_config[compiler_flags],
+                  project_conf[compiler_flags],
                   "interactor");
       cout << termcolor::cyan << termcolor::bold << "Interactive task" << termcolor::reset << '\n';
     } else {
-      if (config["checker"] != "custom") {
-        fs::path checker_bin_path = binary_dir / "checker" / config["checker"];
+      if (problem_conf["checker"] != "custom") {
+        fs::path checker_bin_path = binary_dir / "checker" / problem_conf["checker"];
         check_file(checker_bin_path, "checker binary not found!");
         copy_file(checker_bin_path, root_dir / "checker", fs::copy_options::overwrite_existing);
       } else {
         fs::path checker_file_path = root_dir / "checker.cpp";
         check_file(checker_file_path, "checker file not found!");
         compile_cpp(
-            cache_dir, use_cache, project_config["cpp_compiler"], checker_file_path, testlib_compiler_flag, "checker");
+            cache_dir, use_cache, project_conf["cpp_compiler"], checker_file_path, testlib_compiler_flag, "checker");
       }
-      cout << termcolor::cyan << termcolor::bold << "Using " << config["checker"].get<string>() << " checker!"
+      cout << termcolor::cyan << termcolor::bold << "Using " << problem_conf["checker"].get<string>() << " checker!"
            << termcolor::reset << '\n';
     }
 
     // use slow solution for generate correct output
     // requre slow.cpp
-    if (config["knowGenAns"]) {
+    if (problem_conf["knowGenAns"]) {
       fs::path slow_file_path = root_dir / "slow.cpp";
       check_file(slow_file_path, "brute force solution file not found!");
       compile_cpp(
-          cache_dir, use_cache, project_config["cpp_compiler"], slow_file_path, project_config[compiler_flags], "slow");
+          cache_dir, use_cache, project_conf["cpp_compiler"], slow_file_path, project_conf[compiler_flags], "slow");
     }
 
-    if (config["useGeneration"]) {
+    if (problem_conf["useGeneration"]) {
       fs::path gen_file_path = root_dir / "gen.cpp";
       check_file(gen_file_path, "gen file not found!");
-      compile_cpp(cache_dir, use_cache, project_config["cpp_compiler"], gen_file_path, testlib_compiler_flag, "gen");
-      generator_seed = config["generatorSeed"];
-      if (config["generatorSeed"].get<string>().size() == 0) {
+      compile_cpp(cache_dir, use_cache, project_conf["cpp_compiler"], gen_file_path, testlib_compiler_flag, "gen");
+      generator_seed = problem_conf["generatorSeed"];
+      if (problem_conf["generatorSeed"].get<string>().size() == 0) {
         generator_seed = gen_string_length_20();
       }
       cout << termcolor::yellow << termcolor::bold << "Stress testing with seed \'" << generator_seed << "\'"
@@ -286,9 +263,9 @@ int main(int argc, char *argv[]) {
     check_file(solution_file_path, "solution file not found");
     compile_cpp(cache_dir,
                 use_cache,
-                project_config["cpp_compiler"],
+                project_conf["cpp_compiler"],
                 solution_file_path,
-                project_config[compiler_flags],
+                project_conf[compiler_flags],
                 "solution");
     copy_file(solution_file_path,
               output_dir / "solution.cpp",
@@ -309,7 +286,7 @@ int main(int argc, char *argv[]) {
     fs::current_path(root_dir);
     mkdir("___test_case", 0777);
     fs::current_path("___test_case");
-    for (json test : config["tests"]) {
+    for (json test : problem_conf["tests"]) {
       if (test["active"]) {
         if (test["input"] != nullptr) {
           std::ofstream inf(to_string(test["index"]) + ".in");
@@ -323,9 +300,9 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (config["useGeneration"]) {
+    if (problem_conf["useGeneration"]) {
       string command =
-          "../gen " + generator_seed + " " + to_string(config["numTest"].get<int>()); // NOTE careful with ..
+          "../gen " + generator_seed + " " + to_string(problem_conf["numTest"].get<int>()); // NOTE careful with ..
       int status = system_wraper(command);
       if (status != 0) {
         cout << termcolor::red << termcolor::bold << "generator run time error" << termcolor::reset << endl;
@@ -342,7 +319,7 @@ int main(int argc, char *argv[]) {
   // ----------------------------- TESTS START ------------------------------
   {
     fs::current_path(root_dir);
-    long long time_limit = config["timeLimit"].get<long long>();
+    long long time_limit = problem_conf["timeLimit"].get<long long>();
     auto tests_folder_dir = fs::path("___test_case"); // set the root directory to argv[1]
     create_empty_file(tests_folder_dir / "___na___");
 
@@ -369,7 +346,7 @@ int main(int argc, char *argv[]) {
       const auto actual_file = tests_folder_dir / (test_id + ".actual");
       const auto out_file = tests_folder_dir / (test_id + ".out");
       const auto res_file = tests_folder_dir / (test_id + ".res");
-      bool truncate = config["truncateLongTest"].get<bool>();
+      bool truncate = problem_conf["truncateLongTest"].get<bool>();
 
       create_empty_file(res_file);
 
@@ -380,7 +357,7 @@ int main(int argc, char *argv[]) {
         cout << termcolor::yellow << termcolor::bold << "Test #" << test_id << ": " << termcolor::reset;
       }
 
-      if (config["interactive"]) {
+      if (problem_conf["interactive"]) {
         string command = "./interactor " + entry.string() + " " + actual_file.string() + " " + res_file.string();
         int status = system_wraper(command);
         if (status != 0) {
@@ -409,7 +386,7 @@ int main(int argc, char *argv[]) {
         }
 
         {
-          if (config["knowGenAns"]) {
+          if (problem_conf["knowGenAns"]) {
             string command = "./slow < " + entry.string() + " > " + out_file.string();
             int status = system_wraper(command);
             if (status != 0) {
@@ -447,7 +424,7 @@ int main(int argc, char *argv[]) {
       all_tle |= tle;
       all_wa |= wa;
       all_runtime = std::max(all_runtime, runtime);
-      if (passed && config["hideAcceptedTest"]) {
+      if (passed && problem_conf["hideAcceptedTest"]) {
         cout << termcolor::green << termcolor::bold << "accepted" << termcolor::reset << '\n';
       } else {
         cout << '\n';
@@ -478,7 +455,7 @@ int main(int argc, char *argv[]) {
       cout << DASH_SEPERATOR << '\n';
       fs::current_path(root_dir);
 
-      if (config["stopAtWrongAnswer"] && (wa || rte || tle)) {
+      if (problem_conf["stopAtWrongAnswer"] && (wa || rte || tle)) {
         print_report("Fail detected", all_passed, all_rte, all_tle, all_wa, all_runtime);
         clean_up();
         return 0;
@@ -487,13 +464,11 @@ int main(int argc, char *argv[]) {
   }
   // ------------------------------ TESTS END -------------------------------
 
-  // ------------------------------ PRINT REPORT START
-  // -------------------------------
+  // ------------------------------ PRINT REPORT START -------------------------------
   {
     cout << EQUA_SEPERATOR << '\n';
     print_report("Results", all_passed, all_rte, all_tle, all_wa, all_runtime);
     clean_up();
   }
-  // ------------------------------ PRINT REPORT END
-  // -------------------------------
+  // ------------------------------ PRINT REPORT END -------------------------------
 }

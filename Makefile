@@ -1,48 +1,70 @@
-_DEPS = cpcli_utils.hpp \
-				cpcli_operations.hpp \
-				cpcli_project_config.hpp \
-				cpcli_problem_config.hpp \
-				color.hpp \
-				testlib.h
-
-_OBJ = main.o \
-			 cpcli_utils.o \
-			 cpcli_operations.o \
-			 cpcli_project_config.o \
-			 cpcli_problem_config.o
-
 APPBIN = cpcli_app
 
 IDIR = include
-CC = g++
-CFLAGS = -I$(IDIR) -Wall -Wextra -g -std=c++17
 ODIR = obj
 SDIR = src
-DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
-OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+
+CC = g++
+CFLAGS = -I$(IDIR) -Wall -Wextra -g -std=c++17
+
+
+# example: include/cpcli_project_config.hpp include/util/color.hpp include/nlohmann/json.hpp include/testlib.h
+INC = $(shell find include -type f -name "*.hpp" -o -name "*.h")
+
+# example: src/test/test.cpp src/cpcli_operations.cpp 
+SRC = $(shell find $(SDIR) -type f -name "*.cpp")
+
+# example: obj/test/test.cpp obj/cpcli_operations.cpp 
+_OBJ = $(patsubst $(SDIR)%,$(ODIR)%,$(SRC))
+
+# example: obj/test/test.o obj/cpcli_operations.o
+OBJ = $(patsubst %.cpp, %.o, $(_OBJ))
+
+# example: src/test src
+SRC_DIRNAME = $(shell find src -type f -name "*.cpp" -exec dirname {} \; | sort -u)
+
+# example: obj/test obj 
+OBJ_DIRNAME= $(patsubst $(SDIR)%,$(ODIR)%,$(SRC_DIRNAME))
 
 CHECKER_DIR = binary/checker
+
+# example: binary/checker/double4.cpp binary/checker/double6.cpp
 CHECKER_SCR = $(wildcard $(CHECKER_DIR)/*.cpp)
+
+# example: binary/checker/double4 binary/checker/double6
 CHECKER_BIN = $(patsubst %.cpp,%,$(CHECKER_SCR))
 
-$(ODIR)/%.o: $(SDIR)/%.cpp $(DEPS)
+mkdir:
+	mkdir -p $(OBJ_DIRNAME)
+
+$(OBJ): $(ODIR)%.o : $(SDIR)%.cpp $(INC) mkdir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(APPBIN): $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS)
-
-%: %.cpp
 	$(CC) -o $@ $^ $(CFLAGS)
 
 precompiled_headers:
 	@echo "compile headers..."
 	binary/precompiled_headers/gen.sh ./project_config.json
 
+# compile checker binary
+$(CHECKER_BIN): % : %.cpp
+	$(CC) -o $@ $^ $(CFLAGS)
+
 all: $(APPBIN) $(CHECKER_BIN) precompiled_headers
+
+debug: 
+	@echo "include dir: $(IDIR)"
+	@echo "headers files: $(INC)"
+	@echo "source files: $(SRC)"
+	@echo "obj files: $(OBJ)"
+	@echo "SRC_DIRNAME: $(SRC_DIRNAME)"
+	@echo "OBJ_DIRNAME: $(OBJ_DIRNAME)"
 
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o 
-	rm -f $(APPBIN) $(TESTBIN)
-	find $(CHECKER_DIR) -type f ! -name "*.cpp" -exec rm {} \;
+	git clean -dfX $(ODIR) 
+	git clean -dfX $(CHECKER_DIR) 
+	git clean -dfX binary 
+	rm -f $(APPBIN)

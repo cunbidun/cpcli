@@ -1,5 +1,5 @@
-#ifndef _cpcli_utils_h_
-#define _cpcli_utils_h_
+#ifndef _cpcli_util_hpp_
+#define _cpcli_util_hpp_
 
 #include <algorithm>
 #include <cctype>
@@ -10,17 +10,18 @@
 #include <iostream>
 #include <locale>
 #include <random>
+#include <signal.h>
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
 #include <time.h>
 #include <vector>
 
 using std::string;
 
-static inline string DASH_SEPERATOR = "\033[1;34m---------------------------\033[0m"; // blue color
-static inline string EQUA_SEPERATOR = "===========================";
-
-// TODO add docs
+// Check if directory exist or not
+// If yes, return true
+// If no, return false and if the error_message is not tempy, exit the program
 bool check_dir(std::filesystem::path name, const string &error_message);
 
 // TODO add docs
@@ -34,17 +35,12 @@ string gen_string_length_20();
 
 // trim from start (in place)
 static inline void ltrim(std::string &s) {
-  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-            return !std::isspace(ch);
-          }));
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
 }
 
 // trim from end (in place)
 static inline void rtrim(std::string &s) {
-  s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-            return !std::isspace(ch);
-          }).base(),
-          s.end());
+  s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
 }
 
 // trim from both ends (in place)

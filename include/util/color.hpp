@@ -160,8 +160,7 @@ inline std::ostream &crossed(std::ostream &stream) {
   return stream;
 }
 
-template <uint8_t code>
-inline std::ostream &color(std::ostream &stream) {
+template <uint8_t code> inline std::ostream &color(std::ostream &stream) {
   if (_internal::is_colorized(stream)) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     char command[12];
@@ -173,8 +172,7 @@ inline std::ostream &color(std::ostream &stream) {
   return stream;
 }
 
-template <uint8_t code>
-inline std::ostream &on_color(std::ostream &stream) {
+template <uint8_t code> inline std::ostream &on_color(std::ostream &stream) {
   if (_internal::is_colorized(stream)) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     char command[12];
@@ -186,8 +184,7 @@ inline std::ostream &on_color(std::ostream &stream) {
   return stream;
 }
 
-template <uint8_t r, uint8_t g, uint8_t b>
-inline std::ostream &color(std::ostream &stream) {
+template <uint8_t r, uint8_t g, uint8_t b> inline std::ostream &color(std::ostream &stream) {
   if (_internal::is_colorized(stream)) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     char command[20];
@@ -199,8 +196,7 @@ inline std::ostream &color(std::ostream &stream) {
   return stream;
 }
 
-template <uint8_t r, uint8_t g, uint8_t b>
-inline std::ostream &on_color(std::ostream &stream) {
+template <uint8_t r, uint8_t g, uint8_t b> inline std::ostream &on_color(std::ostream &stream) {
   if (_internal::is_colorized(stream)) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     char command[20];
@@ -230,8 +226,7 @@ inline std::ostream &red(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[31m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_RED);
+    _internal::win_change_attributes(stream, FOREGROUND_RED);
 #endif
   }
   return stream;
@@ -242,8 +237,7 @@ inline std::ostream &green(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[32m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_GREEN);
+    _internal::win_change_attributes(stream, FOREGROUND_GREEN);
 #endif
   }
   return stream;
@@ -254,8 +248,7 @@ inline std::ostream &yellow(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[33m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_GREEN | FOREGROUND_RED);
+    _internal::win_change_attributes(stream, FOREGROUND_GREEN | FOREGROUND_RED);
 #endif
   }
   return stream;
@@ -266,8 +259,7 @@ inline std::ostream &blue(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[34m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_BLUE);
+    _internal::win_change_attributes(stream, FOREGROUND_BLUE);
 #endif
   }
   return stream;
@@ -278,8 +270,7 @@ inline std::ostream &magenta(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[35m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_BLUE | FOREGROUND_RED);
+    _internal::win_change_attributes(stream, FOREGROUND_BLUE | FOREGROUND_RED);
 #endif
   }
   return stream;
@@ -290,8 +281,7 @@ inline std::ostream &cyan(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[36m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_BLUE | FOREGROUND_GREEN);
+    _internal::win_change_attributes(stream, FOREGROUND_BLUE | FOREGROUND_GREEN);
 #endif
   }
   return stream;
@@ -302,8 +292,7 @@ inline std::ostream &white(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[37m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+    _internal::win_change_attributes(stream, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
 #endif
   }
   return stream;
@@ -327,8 +316,7 @@ inline std::ostream &bright_red(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[91m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_RED | FOREGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, FOREGROUND_RED | FOREGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -339,8 +327,7 @@ inline std::ostream &bright_green(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[92m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -351,8 +338,7 @@ inline std::ostream &bright_yellow(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[93m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -363,8 +349,7 @@ inline std::ostream &bright_blue(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[94m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -375,8 +360,7 @@ inline std::ostream &bright_magenta(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[95m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -387,8 +371,7 @@ inline std::ostream &bright_cyan(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[96m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream,
-                                     FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -411,7 +394,8 @@ inline std::ostream &on_grey(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[40m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
+    _internal::win_change_attributes(stream,
+                                     -1,
                                      0 // grey (black)
     );
 #endif
@@ -424,8 +408,7 @@ inline std::ostream &on_red(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[41m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_RED);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_RED);
 #endif
   }
   return stream;
@@ -436,8 +419,7 @@ inline std::ostream &on_green(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[42m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_GREEN);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_GREEN);
 #endif
   }
   return stream;
@@ -448,8 +430,7 @@ inline std::ostream &on_yellow(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[43m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_GREEN | BACKGROUND_RED);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_GREEN | BACKGROUND_RED);
 #endif
   }
   return stream;
@@ -460,8 +441,7 @@ inline std::ostream &on_blue(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[44m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_BLUE);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_BLUE);
 #endif
   }
   return stream;
@@ -472,8 +452,7 @@ inline std::ostream &on_magenta(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[45m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_BLUE | BACKGROUND_RED);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_BLUE | BACKGROUND_RED);
 #endif
   }
   return stream;
@@ -484,8 +463,7 @@ inline std::ostream &on_cyan(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[46m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_GREEN | BACKGROUND_BLUE);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_GREEN | BACKGROUND_BLUE);
 #endif
   }
   return stream;
@@ -496,8 +474,7 @@ inline std::ostream &on_white(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[47m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_RED);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_RED);
 #endif
   }
 
@@ -509,7 +486,8 @@ inline std::ostream &on_bright_grey(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[100m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
+    _internal::win_change_attributes(stream,
+                                     -1,
                                      0 | BACKGROUND_INTENSITY // grey (black)
     );
 #endif
@@ -522,8 +500,7 @@ inline std::ostream &on_bright_red(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[101m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_RED | BACKGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_RED | BACKGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -534,8 +511,7 @@ inline std::ostream &on_bright_green(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[102m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_GREEN | BACKGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_GREEN | BACKGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -546,8 +522,7 @@ inline std::ostream &on_bright_yellow(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[103m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -558,8 +533,7 @@ inline std::ostream &on_bright_blue(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[104m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_BLUE | BACKGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -570,8 +544,7 @@ inline std::ostream &on_bright_magenta(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[105m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_BLUE | BACKGROUND_RED | BACKGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_BLUE | BACKGROUND_RED | BACKGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -582,8 +555,7 @@ inline std::ostream &on_bright_cyan(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[106m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+    _internal::win_change_attributes(stream, -1, BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
 #endif
   }
   return stream;
@@ -594,8 +566,8 @@ inline std::ostream &on_bright_white(std::ostream &stream) {
 #if defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
     stream << "\033[107m";
 #elif defined(TERMCOLOR_USE_WINDOWS_API)
-    _internal::win_change_attributes(stream, -1,
-                                     BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_RED | BACKGROUND_INTENSITY);
+    _internal::win_change_attributes(
+        stream, -1, BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_RED | BACKGROUND_INTENSITY);
 #endif
   }
 

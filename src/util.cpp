@@ -1,17 +1,12 @@
-#include <iostream>
-#include <signal.h>
-#include <sstream>
-#include <string>
-#include <sys/stat.h>
 
-#include "cpcli_operations.hpp"
-#include "cpcli_utils.hpp"
+#include "util/util.hpp"
+#include "operations.hpp"
 
 using std::cout, std::endl, std::string;
 
 bool check_dir(std::filesystem::path path, const string &error_message) {
   if (std::filesystem::exists(path)) {
-    return 1;
+    return true;
   } else {
     if (error_message != "") {
       cout << error_message << endl;
@@ -24,7 +19,7 @@ bool check_dir(std::filesystem::path path, const string &error_message) {
 
 bool check_file(std::filesystem::path path, const string &error_message) {
   if (std::filesystem::exists(path)) {
-    return 1;
+    return true;
   } else {
     if (error_message != "") {
       cout << error_message << endl;
@@ -73,8 +68,7 @@ string gen_string_length_20() {
 }
 
 template <typename InputIterator1, typename InputIterator2>
-bool range_equal(InputIterator1 first1, InputIterator1 last1,
-                 InputIterator2 first2, InputIterator2 last2) {
+bool range_equal(InputIterator1 first1, InputIterator1 last1, InputIterator2 first2, InputIterator2 last2) {
   while (first1 != last1 && first2 != last2) {
     if (*first1 != *first2) {
       return false;

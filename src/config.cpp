@@ -1,8 +1,7 @@
-#include <fstream>
 
-#include "cpcli_operations.hpp"
-#include "cpcli_problem_config.hpp"
-#include "cpcli_utils.hpp"
+#include "config.hpp"
+#include "operations.hpp"
+#include "util/util.hpp"
 
 using std::cout;
 
@@ -23,7 +22,13 @@ nlohmann::json read_problem_config(const string &path, std::filesystem::path tem
   return j;
 }
 
-bool validate_problem_config(const nlohmann::json &obj) {
-  // TODO implement this method
-  return true;
+bool validate_problem_config(const nlohmann::json &obj) { return true; }
+
+nlohmann::json read_project_config(const string &path) {
+  std::ifstream input(path);
+  nlohmann::json j;
+  input >> j;
+  return j;
 }
+
+bool validate_project_config(const nlohmann::json &obj) { return true; }
