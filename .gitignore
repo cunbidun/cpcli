@@ -1,4 +1,7 @@
 cpcli_app
 tmp
 project_config.json
+
+# MacOS stuff
 *.dSYM
+.DS_Store

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <getopt.h>
 #include <iostream>
 #include <set>
 #include <signal.h>
@@ -13,6 +14,7 @@
 #include "constant.hpp"
 #include "nlohmann/json.hpp"
 #include "operations.hpp"
+#include "spdlog/spdlog.h"
 #include "util/color.hpp"
 #include "util/util.hpp"
 
@@ -28,6 +30,8 @@ std::chrono::high_resolution_clock::time_point t_start;
 // TODO add return code
 int main(int argc, char *argv[]) {
   signal(SIGINT, [](int) { sigint(); }); // implement SIGINT
+
+  t_start = std::chrono::high_resolution_clock::now();
 
   fs::path root_dir;   // where source files and problem_config file located
   fs::path output_dir; // where source will be put for submission
@@ -48,52 +52,174 @@ int main(int argc, char *argv[]) {
   string compiler_flags = "cpp_compile_flag";
   string generator_seed;
 
-  t_start = std::chrono::high_resolution_clock::now();
+  bool is_archieve = false;
+  bool is_build = false;
+  bool is_build_with_term = false;
+  bool is_debug = false;
+  bool is_edit_config = false;
+  bool is_new = false;
 
-  if (argc == 2) { // create new task
-    string new_task = "___n3w_t4sk";
-    project_conf_path = fs::absolute(argv[1]);             // set the root directory to argv[2]
+  // cout << "usage: cpcli <path/to/folder> <path/to/project_config.json> [op_num]" << endl;
+  // cout << "op_num = 0 (default):  run normally" << endl; -> b
+  // cout << "op_num = 1:            run with debug flags" << endl; -> d
+  // cout << "op_num = 2:            run with terminal" << endl; -> B
+  // cout << "op_num = 3:            test frontend" << endl; -> t
+  // cout << "op_num = 4:            archive task" << endl; -> a
+  while (true) {
+    int option_index = 0;
+    static struct option long_options[] = {{"archive", no_argument, NULL, 'a'},
+                                           {"build", no_argument, NULL, 'b'},
+                                           {"build-with-term", no_argument, NULL, 'B'},
+                                           {"build-with-debug", no_argument, NULL, 'd'},
+                                           {"debug", no_argument, NULL, 'D'},
+                                           {"edit-config", no_argument, NULL, 'e'},
+                                           {"help", no_argument, NULL, 'h'},
+                                           {"new", no_argument, NULL, 'n'},
+                                           {"project-config", required_argument, NULL, 'p'},
+                                           {"root-dir", required_argument, NULL, 'r'},
+                                           {"version", no_argument, NULL, 'v'},
+                                           {NULL, 0, NULL, 0}};
+
+    int c = getopt_long(argc, argv, "-:abBdDehnp:r:v", long_options, &option_index);
+    if (c == -1)
+      break;
+
+    switch (c) {
+    // long options
+    case 0:
+      break;
+
+    // regular options
+    case 1:
+      return ARG_ERR;
+
+    case 'a':
+      spdlog::debug("Archive flag (--archive) is set");
+      is_archieve = true;
+      break;
+
+    case 'b':
+      spdlog::debug("Build flag (--build) is set");
+      is_build = true;
+      break;
+
+    case 'B':
+      spdlog::debug("Build with terminal flag (--build-with-term) is set");
+      is_build_with_term = true;
+      break;
+
+    case 'd':
+      spdlog::debug("Build with debug flag (--build-with-debug) is set");
+      is_debug = true;
+      break;
+
+    case 'D':
+      spdlog::set_level(spdlog::level::debug);
+      spdlog::debug("Debug cpcli (--debug) is set");
+      break;
+
+    case 'e':
+      spdlog::debug("Edit config flag (--edit-config) is set");
+      is_edit_config = true;
+      break;
+
+    case 'h':
+      spdlog::debug("Help flag (--help) is set");
+      print_usage();
+      return 0;
+
+    case 'n':
+      spdlog::debug("New task flag (--new) is set");
+      is_new = true;
+      break;
+
+    case 'p':
+      project_conf_path = fs::absolute(optarg);
+      spdlog::debug("Value of project_conf_path is set to {}", project_conf_path.c_str());
+      break;
+
+    case 'r':
+      root_dir = fs::absolute(optarg);
+      spdlog::debug("Value of root_dir is set to {}", root_dir.c_str());
+      break;
+
+    case 'v':
+      cout << VERSION << endl;
+      return 0;
+
+    case '?':
+      spdlog::error("Unknow options {}", char(optopt));
+      spdlog::info("Try 'cpcli_app --help' for more information");
+      return ARG_ERR;
+
+    case ':':
+      spdlog::error("Missing option for {}", char(optopt));
+      spdlog::info("Try 'cpcli_app --help' for more information");
+
+      return ARG_ERR;
+
+    default:
+      spdlog::error("getopt returned character code {}", c);
+      spdlog::info("Try 'cpcli_app --help' for more information");
+      return ARG_ERR;
+    }
+  }
+
+  /*
+    Make sure that the arguments are correct
+  */
+  {
+    int number_of_choice = is_archieve + is_build + is_build_with_term + is_debug + is_edit_config + is_new;
+
+    if (number_of_choice == 0) {
+      spdlog::error("No operation requested");
+      return OPERATION_ERR;
+    }
+
+    if (number_of_choice == 2) {
+      spdlog::error("More than one operations requested");
+      return OPERATION_ERR;
+    }
+  }
+
+  /*
+    Check and parse the project config
+  */
+  {
+    if (project_conf_path.empty()) {
+      spdlog::error("project_config_path is empty");
+      return ARG_ERR;
+    }
+    check_file(project_conf_path, "project config file not found");
     project_conf = read_project_config(project_conf_path); // reade the project config into a json object
     validate_project_config(project_conf);
-    fs::path task_dir = fs::absolute(project_conf["task_dir"].get<string>());
-    fs::path frontend_path = fs::absolute(project_conf["frontend_path"].get<string>());
-    fs::path template_dir = fs::absolute(project_conf["template_dir"].get<string>());
+  }
 
-    fs::create_directory(task_dir / new_task);
-    fs::current_path(task_dir / new_task);
-    root_dir = fs::current_path();
+  /*
+    Create a new task.
 
-    fs::copy_file(template_dir / "solution.template", root_dir / "solution.cpp", fs::copy_options::overwrite_existing);
-    fs::copy_file(template_dir / "config.template", root_dir / "config.json", fs::copy_options::overwrite_existing);
-    edit_config(task_dir / new_task, template_dir, frontend_path);
-    problem_conf = read_problem_config(root_dir / "config.json",
-                                       template_dir / "config.template"); // reade the project config into a json object
-    validate_problem_config(problem_conf);
-    string name = problem_conf["name"].get<string>();
-
-    fs::current_path(root_dir.parent_path());
-
-    if (name.size() == 0 || check_dir(name, "")) {
-      fs::remove_all(new_task);
-    } else {
-      fs::rename(new_task, name);
+    For example:
+      cpcli_app -p path/to/project_config.json --new
+    or
+      cpcli_app -project-config=path/to/project_config.json -n
+  */
+  {
+    if (is_new) {
+      create_new_task(project_conf);
+      return 0;
     }
-    return 0;
   }
-
-  if (argc != 3 && argc != 4) {
-    print_usage();
-  }
-
-  root_dir = fs::absolute(argv[1]);          // set the root directory to argv[1]
-  project_conf_path = fs::absolute(argv[2]); // set the project config path to argv[2]
 
   check_dir(root_dir, "root directory not found!"); // check if the root_dir exists
   fs::current_path(root_dir);                       // change directory to root_dir
   clean_up(1);                                      // clean up the root directory for the first time
 
-  project_conf = read_project_config(project_conf_path); // reade the project config into a json object
-  validate_project_config(project_conf);
+  if (is_edit_config) { // edit config
+    fs::path template_dir = fs::absolute(project_conf["template_dir"].get<string>());
+    fs::path frontend_path = fs::absolute(project_conf["frontend_path"].get<string>());
+    edit_config(root_dir, template_dir, frontend_path);
+    return 0;
+  }
 
   cpcli_dir = fs::absolute(std::getenv("CPCLI_PATH"));
   output_dir = fs::absolute(project_conf["output_dir"]);
@@ -104,62 +230,52 @@ int main(int argc, char *argv[]) {
     testlib_compiler_flag = project_conf["cpp_compile_flag"].get<string>() + " " + "-I" + include_dir;
   }
 
-  // TODO pass as K-V args
-  if (argc == 4) {
-    if (argv[3] == string("0")) {
-      // do nothing
-      // argv[3] = 0 mean run normally
-    } else if (argv[3] == string("1")) { // run with debug flags
-      project_conf["use_cache"] = false; // don't use cache for debuging
-      compiler_flags = "cpp_debug_flag";
-    } else if (argv[3] == string("2")) {
-      // Run with terminal. This option only uses the project config file for
-      // compiler flags. No problem config will be used.
-      solution_file_path = root_dir / "solution.cpp"; // NOTE support c++ for now
-      check_file(solution_file_path, "solution file not found");
-      compile_cpp(
-          root_dir, false, project_conf["cpp_compiler"], solution_file_path, project_conf[compiler_flags], "solution");
-      // copy solution file to output dir for submission
-      copy_file(solution_file_path, output_dir / "solution.cpp", fs::copy_options::overwrite_existing);
-      int status = system_wraper("./solution");
-      cout << '\n'; // empty line before printing the status
-      if (status != 0) {
-        cout << termcolor::red << "[Process exited " << status << "]" << termcolor::reset << "\n";
-      } else {
-        cout << "[Process exited 0]\n";
-      }
-      clean_up();
-      return 0;
-    } else if (argv[3] == string("3")) { // edit config
-      fs::path template_dir = fs::absolute(project_conf["template_dir"].get<string>());
-      fs::path frontend_path = fs::absolute(project_conf["frontend_path"].get<string>());
-      edit_config(root_dir, template_dir, frontend_path);
-      return 0;
-    } else if (argv[3] == string("4")) { // archive
-      fs::path temp_config_path = fs::absolute(project_conf["template_dir"].get<string>()) / "config.template";
-      problem_conf_path = root_dir / "config.json";
-      problem_conf = read_problem_config(problem_conf_path,
-                                         temp_config_path); // reade the project config into a json object
-      validate_problem_config(problem_conf);
-      string name = problem_conf["name"].get<string>();
-      string group = problem_conf["group"].get<string>();
-      fs::current_path(root_dir.parent_path());
-
-      fs::path archive_dir = fs::absolute(project_conf["archive_dir"].get<string>());
-      if (group.size() == 0) {
-        fs::create_directories(archive_dir / "Unsorted" / name);
-        fs::copy(
-            name, archive_dir / "Unsorted" / name, fs::copy_options::recursive | fs::copy_options::update_existing);
-      } else {
-        fs::create_directories(archive_dir / group / name);
-        fs::copy(name, archive_dir / group / name, fs::copy_options::recursive | fs::copy_options::update_existing);
-      }
-      fs::remove_all(name);
-      return 0;
+  if (is_build) {
+    // do nothing
+  } else if (is_debug) {               // run with debug flags
+    project_conf["use_cache"] = false; // don't use cache for debuging
+    compiler_flags = "cpp_debug_flag";
+  } else if (is_build_with_term) {
+    // Run with terminal. This option only uses the project config file for
+    // compiler flags. No problem config will be used.
+    solution_file_path = root_dir / "solution.cpp"; // NOTE support c++ for now
+    check_file(solution_file_path, "solution file not found");
+    compile_cpp(
+        root_dir, false, project_conf["cpp_compiler"], solution_file_path, project_conf[compiler_flags], "solution");
+    // copy solution file to output dir for submission
+    copy_file(solution_file_path, output_dir / "solution.cpp", fs::copy_options::overwrite_existing);
+    int status = system_warper("./solution");
+    cout << '\n'; // empty line before printing the status
+    if (status != 0) {
+      cout << termcolor::red << "[Process exited " << status << "]" << termcolor::reset << "\n";
     } else {
-      cout << termcolor::red << "[cpcli] unknown operation" << endl;
-      return 0;
+      cout << "[Process exited 0]\n";
     }
+    clean_up();
+    return 0;
+  } else if (is_archieve) { // archive
+    fs::path temp_config_path = fs::absolute(project_conf["template_dir"].get<string>()) / "config.template";
+    problem_conf_path = root_dir / "config.json";
+    problem_conf = read_problem_config(problem_conf_path,
+                                       temp_config_path); // reade the project config into a json object
+    validate_problem_config(problem_conf);
+    string name = problem_conf["name"].get<string>();
+    string group = problem_conf["group"].get<string>();
+    fs::current_path(root_dir.parent_path());
+
+    fs::path archive_dir = fs::absolute(project_conf["archive_dir"].get<string>());
+    if (group.size() == 0) {
+      fs::create_directories(archive_dir / "Unsorted" / name);
+      fs::copy(name, archive_dir / "Unsorted" / name, fs::copy_options::recursive | fs::copy_options::update_existing);
+    } else {
+      fs::create_directories(archive_dir / group / name);
+      fs::copy(name, archive_dir / group / name, fs::copy_options::recursive | fs::copy_options::update_existing);
+    }
+    fs::remove_all(name);
+    return 0;
+  } else {
+    cout << termcolor::red << "[cpcli] unknown operation" << endl;
+    return OPERATION_ERR;
   }
 
   binary_dir = cpcli_dir / "binary";
@@ -303,7 +419,7 @@ int main(int argc, char *argv[]) {
     if (problem_conf["useGeneration"]) {
       string command =
           "../gen " + generator_seed + " " + to_string(problem_conf["numTest"].get<int>()); // NOTE careful with ..
-      int status = system_wraper(command);
+      int status = system_warper(command);
       if (status != 0) {
         cout << termcolor::red << termcolor::bold << "generator run time error" << termcolor::reset << endl;
         clean_up();
@@ -359,7 +475,7 @@ int main(int argc, char *argv[]) {
 
       if (problem_conf["interactive"]) {
         string command = "./interactor " + entry.string() + " " + actual_file.string() + " " + res_file.string();
-        int status = system_wraper(command);
+        int status = system_warper(command);
         if (status != 0) {
           passed = 0;
           if (status != 1) {
@@ -372,7 +488,7 @@ int main(int argc, char *argv[]) {
           string command = "./solution < " + entry.string() + " > " + actual_file.string();
 
           auto t0 = std::chrono::high_resolution_clock::now();
-          int status = system_wraper(command);
+          int status = system_warper(command);
           auto t1 = std::chrono::high_resolution_clock::now();
           runtime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
           if (runtime > time_limit) {
@@ -388,7 +504,7 @@ int main(int argc, char *argv[]) {
         {
           if (problem_conf["knowGenAns"]) {
             string command = "./slow < " + entry.string() + " > " + out_file.string();
-            int status = system_wraper(command);
+            int status = system_warper(command);
             if (status != 0) {
               cout << "Input:" << '\n';
               print_file(entry.string(), truncate);
@@ -409,7 +525,7 @@ int main(int argc, char *argv[]) {
           // ./checker <input> <pout> <jans> <res>
           string command = "./checker " + entry.string() + "  " + actual_file.string() + " " + out_file_str + " " +
                            res_file.string() + " > /dev/null 2>&1";
-          int status = system_wraper(command);
+          int status = system_warper(command);
           if (status != 0) {
             passed = 0;
           }

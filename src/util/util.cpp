@@ -11,7 +11,7 @@ bool check_dir(std::filesystem::path path, const string &error_message) {
     if (error_message != "") {
       cout << error_message << endl;
       clean_up();
-      exit(1);
+      exit(61824);
     }
     return false;
   }
@@ -24,7 +24,7 @@ bool check_file(std::filesystem::path path, const string &error_message) {
     if (error_message != "") {
       cout << error_message << endl;
       clean_up();
-      exit(1);
+      exit(61825);
     }
     return false;
   }
@@ -94,7 +94,7 @@ bool compare_files(const std::filesystem::path &filename1, const std::filesystem
   return range_equal(begin1, end, begin2, end);
 }
 
-int system_wraper(const string &command) {
+int system_warper(const string &command) {
   int status = std::system(command.c_str());
   if (WIFSIGNALED(status) && (WTERMSIG(status) == SIGINT)) {
     sigint();

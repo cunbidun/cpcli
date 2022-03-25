@@ -8,16 +8,17 @@
 #include <vector>
 
 using std::string;
+using json = nlohmann::json;
 
 // TODO add docs
-nlohmann::json read_problem_config(const string &path, std::filesystem::path temp_config_path);
+json read_problem_config(const string &path, std::filesystem::path temp_config_path);
 
 // TODO validate project config
-bool validate_problem_config(const nlohmann::json &obj);
+bool validate_problem_config(const json &obj);
 
 // TODO add docs
-nlohmann::json read_project_config(const string &path);
+json read_project_config(const string &path);
 
 // TODO validate project config
-bool validate_project_config(const nlohmann::json &obj);
+bool validate_project_config(const json &obj);
 #endif

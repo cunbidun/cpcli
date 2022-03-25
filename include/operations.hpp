@@ -7,6 +7,10 @@
 #include <unistd.h>
 #include <vector>
 
+#include "nlohmann/json.hpp"
+
+using json = nlohmann::json;
+
 using std::string;
 namespace fs = std::filesystem;
 
@@ -14,12 +18,14 @@ namespace fs = std::filesystem;
 void print_usage();
 
 // TODO add docs
-int compile_cpp(std::filesystem::path &cache_dir,
+int compile_cpp(fs::path &cache_dir,
                 bool use_cache,
                 const string &c_complier,
                 fs::path &path,
                 const string &compiler_flags,
                 const string &binary_name);
+
+int create_new_task(json project_conf);
 
 // TODO add docs
 int clean_up(int first_time = 0);

@@ -76,5 +76,5 @@ void print_file(string path, bool truncate);
 bool compare_files(const std::filesystem::path &filename1, const std::filesystem::path &filename2);
 
 // TODO add docs
-int system_wraper(const string &command);
+int system_warper(const string &command);
 #endif
