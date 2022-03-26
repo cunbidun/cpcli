@@ -147,7 +147,6 @@ int clean_up(int first_time) {
   fs::remove("gen");
   fs::remove("slow");
   fs::remove("interactor");
-  fs::remove("printer");
   fs::remove_all("___test_case");
 
   // if not the first_time, assume that testing is done

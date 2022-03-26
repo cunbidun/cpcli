@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
                   use_cache,
                   project_conf["cpp_compiler"],
                   interactor_file_path,
-                  project_conf[compiler_flags],
+                  testlib_compiler_flag,
                   "interactor");
       cout << termcolor::cyan << termcolor::bold << "Interactive task" << termcolor::reset << '\n';
     } else {
