@@ -19,12 +19,9 @@
 
 using std::string;
 
-// Check if directory exist or not
+// Check if file/directory exist or not
 // If yes, return true
 // If no, return false and if the error_message is not tempy, exit the program
-bool check_dir(std::filesystem::path name, const string &error_message);
-
-// TODO add docs
 bool check_file(std::filesystem::path path, const string &error_message);
 
 // TODO add docs

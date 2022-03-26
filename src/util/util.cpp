@@ -1,30 +1,19 @@
 
 #include "util/util.hpp"
+#include "constant.hpp"
 #include "operations.hpp"
+#include "spdlog/spdlog.h"
 
-using std::cout, std::endl, std::string;
-
-bool check_dir(std::filesystem::path path, const string &error_message) {
-  if (std::filesystem::exists(path)) {
-    return true;
-  } else {
-    if (error_message != "") {
-      cout << error_message << endl;
-      clean_up();
-      exit(61824);
-    }
-    return false;
-  }
-}
+using std::cout, std::string;
 
 bool check_file(std::filesystem::path path, const string &error_message) {
   if (std::filesystem::exists(path)) {
     return true;
   } else {
     if (error_message != "") {
-      cout << error_message << endl;
+      spdlog::error(error_message);
       clean_up();
-      exit(61825);
+      exit(FILE_NOT_FOUND_ERR);
     }
     return false;
   }
@@ -52,9 +41,9 @@ void print_file(string path, bool truncate) {
   buffer << std::ifstream(path).rdbuf();
   if (truncate && buffer.str().size() >= 100) {
     string buff = rtrim_copy(buffer.str());
-    std::cout << buff.substr(0, 35) << "..." << buff.substr(buff.size() - 35, 35) << '\n';
+    cout << buff.substr(0, 35) << "..." << buff.substr(buff.size() - 35, 35) << '\n';
   } else {
-    std::cout << rtrim_copy(buffer.str()) << '\n';
+    cout << rtrim_copy(buffer.str()) << '\n';
   }
 }
 

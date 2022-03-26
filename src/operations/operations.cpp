@@ -1,5 +1,4 @@
 #include "operations.hpp"
-#include "config.hpp"
 #include "constant.hpp"
 #include "util/color.hpp"
 #include "util/util.hpp"
@@ -8,52 +7,6 @@ using std::cout;
 using std::endl;
 
 extern std::chrono::high_resolution_clock::time_point t_start; // TODO remove this
-
-// TODO fix this
-void print_usage() {
-  cout << endl;
-  cout << "usage: cpcli -p path/to/project_config.json [OPTION]" << endl;
-  cout << endl;
-
-  cout << "Required: all options require this to be set" << endl;
-  cout << "   -p, --project-config          path to the golbal config file" << endl;
-  cout << endl;
-
-  cout << "Optional: except for creating new task, all options require this to be set" << endl;
-  cout << "   -r, --root-dir                the folder directory" << endl;
-  cout << endl;
-
-  cout << "Optional flags: those arguments do not require an arguments" << endl;
-  cout << "   -a, --archive                 archive current root-dir" << endl;
-  cout << "   -b, --build                   build solution file with normal flags" << endl;
-  cout << "   -B, --build-with-term         build solution file with terminal (this option will not use cpcli)" << endl;
-  cout << "   -d, --build-with-debug        build solution file with debug flags" << endl;
-  cout << "   -n, --new                     create new task (this option does not require --root-dir)" << endl;
-  cout << endl;
-
-  cout << "Info: those arguments do not require an arguments" << endl;
-  cout << "   -D, --debug                   run cpcli_app with debug flags (this option will print debug logs)" << endl;
-  cout << "                                 when running with this flag, it is best to put this before others" << endl;
-  cout << "   -h, --help                    show this help" << endl;
-  cout << "   -v, --version                 print cpcli_app version" << endl;
-  cout << endl;
-
-  cout << "Examples:" << endl;
-  cout << "   cpcli_app --new --project-config=./project_config.json" << endl;
-  cout << "       for creating new task (the location is determine in the config file)" << endl;
-  cout << endl;
-
-  cout << "   cpcli_app --root-dir='$ROOT' --project-config=./project_config.json --build-with-debug" << endl;
-  cout << "       for building and running task at '$ROOT' with debug flags" << endl;
-  cout << endl;
-
-  cout << "   cpcli_app -D --root-dir='$ROOT' --project-config=./project_config.json --build-with-debug" << endl;
-  cout << "       for building and running task at '$ROOT' with debug flags, also show logs from cpcli_app" << endl;
-  cout << endl;
-
-  cout << "Check out https://github.com/cunbidun/cpcli for more info";
-  cout << endl;
-}
 
 int create_new_task(json project_conf) {
   // dummy dir for new task
@@ -73,34 +26,13 @@ int create_new_task(json project_conf) {
 
   // read and validate the project config file
   json problem_conf = read_problem_config(root_dir / "config.json", template_dir / "config.template");
-  validate_problem_config(problem_conf);
 
   string name = problem_conf["name"].get<string>();
   fs::current_path(root_dir.parent_path());
-  if (name.size() == 0 || check_dir(name, "")) {
+  if (name.size() == 0 || check_file(name, "")) {
     fs::remove_all(new_task);
   } else {
     fs::rename(new_task, name);
-  }
-  return 0;
-}
-
-int clean_up(int first_time) {
-  // Remove binary and ___test_case directory everytime
-  fs::remove("solution");
-  fs::remove("checker");
-  fs::remove("gen");
-  fs::remove("slow");
-  fs::remove("interactor");
-  fs::remove("printer");
-  fs::remove_all("___test_case");
-
-  // if not the first_time, assume that testing is done
-  if (!first_time) {
-    auto t_end = std::chrono::high_resolution_clock::now();
-    long long total_time = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
-    cout << termcolor::magenta << termcolor::bold << "All testing finished in " << total_time << " ms"
-         << termcolor::reset << endl;
   }
   return 0;
 }
@@ -142,14 +74,8 @@ int compile_cpp(fs::path &cache_dir,
   }
 
   if (use_cache) {
-    copy_file(path.parent_path() / binary_name,
-              binary_cache_dir,
-              fs::copy_options::overwrite_existing); // copy solution file to output dir for
-                                                     // submission
-    copy_file(path,
-              file_cache_dir,
-              fs::copy_options::overwrite_existing); // copy solution file to output dir for
-                                                     // submission
+    copy_file(path.parent_path() / binary_name, binary_cache_dir, fs::copy_options::overwrite_existing);
+    copy_file(path, file_cache_dir, fs::copy_options::overwrite_existing);
   }
   return status;
 }
@@ -183,15 +109,10 @@ void sigint() {
 }
 
 void edit_config(fs::path root_dir, fs::path &template_dir, string &frontend_exec) {
-
-  namespace fs = fs;
-
-  auto config = read_problem_config(root_dir / "config.json",
-                                    template_dir / "config.template"); // reade the project config into a json object
-  validate_problem_config(config);
+  // read the project config into a json object
+  json config = read_problem_config(root_dir / "config.json", template_dir / "config.template");
   string old_name = config["name"].get<string>();
 
-  // TODO pass this from env varibale
   string command = frontend_exec + " \"" + root_dir.string() + "\"";
   system_warper(command);
 
@@ -217,4 +138,24 @@ void edit_config(fs::path root_dir, fs::path &template_dir, string &frontend_exe
       fs::rename(old_name, name);
     }
   }
+}
+
+int clean_up(int first_time) {
+  // Remove binary and ___test_case directory everytime
+  fs::remove("solution");
+  fs::remove("checker");
+  fs::remove("gen");
+  fs::remove("slow");
+  fs::remove("interactor");
+  fs::remove("printer");
+  fs::remove_all("___test_case");
+
+  // if not the first_time, assume that testing is done
+  if (!first_time) {
+    auto t_end = std::chrono::high_resolution_clock::now();
+    long long total_time = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
+    cout << termcolor::magenta << termcolor::bold << "All testing finished in " << total_time << " ms"
+         << termcolor::reset << endl;
+  }
+  return 0;
 }
