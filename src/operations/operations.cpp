@@ -60,7 +60,7 @@ int create_new_task(json project_conf) {
   string new_task = "___n3w_t4sk";
 
   fs::path task_dir = fs::absolute(project_conf["task_dir"].get<string>());
-  fs::path frontend_path = fs::absolute(project_conf["frontend_path"].get<string>());
+  string frontend_exec = project_conf["frontend_exec"].get<string>();
   fs::path template_dir = fs::absolute(project_conf["template_dir"].get<string>());
 
   fs::create_directory(task_dir / new_task);
@@ -69,7 +69,7 @@ int create_new_task(json project_conf) {
 
   fs::copy_file(template_dir / "solution.template", root_dir / "solution.cpp", fs::copy_options::overwrite_existing);
   fs::copy_file(template_dir / "config.template", root_dir / "config.json", fs::copy_options::overwrite_existing);
-  edit_config(task_dir / new_task, template_dir, frontend_path);
+  edit_config(task_dir / new_task, template_dir, frontend_exec);
 
   // read and validate the project config file
   json problem_conf = read_problem_config(root_dir / "config.json", template_dir / "config.template");
@@ -182,7 +182,7 @@ void sigint() {
   exit(0);
 }
 
-void edit_config(fs::path root_dir, fs::path &template_dir, fs::path &frontend_path) {
+void edit_config(fs::path root_dir, fs::path &template_dir, string &frontend_exec) {
 
   namespace fs = fs;
 
@@ -192,7 +192,7 @@ void edit_config(fs::path root_dir, fs::path &template_dir, fs::path &frontend_p
   string old_name = config["name"].get<string>();
 
   // TODO pass this from env varibale
-  string command = "java -jar \"" + frontend_path.string() + "\" \"" + root_dir.string() + "\"";
+  string command = frontend_exec + " \"" + root_dir.string() + "\"";
   system_warper(command);
 
   config = read_problem_config(root_dir / "config.json", template_dir / "config.template");

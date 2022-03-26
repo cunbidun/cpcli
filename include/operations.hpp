@@ -37,6 +37,6 @@ void print_report(const string report_name, bool passed, bool rte, bool tle, boo
 void sigint();
 
 // TODO add docs
-void edit_config(fs::path root_dir, fs::path &template_dir, fs::path &frontend_path);
+void edit_config(fs::path root_dir, fs::path &template_dir, string &frontend_exec);
 
 #endif

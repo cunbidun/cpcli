@@ -59,12 +59,6 @@ int main(int argc, char *argv[]) {
   bool is_edit_config = false;
   bool is_new = false;
 
-  // cout << "usage: cpcli <path/to/folder> <path/to/project_config.json> [op_num]" << endl;
-  // cout << "op_num = 0 (default):  run normally" << endl; -> b
-  // cout << "op_num = 1:            run with debug flags" << endl; -> d
-  // cout << "op_num = 2:            run with terminal" << endl; -> B
-  // cout << "op_num = 3:            test frontend" << endl; -> t
-  // cout << "op_num = 4:            archive task" << endl; -> a
   while (true) {
     int option_index = 0;
     static struct option long_options[] = {{"archive", no_argument, NULL, 'a'},
@@ -216,8 +210,8 @@ int main(int argc, char *argv[]) {
 
   if (is_edit_config) { // edit config
     fs::path template_dir = fs::absolute(project_conf["template_dir"].get<string>());
-    fs::path frontend_path = fs::absolute(project_conf["frontend_path"].get<string>());
-    edit_config(root_dir, template_dir, frontend_path);
+    string frontend_exec = project_conf["frontend_exec"].get<string>();
+    edit_config(root_dir, template_dir, frontend_exec);
     return 0;
   }
 
