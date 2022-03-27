@@ -51,6 +51,9 @@ competitive_companion:
 	@echo "running 'npm install' in cc"
 	cd cc && npm install
 
+install:
+	mv cpcli_app ~/.local/bin
+
 # compile checker binary
 $(CHECKER_BIN): % : %.cpp
 	$(CC) -o $@ $^ $(CFLAGS)
