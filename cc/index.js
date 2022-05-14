@@ -7,13 +7,33 @@ import {
   writeFileSync,
 } from "fs";
 import path from "path";
+import { exit } from "process";
 
-let project_config_path = path.join(
-  path.resolve(process.env.CPCLI_PATH),
-  "project_config.json"
-);
+function print_usage() {
+  console.log("The correct usage is: ");
+  console.log("   npm start -- config=<path/to/config/file>");
+}
+
+if (process.argv.length !== 3) {
+  console.log("Invalid command line args!!!");
+  print_usage();
+  exit(1);
+}
+
+let config_array = process.argv[2].split("=");
+if (config_array[0] !== "config") {
+  console.log("Invalid command line args!!!");
+  print_usage();
+  exit(1);
+}
+
+let project_config_path = config_array[1];
+console.log(`Using config file ${project_config_path} (assuming it exists)`);
 
 let project_config = JSON.parse(readFileSync(project_config_path));
+
+console.log(`Using task dir: ${project_config.task_dir} (assuming it exists)`);
+
 
 const app = express();
 app.use(express.json());
