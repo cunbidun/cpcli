@@ -44,14 +44,21 @@ $(APPBIN): $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 precompiled_headers:
-	@echo "compile headers..."
+	@echo "compiling headers..."
 	binary/precompiled_headers/gen.sh ./project_config.json
+
+competitive_companion:
+	@echo "running 'npm install' in cc"
+	cd cc && npm install
+
+install:
+	mv cpcli_app ~/.local/bin
 
 # compile checker binary
 $(CHECKER_BIN): % : %.cpp
 	$(CC) -o $@ $^ $(CFLAGS)
 
-all: $(APPBIN) $(CHECKER_BIN) precompiled_headers
+all: $(APPBIN) $(CHECKER_BIN) precompiled_headers competitive_companion 
 
 debug: 
 	@echo "include dir: $(IDIR)"

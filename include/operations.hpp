@@ -18,6 +18,12 @@ namespace fs = std::filesystem;
 void print_usage();
 
 // TODO add docs
+json read_problem_config(fs::path path, fs::path temp_config_path);
+
+// TODO add docs
+json read_project_config(fs::path path);
+
+// TODO add docs
 int compile_cpp(fs::path &cache_dir,
                 bool use_cache,
                 const string &c_complier,

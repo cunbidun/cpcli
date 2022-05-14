@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "config.hpp"
 #include "constant.hpp"
 #include "nlohmann/json.hpp"
 #include "operations.hpp"
@@ -177,17 +176,9 @@ int main(int argc, char *argv[]) {
   }
 
   /*
-    Check and parse the project config
+    Parse the project config
   */
-  {
-    if (project_conf_path.empty()) {
-      spdlog::error("project_config_path is empty");
-      return ARG_ERR;
-    }
-    check_file(project_conf_path, "project config file not found");
-    project_conf = read_project_config(project_conf_path); // reade the project config into a json object
-    validate_project_config(project_conf);
-  }
+  project_conf = read_project_config(project_conf_path); // read the project config into a json object
 
   /*
     Create a new task.
@@ -204,9 +195,9 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  check_dir(root_dir, "root directory not found!"); // check if the root_dir exists
-  fs::current_path(root_dir);                       // change directory to root_dir
-  clean_up(1);                                      // clean up the root directory for the first time
+  check_file(root_dir, "root directory not found!"); // check if the root_dir exists
+  fs::current_path(root_dir);                        // change directory to root_dir
+  clean_up(1);                                       // clean up the root directory for the first time
 
   if (is_edit_config) { // edit config
     fs::path template_dir = fs::absolute(project_conf["template_dir"].get<string>());
@@ -214,6 +205,10 @@ int main(int argc, char *argv[]) {
     edit_config(root_dir, template_dir, frontend_exec);
     return 0;
   }
+
+  fs::path temp_config_path = fs::absolute(project_conf["template_dir"].get<string>()) / "config.template";
+  problem_conf_path = root_dir / "config.json";
+  problem_conf = read_problem_config(problem_conf_path, temp_config_path);
 
   cpcli_dir = fs::absolute(std::getenv("CPCLI_PATH"));
   output_dir = fs::absolute(project_conf["output_dir"]);
@@ -239,7 +234,7 @@ int main(int argc, char *argv[]) {
     // copy solution file to output dir for submission
     copy_file(solution_file_path, output_dir / "solution.cpp", fs::copy_options::overwrite_existing);
     int status = system_warper("./solution");
-    cout << '\n'; // empty line before printing the status
+    cout << '\n'; // add an empty line before printing the status
     if (status != 0) {
       cout << termcolor::red << "[Process exited " << status << "]" << termcolor::reset << "\n";
     } else {
@@ -248,13 +243,10 @@ int main(int argc, char *argv[]) {
     clean_up();
     return 0;
   } else if (is_archieve) { // archive
-    fs::path temp_config_path = fs::absolute(project_conf["template_dir"].get<string>()) / "config.template";
-    problem_conf_path = root_dir / "config.json";
-    problem_conf = read_problem_config(problem_conf_path,
-                                       temp_config_path); // reade the project config into a json object
-    validate_problem_config(problem_conf);
     string name = problem_conf["name"].get<string>();
     string group = problem_conf["group"].get<string>();
+
+    // We move back to the parent directory of current task in order to copy it
     fs::current_path(root_dir.parent_path());
 
     fs::path archive_dir = fs::absolute(project_conf["archive_dir"].get<string>());
@@ -273,7 +265,7 @@ int main(int argc, char *argv[]) {
   }
 
   binary_dir = cpcli_dir / "binary";
-  check_dir(binary_dir, "binary_dir not found!");
+  check_file(binary_dir, "binary_dir not found!");
 
   if (project_conf["use_precompiled_header"]) {
     // TODO validate precompiled_header
@@ -293,17 +285,6 @@ int main(int argc, char *argv[]) {
                                      precompiled_debug_path.string() + "\"";
   }
 
-  check_file(project_conf_path, "project config file not found"); // check if the
-                                                                  // project_config.json exists
-
-  problem_conf_path = root_dir / "config.json";
-
-  // TODO check if template exists
-  fs::path temp_config_path = fs::absolute(project_conf["template_dir"].get<string>()) / "config.template";
-  problem_conf =
-      read_problem_config(problem_conf_path, temp_config_path); // reade the project config into a json object
-  validate_problem_config(problem_conf);
-
   if (problem_conf["group"] != nullptr && problem_conf["group"].get<string>().size() != 0) {
     cout << problem_conf["group"].get<string>() << '\n';
   }
@@ -317,7 +298,7 @@ int main(int argc, char *argv[]) {
     bool use_cache = project_conf["use_cache"];
     if (use_cache) {
       // TODO using a tempdir library instead of hard codeing the path
-      cache_dir = fs::absolute("/tmp/cpcli") / to_string(std::hash<std::string>()(root_dir));
+      cache_dir = fs::temp_directory_path() / "cpcli" / to_string(std::hash<std::string>()(root_dir));
       fs::create_directories(cache_dir);
     }
 
@@ -329,7 +310,7 @@ int main(int argc, char *argv[]) {
                   use_cache,
                   project_conf["cpp_compiler"],
                   interactor_file_path,
-                  project_conf[compiler_flags],
+                  testlib_compiler_flag,
                   "interactor");
       cout << termcolor::cyan << termcolor::bold << "Interactive task" << termcolor::reset << '\n';
     } else {
@@ -391,10 +372,9 @@ int main(int argc, char *argv[]) {
   // ------------------------------ COMPILE END -----------------------------
 
   // ------------------------ GENERATING TESTS START ------------------------
-
   {
     fs::current_path(root_dir);
-    mkdir("___test_case", 0777);
+    fs::create_directory("___test_case");
     fs::current_path("___test_case");
     for (json test : problem_conf["tests"]) {
       if (test["active"]) {
