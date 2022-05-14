@@ -5,7 +5,7 @@
 
 using std::string;
 
-static inline const string VERSION = "0.5.3";
+static inline const string VERSION = "0.5.4";
 
 static inline const string DASH_SEPERATOR = "\033[1;34m---------------------------\033[0m"; // blue color
 static inline const string EQUA_SEPERATOR = "===========================";
