@@ -43,10 +43,6 @@ $(OBJ): $(ODIR)%.o : $(SDIR)%.cpp $(INC) mkdir
 $(APPBIN): $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 
-precompiled_headers:
-	@echo "compiling headers..."
-	binary/precompiled_headers/gen.sh ./project_config.json
-
 competitive_companion:
 	@echo "running 'npm install' in cc"
 	cd cc && npm install
@@ -58,7 +54,7 @@ install:
 $(CHECKER_BIN): % : %.cpp
 	$(CC) -o $@ $^ $(CFLAGS)
 
-all: $(APPBIN) $(CHECKER_BIN) precompiled_headers competitive_companion 
+all: $(APPBIN) $(CHECKER_BIN) competitive_companion 
 
 debug: 
 	@echo "include dir: $(IDIR)"
@@ -75,3 +71,5 @@ clean:
 	git clean -dfX $(CHECKER_DIR) 
 	git clean -dfX binary 
 	rm -f $(APPBIN)
+	rm -f ~/.local/bin/cpcli_app
+	rm -rf cc/node_modules
