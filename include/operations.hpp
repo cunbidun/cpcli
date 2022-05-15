@@ -45,4 +45,6 @@ void sigint();
 // TODO add docs
 void edit_config(fs::path root_dir, fs::path &template_dir, string &frontend_exec);
 
+bool compile_headers(fs::path precompiled_dir, const string & cc, const string &flag, const string &debug);
+
 #endif
