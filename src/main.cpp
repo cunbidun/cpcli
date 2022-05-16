@@ -34,8 +34,6 @@ int main(int argc, char *argv[]) {
 
   fs::path root_dir;   // where source files and problem_config file located
   fs::path output_dir; // where source will be put for submission
-  fs::path binary_dir;
-  fs::path cpcli_dir;
 
   // project_config's path and project_config json object
   fs::path project_conf_path;
@@ -57,6 +55,7 @@ int main(int argc, char *argv[]) {
   bool is_debug = false;
   bool is_edit_config = false;
   bool is_new = false;
+  bool is_gen_header = false;
 
   while (true) {
     int option_index = 0;
@@ -66,6 +65,7 @@ int main(int argc, char *argv[]) {
                                            {"build-with-debug", no_argument, NULL, 'd'},
                                            {"debug", no_argument, NULL, 'D'},
                                            {"edit-config", no_argument, NULL, 'e'},
+                                           {"gen-headers", no_argument, NULL, 'g'},
                                            {"help", no_argument, NULL, 'h'},
                                            {"new", no_argument, NULL, 'n'},
                                            {"project-config", required_argument, NULL, 'p'},
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
                                            {"version", no_argument, NULL, 'v'},
                                            {NULL, 0, NULL, 0}};
 
-    int c = getopt_long(argc, argv, "-:abBdDehnp:r:v", long_options, &option_index);
+    int c = getopt_long(argc, argv, "-:abBdDeghnp:r:v", long_options, &option_index);
     if (c == -1)
       break;
 
@@ -114,6 +114,11 @@ int main(int argc, char *argv[]) {
     case 'e':
       spdlog::debug("Edit config flag (--edit-config) is set");
       is_edit_config = true;
+      break;
+
+    case 'g':
+      spdlog::debug("Build flag (--gen-headers) is set");
+      is_gen_header = true;
       break;
 
     case 'h':
@@ -162,7 +167,8 @@ int main(int argc, char *argv[]) {
     Make sure that the arguments are correct
   */
   {
-    int number_of_choice = is_archieve + is_build + is_build_with_term + is_debug + is_edit_config + is_new;
+    int number_of_choice =
+        is_archieve + is_build + is_build_with_term + is_debug + is_edit_config + is_new + is_gen_header;
 
     if (number_of_choice == 0) {
       spdlog::error("No operation requested");
@@ -180,17 +186,47 @@ int main(int argc, char *argv[]) {
   */
   project_conf = read_project_config(project_conf_path); // read the project config into a json object
 
-  /*
-    Create a new task.
+  fs::path cpcli_dir = fs::absolute(project_conf["cpcli_dir"].get<string>());
+  spdlog::debug("cpcli_dir is: " + cpcli_dir.string());
+  check_file(cpcli_dir, "cpcli_dir not found!");
+  fs::path binary_dir = cpcli_dir / "binary";
+  check_file(binary_dir, "binary_dir not found!");
+  fs::path precompiled_dir = binary_dir / "precompiled_headers";
 
-    For example:
-      cpcli_app -p path/to/project_config.json --new
-    or
-      cpcli_app -project-config=path/to/project_config.json -n
-  */
   {
+    /*
+      Create a new task.
+
+      For example:
+        cpcli_app -p path/to/project_config.json --new
+      or
+        cpcli_app -project-config=path/to/project_config.json -n
+    */
     if (is_new) {
       create_new_task(project_conf);
+      return 0;
+    }
+  }
+
+  {
+    /*
+      Generate precompiled header files
+
+      For example:
+        cpcli_app -p path/to/project_config.json -g
+      or
+        cpcli_app -project-config=path/to/project_config.json --gen-headers
+    */
+    if (is_gen_header) {
+      spdlog::debug("Generating precompiled headers");
+      spdlog::debug("precompied_dir is: " + precompiled_dir.string());
+      spdlog::debug("cpp_compiler is: " + project_conf["cpp_compiler"].get<string>());
+      spdlog::debug("cpp_compile_flag is: " + project_conf["cpp_compile_flag"].get<string>());
+      spdlog::debug("cpp_debug_flag is: " + project_conf["cpp_debug_flag"].get<string>());
+      compile_headers(precompiled_dir,
+                      project_conf["cpp_compiler"].get<string>(),
+                      project_conf["cpp_compile_flag"].get<string>(),
+                      project_conf["cpp_debug_flag"].get<string>());
       return 0;
     }
   }
@@ -210,7 +246,6 @@ int main(int argc, char *argv[]) {
   problem_conf_path = root_dir / "config.json";
   problem_conf = read_problem_config(problem_conf_path, temp_config_path);
 
-  cpcli_dir = fs::absolute(std::getenv("CPCLI_PATH"));
   output_dir = fs::absolute(project_conf["output_dir"]);
 
   testlib_compiler_flag = project_conf["cpp_compile_flag"].get<string>();
@@ -264,19 +299,12 @@ int main(int argc, char *argv[]) {
     return OPERATION_ERR;
   }
 
-  binary_dir = cpcli_dir / "binary";
-  check_file(binary_dir, "binary_dir not found!");
-
   if (project_conf["use_precompiled_header"]) {
-    // TODO validate precompiled_header
-
-    fs::path precompiled_dir = binary_dir / "precompiled_headers";
-
     fs::path precompiled_path = precompiled_dir / "cpp_compile_flag" / "stdc++.h";
-    check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch", "precompiled header not found!");
+    check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch", "precompiled header not found! Please try --gen-headers option");
 
     fs::path precompiled_debug_path = precompiled_dir / "cpp_debug_flag" / "stdc++.h";
-    check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch", "precompiled debug header not found!");
+    check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch", "precompiled debug header not found! Please try --gen-headers option");
 
     project_conf["cpp_compile_flag"] =
         project_conf["cpp_compile_flag"].get<string>() + " " + "-include" + " \"" + precompiled_path.string() + "\"";

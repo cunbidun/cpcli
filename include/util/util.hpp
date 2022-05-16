@@ -74,4 +74,5 @@ bool compare_files(const std::filesystem::path &filename1, const std::filesystem
 
 // TODO add docs
 int system_warper(const string &command);
+
 #endif

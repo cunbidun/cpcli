@@ -12,7 +12,7 @@ void print_usage() {
   cout << "   -p, --project-config          path to the golbal config file" << endl;
   cout << endl;
 
-  cout << "Optional: except for creating new task, all options require this to be set" << endl;
+  cout << "Optional: except for creating new task and generate precomplied headers, all options require -r to be set" << endl;
   cout << "   -r, --root-dir                the folder directory" << endl;
   cout << endl;
 
@@ -22,6 +22,7 @@ void print_usage() {
   cout << "   -B, --build-with-term         build solution file with terminal (this option will not use cpcli)" << endl;
   cout << "   -d, --build-with-debug        build solution file with debug flags" << endl;
   cout << "   -n, --new                     create new task (this option does not require --root-dir)" << endl;
+  cout << "   -g, --gen-headers             precompile headers file. This needs to be done before using the precompiled headers" << endl;
   cout << endl;
 
   cout << "Info: those arguments do not require an arguments" << endl;
