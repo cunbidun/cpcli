@@ -25,6 +25,9 @@ using std::string;
 bool check_file(std::filesystem::path path, const string &error_message);
 
 // TODO add docs
+bool is_empty_file(const string &path);
+
+// TODO add docs
 string join(std::vector<string> &v);
 
 // TODO add docs

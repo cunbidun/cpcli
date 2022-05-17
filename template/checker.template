@@ -1,0 +1,11 @@
+/**
+ * The checkere program should accept 4 file paths as arguments and can be invoke this way:
+ *
+ *    check <input_file> <program_output_file> <expected_output> <result_file>
+ *
+ * The input_file will contain input data 
+ * The program_output_file will contain what your program produces
+ * The expected_output will contain the expected output of the test
+ * The content of result_file will be printed to screen 
+ */
+int main(int argc, char *argv[]) {}

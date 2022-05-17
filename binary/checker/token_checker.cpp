@@ -22,5 +22,5 @@ int main(int argc, char *argv[]) {
   if (!ans.seekEof() || !ouf.seekEof()) {
     quitf(_wa, "number of token differs");
   }
-  quitf(_ok, "passed");
+  quitf(_ok, "");
 }

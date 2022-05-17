@@ -301,10 +301,12 @@ int main(int argc, char *argv[]) {
 
   if (project_conf["use_precompiled_header"]) {
     fs::path precompiled_path = precompiled_dir / "cpp_compile_flag" / "stdc++.h";
-    check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch", "precompiled header not found! Please try --gen-headers option");
+    check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch",
+               "precompiled header not found! Please try --gen-headers option");
 
     fs::path precompiled_debug_path = precompiled_dir / "cpp_debug_flag" / "stdc++.h";
-    check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch", "precompiled debug header not found! Please try --gen-headers option");
+    check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch",
+               "precompiled debug header not found! Please try --gen-headers option");
 
     project_conf["cpp_compile_flag"] =
         project_conf["cpp_compile_flag"].get<string>() + " " + "-include" + " \"" + precompiled_path.string() + "\"";
@@ -520,12 +522,12 @@ int main(int argc, char *argv[]) {
         }
 
         {
-          string out_file_str = out_file.string();
+          string jans_file = out_file.string();
           if (!check_file(out_file, "")) {
-            out_file_str = tests_folder_dir / "___na___";
+            jans_file = tests_folder_dir / "___na___";
           }
-          // ./checker <input> <pout> <jans> <res>
-          string command = "./checker " + entry.string() + "  " + actual_file.string() + " " + out_file_str + " " +
+          // ./checker <input> <pout> <jans_file> <res>
+          string command = "./checker " + entry.string() + "  " + actual_file.string() + " " + jans_file + " " +
                            res_file.string() + " > /dev/null 2>&1";
           int status = system_warper(command);
           if (status != 0) {
@@ -566,7 +568,7 @@ int main(int argc, char *argv[]) {
 
         // --------- Verdict --------------
         print_report("Verdict", passed, rte, tle, wa, runtime);
-        if (wa) {
+        if (!is_empty_file(res_file.string())) {
           print_file(res_file, false);
         }
       }

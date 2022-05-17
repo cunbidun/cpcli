@@ -1,0 +1,4 @@
+/**
+ * solution file should read from stdin and print to stdout 
+ */
+int main() {}

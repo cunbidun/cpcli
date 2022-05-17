@@ -19,6 +19,11 @@ bool check_file(std::filesystem::path path, const string &error_message) {
   }
 }
 
+bool is_empty_file(const string &path) {
+  std::ifstream file(path);
+  return file.peek() == std::ifstream::traits_type::eof();
+}
+
 bool create_empty_file(const string &path) {
   std::ofstream tmp(path);
   tmp.close();
