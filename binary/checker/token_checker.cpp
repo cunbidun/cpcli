@@ -5,7 +5,7 @@ using namespace std;
 int main(int argc, char *argv[]) {
   registerTestlibCmd(argc, argv);
   if (argv[3] == std::string("___test_case/___na___")) {
-    quitf(_fail, "undecided");
+    quitf(_fail, "");
   }
 
   int i = 0;
@@ -13,7 +13,9 @@ int main(int argc, char *argv[]) {
     ++i;
     string p = ouf.readToken(), j = ans.readToken();
     if (j != p) {
-      quitf(_wa, "%d%s words differ - expected: '%s', found: '%s'", i,
+      quitf(_wa,
+            "%d%s words differ - expected: '%s', found: '%s'",
+            i,
             englishEnding(i).c_str(),
             compress(j).c_str(),
             compress(p).c_str());

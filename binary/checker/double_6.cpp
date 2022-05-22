@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
   setName("compare two sequences of doubles, max absolute or relative error = %.10f", EPS);
   registerTestlibCmd(argc, argv);
   if (argv[3] == std::string("___test_case/___na___")) {
-    quitf(_fail, "undecided");
+    quitf(_fail, "");
   }
 
   int i = 0;
@@ -17,10 +17,13 @@ int main(int argc, char *argv[]) {
     ++i;
     double p = ouf.readDouble(), j = ans.readDouble();
     if (!doubleCompare(j, p, EPS)) {
-      quitf(
-          _wa,
-          "%d%s numbers differ - expected: '%.10f', found: '%.10f', error = '%.10f'",
-          i, englishEnding(i).c_str(), j, p, doubleDelta(j, p));
+      quitf(_wa,
+            "%d%s numbers differ - expected: '%.10f', found: '%.10f', error = '%.10f'",
+            i,
+            englishEnding(i).c_str(),
+            j,
+            p,
+            doubleDelta(j, p));
     }
   }
   if (!ans.seekEof() || !ouf.seekEof()) {
