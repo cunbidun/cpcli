@@ -23,6 +23,7 @@ void print_usage() {
   cout << "   -d, --build-with-debug        build solution file with debug flags" << endl;
   cout << "   -n, --new                     create new task (this option does not require --root-dir)" << endl;
   cout << "   -g, --gen-headers             precompile headers file. This needs to be done before using the precompiled headers" << endl;
+  cout << "   -e, --edit-problem-config     edit the problem config file, updating the config.json" << endl;
   cout << endl;
 
   cout << "Info: those arguments do not require an arguments" << endl;
