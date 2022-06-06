@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   string compiler_flags = "cpp_compile_flag";
   string generator_seed;
 
-  bool is_archieve = false;
+  bool is_archive = false;
   bool is_build = false;
   bool is_build_with_term = false;
   bool is_debug = false;
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     case 'a':
       spdlog::debug("Archive flag (--archive) is set");
-      is_archieve = true;
+      is_archive = true;
       break;
 
     case 'b':
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
       break;
 
     case 'r':
-      root_dir = fs::absolute(optarg);
+      root_dir = fs::canonical(optarg);
       spdlog::debug("Value of root_dir is set to {}", root_dir.c_str());
       break;
 
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
   */
   {
     int number_of_choice =
-        is_archieve + is_build + is_build_with_term + is_debug + is_edit_config + is_new + is_gen_header;
+        is_archive + is_build + is_build_with_term + is_debug + is_edit_config + is_new + is_gen_header;
 
     if (number_of_choice == 0) {
       spdlog::error("No operation requested");
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
     }
     clean_up();
     return 0;
-  } else if (is_archieve) { // archive
+  } else if (is_archive) { // archive
     string name = problem_conf["name"].get<string>();
     string group = problem_conf["group"].get<string>();
 
@@ -285,13 +285,11 @@ int main(int argc, char *argv[]) {
     fs::current_path(root_dir.parent_path());
 
     fs::path archive_dir = fs::absolute(project_conf["archive_dir"].get<string>());
-    if (group.size() == 0) {
-      fs::create_directories(archive_dir / "Unsorted" / name);
-      fs::copy(name, archive_dir / "Unsorted" / name, fs::copy_options::recursive | fs::copy_options::update_existing);
-    } else {
-      fs::create_directories(archive_dir / group / name);
-      fs::copy(name, archive_dir / group / name, fs::copy_options::recursive | fs::copy_options::update_existing);
+    if (group.empty()) {
+      group = "Unsorted";
     }
+    fs::create_directories(archive_dir / group / name);
+    fs::copy(name, archive_dir / group / name, fs::copy_options::recursive | fs::copy_options::update_existing);
     fs::remove_all(name);
     return 0;
   } else {
