@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
       break;
 
     case 'p':
-      project_conf_path = fs::absolute(optarg);
+      project_conf_path = fs::canonical(optarg);
       spdlog::debug("Value of project_conf_path is set to {}", project_conf_path.c_str());
       break;
 
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
   */
   project_conf = read_project_config(project_conf_path); // read the project config into a json object
 
-  fs::path cpcli_dir = fs::absolute(project_conf["cpcli_dir"].get<string>());
+  fs::path cpcli_dir = fs::canonical(project_conf["cpcli_dir"].get<string>());
   spdlog::debug("cpcli_dir is: " + cpcli_dir.string());
   check_file(cpcli_dir, "cpcli_dir not found!");
   fs::path binary_dir = cpcli_dir / "binary";
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
     */
     if (is_gen_header) {
       spdlog::debug("Generating precompiled headers");
-      spdlog::debug("precompied_dir is: " + precompiled_dir.string());
+      spdlog::debug("precompiled_dir is: " + precompiled_dir.string());
       spdlog::debug("cpp_compiler is: " + project_conf["cpp_compiler"].get<string>());
       spdlog::debug("cpp_compile_flag is: " + project_conf["cpp_compile_flag"].get<string>());
       spdlog::debug("cpp_debug_flag is: " + project_conf["cpp_debug_flag"].get<string>());
@@ -236,17 +236,17 @@ int main(int argc, char *argv[]) {
   clean_up(1);                                       // clean up the root directory for the first time
 
   if (is_edit_config) { // edit config
-    fs::path template_dir = fs::absolute(project_conf["template_dir"].get<string>());
+    fs::path template_dir = fs::canonical(project_conf["template_dir"].get<string>());
     string frontend_exec = project_conf["frontend_exec"].get<string>();
     edit_config(root_dir, template_dir, frontend_exec);
     return 0;
   }
 
-  fs::path temp_config_path = fs::absolute(project_conf["template_dir"].get<string>()) / "config.template";
+  fs::path temp_config_path = fs::canonical(project_conf["template_dir"].get<string>()) / "config.template";
   problem_conf_path = root_dir / "config.json";
   problem_conf = read_problem_config(problem_conf_path, temp_config_path);
 
-  output_dir = fs::absolute(project_conf["output_dir"]);
+  output_dir = fs::canonical(project_conf["output_dir"]);
 
   testlib_compiler_flag = project_conf["cpp_compile_flag"].get<string>();
   if (project_conf["include_dir"] != nullptr && project_conf["include_dir"].get<string>().size() != 0) {
@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
   if (is_build) {
     // do nothing
   } else if (is_debug) {               // run with debug flags
-    project_conf["use_cache"] = false; // don't use cache for debuging
+    project_conf["use_cache"] = false; // don't use cache for debugging
     compiler_flags = "cpp_debug_flag";
   } else if (is_build_with_term) {
     // Run with terminal. This option only uses the project config file for
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
     // We move back to the parent directory of current task in order to copy it
     fs::current_path(root_dir.parent_path());
 
-    fs::path archive_dir = fs::absolute(project_conf["archive_dir"].get<string>());
+    fs::path archive_dir = fs::canonical(project_conf["archive_dir"].get<string>());
     if (group.empty()) {
       group = "Unsorted";
     }
@@ -325,7 +325,6 @@ int main(int argc, char *argv[]) {
 
     bool use_cache = project_conf["use_cache"];
     if (use_cache) {
-      // TODO using a tempdir library instead of hard codeing the path
       cache_dir = fs::temp_directory_path() / "cpcli" / to_string(std::hash<std::string>()(root_dir));
       fs::create_directories(cache_dir);
     }
@@ -357,7 +356,7 @@ int main(int argc, char *argv[]) {
     }
 
     // use slow solution for generate correct output
-    // requre slow.cpp
+    // require slow.cpp
     if (problem_conf["knowGenAns"]) {
       fs::path slow_file_path = root_dir / "slow.cpp";
       check_file(slow_file_path, "brute force solution file not found!");
