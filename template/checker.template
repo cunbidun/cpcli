@@ -1,11 +1,11 @@
 /**
- * The checkere program should accept 4 file paths as arguments and can be invoke this way:
+ * The checker program accepts 4 file paths as arguments and should be invoke in this way:
  *
- *    check <input_file> <program_output_file> <expected_output> <result_file>
+ *    checker <input_file> <program_output_file> <expected_output> <result_file>
  *
- * The input_file will contain input data 
- * The program_output_file will contain what your program produces
- * The expected_output will contain the expected output of the test
- * The content of result_file will be printed to screen 
+ * <input_file>: the path to file that contains the test's input 
+ * <program_output_file>: the path to file that contains your program output 
+ * <expected_output>: the path to file that contains the test's expected output (the correct one)
+ * <result_file>: the content you want to print to screen along side with test's verdict
  */
 int main(int argc, char *argv[]) {}
