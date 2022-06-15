@@ -57,4 +57,6 @@ bool compile_headers(fs::path precompiled_dir, const string &cc, const string &f
   fs::remove(tmp_path);
   fs::remove(precompiled_dir / "a.out");
   fs::remove(precompiled_dir / "stdc++.h");
+
+  return true;
 }

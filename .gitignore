@@ -1,6 +1,7 @@
 .vscode 
 
 cpcli_app
+cpcli_test
 tmp
 docs/build/*
 

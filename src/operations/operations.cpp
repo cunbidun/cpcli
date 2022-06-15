@@ -6,8 +6,6 @@
 using std::cout;
 using std::endl;
 
-extern std::chrono::high_resolution_clock::time_point t_start; // TODO remove this
-
 int create_new_task(json project_conf) {
   // dummy dir for new task
   string new_task = "___n3w_t4sk";
@@ -140,7 +138,14 @@ void edit_config(fs::path root_dir, fs::path &template_dir, string &frontend_exe
   }
 }
 
-int clean_up(int first_time) {
+void print_duration(std::chrono::high_resolution_clock::time_point t_start) {
+  auto t_end = std::chrono::high_resolution_clock::now();
+  long long total_time = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
+  cout << termcolor::magenta << termcolor::bold << "All testing finished in " << total_time << " ms" << termcolor::reset
+       << endl;
+}
+
+int clean_up() {
   // Remove binary and ___test_case directory every time
   fs::remove("solution");
   fs::remove("checker");
@@ -148,13 +153,5 @@ int clean_up(int first_time) {
   fs::remove("slow");
   fs::remove("interactor");
   fs::remove_all("___test_case");
-
-  // if not the first_time, assume that testing is done
-  if (!first_time) {
-    auto t_end = std::chrono::high_resolution_clock::now();
-    long long total_time = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
-    cout << termcolor::magenta << termcolor::bold << "All testing finished in " << total_time << " ms"
-         << termcolor::reset << endl;
-  }
   return 0;
 }

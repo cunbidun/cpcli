@@ -33,8 +33,10 @@ int compile_cpp(fs::path &cache_dir,
 
 int create_new_task(json project_conf);
 
+void print_duration(std::chrono::high_resolution_clock::time_point t_start);
+
 // TODO add docs
-int clean_up(int first_time = 0);
+int clean_up();
 
 // TODO add docs
 void print_report(const string report_name, bool passed, bool rte, bool tle, bool wa, long long runtime);
@@ -45,6 +47,6 @@ void sigint();
 // TODO add docs
 void edit_config(fs::path root_dir, fs::path &template_dir, string &frontend_exec);
 
-bool compile_headers(fs::path precompiled_dir, const string & cc, const string &flag, const string &debug);
+bool compile_headers(fs::path precompiled_dir, const string &cc, const string &flag, const string &debug);
 
 #endif

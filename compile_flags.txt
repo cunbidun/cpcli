@@ -6,3 +6,4 @@
 -pedantic
 -Wlogical-op
 -Iinclude
+-I/usr/local/include

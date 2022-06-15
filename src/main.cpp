@@ -24,13 +24,11 @@ using std::string;
 using std::to_string;
 using json = nlohmann::json;
 
-std::chrono::high_resolution_clock::time_point t_start;
-
 // TODO add return code
 int main(int argc, char *argv[]) {
   signal(SIGINT, [](int) { sigint(); }); // implement SIGINT
 
-  t_start = std::chrono::high_resolution_clock::now();
+  std::chrono::high_resolution_clock::time_point t_start = std::chrono::high_resolution_clock::now();
 
   fs::path root_dir;   // where source files and problem_config file located
   fs::path output_dir; // where source will be put for submission
@@ -233,7 +231,7 @@ int main(int argc, char *argv[]) {
 
   check_file(root_dir, "root directory not found!"); // check if the root_dir exists
   fs::current_path(root_dir);                        // change directory to root_dir
-  clean_up(1);                                       // clean up the root directory for the first time
+  clean_up();                                        // clean up the root directory for the first time
 
   if (is_edit_config) { // edit config
     fs::path template_dir = fs::canonical(project_conf["template_dir"].get<string>());
@@ -276,6 +274,7 @@ int main(int argc, char *argv[]) {
       cout << "[Process exited 0]\n";
     }
     clean_up();
+    print_duration(t_start);
     return 0;
   } else if (is_archive) { // archive
     string name = problem_conf["name"].get<string>();
@@ -575,6 +574,7 @@ int main(int argc, char *argv[]) {
       if (problem_conf["stopAtWrongAnswer"] && (wa || rte || tle)) {
         print_report("Fail detected", all_passed, all_rte, all_tle, all_wa, all_runtime);
         clean_up();
+        print_duration(t_start);
         return 0;
       }
     }
@@ -586,6 +586,7 @@ int main(int argc, char *argv[]) {
     cout << EQUA_SEPERATOR << '\n';
     print_report("Results", all_passed, all_rte, all_tle, all_wa, all_runtime);
     clean_up();
+    print_duration(t_start);
   }
   // ------------------------------ PRINT REPORT END -------------------------------
 }
