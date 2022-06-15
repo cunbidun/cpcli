@@ -11,7 +11,7 @@ TDIR = test
 
 CC = g++
 CFLAGS = -I$(IDIR) -g -std=c++17
-TFLAGS = -lgtest -lgtest_main -fprofile-arcs -ftest-coverage
+TFLAGS = -lgtest -lgtest_main 
 
 # example: include/cpcli_project_config.hpp include/util/color.hpp include/nlohmann/json.hpp include/testlib.h
 INC = $(shell find include -type f -name "*.hpp" -o -name "*.h")
@@ -50,6 +50,10 @@ MOBJ = $(patsubst %,$(ODIR)/%,$(_MOBJ))
 mkdir:
 	mkdir -p $(OBJ_DIRNAME) $(TOBJ_DIRNAME)
 
+clean_gcda:
+	find . -name "*.gcda" -exec rm {} \;
+	find . -name "*.gcno" -exec rm {} \;
+
 # object files
 $(OBJ): $(ODIR)%.o : $(SDIR)%.cpp src/main.cpp $(INC) mkdir
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -64,7 +68,7 @@ $(TOBJ): $(TODIR)%.o : $(TDIR)%.cpp $(INC) mkdir
 $(APPBIN): $(OBJ) $(MOBJ) 
 	$(CC) -o $@ $^ $(CFLAGS)
 
-$(TESTBIN): $(OBJ) $(TOBJ)  
+$(TESTBIN): $(OBJ) $(TOBJ) 
 	$(CC) -o $@ $^ $(CFLAGS) $(TFLAGS)
 
 competitive_companion:
