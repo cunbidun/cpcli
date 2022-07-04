@@ -15,4 +15,8 @@ static inline const int OPERATION_ERR = 87122;
 static inline const int FILE_NOT_FOUND_ERR = 53234;
 static inline const int INVALID_CONFIG = 9320850;
 
+static inline const int RETURN_OK = 0;
+static inline const int RETURN_WA = 10;
+static inline const int RETURN_STOP_ON_WA = 11;
+
 #endif
