@@ -1,9 +1,9 @@
 .vscode 
 
-cpcli_app
-cpcli_test
-tmp
+build/*
 docs/build/*
+
+.cache
 
 # MacOS stuff
 *.dSYM

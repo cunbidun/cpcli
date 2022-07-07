@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <util/util.hpp>
+#include <utils.hpp>
 
 #include <filesystem>
 #include <string>
@@ -20,4 +20,9 @@ TEST(TestUtil, TestEmptyFile) {
 TEST(TestUtil, TestJoin) {
   std::vector<string> x = {"a", "b", "c"};
   EXPECT_EQ(join(x), "a b c") << "join on ['a' 'b' 'c'] not working.";
+}
+
+TEST(TestUtil, TestSystemWarper) {
+  int output = system_warper("ls");
+  EXPECT_EQ(output, 0);
 }

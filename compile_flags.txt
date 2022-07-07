@@ -5,5 +5,3 @@
 -Wduplicated-cond
 -pedantic
 -Wlogical-op
--Iinclude
--I/usr/local/include

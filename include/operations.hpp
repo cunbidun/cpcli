@@ -18,6 +18,9 @@ namespace fs = std::filesystem;
 void print_usage();
 
 // TODO add docs
+bool check_file(std::filesystem::path path, const string &error_message);
+
+// TODO add docs
 json read_problem_config(fs::path path, fs::path temp_config_path);
 
 // TODO add docs
@@ -36,13 +39,7 @@ int create_new_task(json project_conf);
 void print_duration(std::chrono::high_resolution_clock::time_point t_start);
 
 // TODO add docs
-int clean_up();
-
-// TODO add docs
 void print_report(const string report_name, bool passed, bool rte, bool tle, bool wa, long long runtime);
-
-// Methods handle the SIGNINT signal
-void sigint();
 
 // TODO add docs
 void edit_config(fs::path root_dir, fs::path &template_dir, string &frontend_exec);
