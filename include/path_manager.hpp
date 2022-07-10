@@ -6,12 +6,33 @@
 #include <string>
 #include <vector>
 
-enum class PathManagerStatus { Success, RequiredDirNotFound, DirNotExist, RootDirNotExist, CustomPathDoesNotExist };
+enum class PathManagerStatus {
+  Success,
+  RequiredPathNotFound,
+  RootPathDoesNotExist,
+  RequiredPathDoesNotExist,
+  OptionalPathDoesNotExist,
+  PathIsNotDirectory,
+  FieldDoesNotExist,
+};
 
 static inline const std::vector<std::string> REQUIRED_DIR = {"task", "archive", "output", "cpcli"};
 static inline const std::vector<std::string> OPTIONAL_DIR = {"include", "template"};
 
-using json = nlohmann::json;
+class PathManager {
+  using json = nlohmann::json;
 
-PathManagerStatus path_manager_init(json project_config);
+public:
+  PathManagerStatus path_manager_init(json project_config);
+
+  bool has_customize_template_dir();
+
+  bool has_customize_include_dir();
+
+  std::filesystem::path get(std::string key);
+
+private:
+  std::map<std::string, std::filesystem::path> path_mp;
+};
+
 #endif

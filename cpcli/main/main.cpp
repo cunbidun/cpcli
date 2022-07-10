@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
       For example:
         cpcli_app -p path/to/project_config.json -g
       or
-        cpcli_app -project-config=path/to/project_config.json --gen-headers
+        cpcli_app --project-config=path/to/project_config.json --gen-headers
     */
     if (is_gen_header) {
       spdlog::debug("Generating precompiled headers");
