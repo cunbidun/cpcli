@@ -1,6 +1,10 @@
-add_executable(cpcli_app main.cpp)
+set(TARGET_EXEC "cpcli_app")
 
-target_link_libraries(cpcli_app utils_lib)
-target_link_libraries(cpcli_app operations_lib)
+add_executable(${TARGET_EXEC} main.cpp)
 
-install(TARGETS cpcli_app DESTINATION ~/.local/bin)
+target_link_libraries(${TARGET_EXEC} nlohmann_json::nlohmann_json)
+target_link_libraries(${TARGET_EXEC} spdlog::spdlog)
+target_link_libraries(${TARGET_EXEC} utils_lib)
+target_link_libraries(${TARGET_EXEC} operations_lib)
+
+install(TARGETS ${TARGET_EXEC} DESTINATION ~/.local/bin)

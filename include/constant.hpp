@@ -13,7 +13,7 @@ static inline const string EQUA_SEPERATOR = "===========================";
 static inline const int ARG_ERR = 1029741;
 static inline const int OPERATION_ERR = 87122;
 static inline const int FILE_NOT_FOUND_ERR = 53234;
-static inline const int INVALID_CONFIG = 9320850;
+static inline const int INVALID_CONFIG_ERROR = 9320850;
 
 static inline const int RETURN_OK = 0;
 static inline const int RETURN_WA = 10;

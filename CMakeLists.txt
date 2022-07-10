@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 
+include(FetchContent)
+
 # Use C++17
 set(CMAKE_CXX_STANDARD 17)
 
@@ -34,7 +36,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
 
   set(COVERAGE_EXCLUDES
     "${CPCLI_SOURCE_DIR}/cpcli/checkers/*"
-    "${CPCLI_SOURCE_DIR}/third_party/*"
     "${CPCLI_SOURCE_DIR}/build/*"
     "${CPCLI_SOURCE_DIR}/test/*"
     "/Applications/*"
@@ -51,9 +52,24 @@ if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
   )
 endif()
 
+# Getting Json 
+FetchContent_Declare(
+  json 
+  URL https://github.com/nlohmann/json/releases/download/v3.10.5/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
+
+FetchContent_Declare(
+  spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog.git
+  GIT_TAG        v1.x
+  GIT_PROGRESS   TRUE
+)
+FetchContent_MakeAvailable(spdlog)
+
+
 # Golbal include diretory
 include_directories(${CPCLI_SOURCE_DIR}/include)
-include_directories(${CPCLI_SOURCE_DIR}/third_party)
 
 # CPCLI's source code
 add_subdirectory(cpcli)

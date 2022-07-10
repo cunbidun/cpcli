@@ -1,6 +1,7 @@
 # Proejct's sub diretory
 add_subdirectory(utils)
 add_subdirectory(operations)
+add_subdirectory(path_manager)
 add_subdirectory(main)
 
 # Checkers diretory

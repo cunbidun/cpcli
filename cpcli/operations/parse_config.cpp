@@ -23,7 +23,7 @@ json read_problem_config(fs::path path, fs::path template_path) {
     cout << "Sample config:\n";
     print_file(template_path.string(), false);
     clean_up();
-    exit(INVALID_CONFIG);
+    exit(INVALID_CONFIG_ERROR);
   }
   return j;
 }
@@ -42,7 +42,7 @@ json read_project_config(fs::path path) {
   if (!validate_project_config(j)) {
     cout << "Invalid project configuration\n";
     clean_up();
-    exit(INVALID_CONFIG);
+    exit(INVALID_CONFIG_ERROR);
   }
   return j;
 }
