@@ -11,11 +11,12 @@ PathManagerStatus PathManager::path_manager_init(json project_config) {
 
   // If the project config contains "root" attribute, infer all other path from the root.
   if (project_config.contains("root")) {
-    root_path = std::filesystem::canonical(project_config["root"].get<std::string>());
+    root_path = project_config["root"].get<std::string>();
     if (!std::filesystem::exists(root_path)) {
       spdlog::error("The root_path={} does not exist.", root_path.c_str());
       return PathManagerStatus::RootPathDoesNotExist;
     }
+    root_path = std::filesystem::canonical(root_path);
   }
 
   for (std::string str : REQUIRED_DIR) {
@@ -24,7 +25,7 @@ PathManagerStatus PathManager::path_manager_init(json project_config) {
       path = root_path / str;
     }
     if (project_config.contains(str)) {
-      path = std::filesystem::canonical(project_config[str].get<std::string>());
+      path = project_config[str].get<std::string>();
     }
     if (path.empty()) {
       spdlog::error("The required path for '{}' not found", str);
@@ -46,7 +47,7 @@ PathManagerStatus PathManager::path_manager_init(json project_config) {
       path = root_path / str;
     }
     if (project_config.contains(str)) {
-      path = std::filesystem::canonical(project_config[str].get<std::string>());
+      path = project_config[str].get<std::string>();
       if (!std::filesystem::exists(path)) {
         spdlog::error("The optional path for '{}' found, but does not exists", str);
         return PathManagerStatus::OptionalPathDoesNotExist;
@@ -63,6 +64,7 @@ PathManagerStatus PathManager::path_manager_init(json project_config) {
   }
   spdlog::info("Path manager contents:");
   for (auto [k, v] : PathManager::path_mp) {
+    PathManager::path_mp[k] = std::filesystem::canonical(v);
     spdlog::debug("key={}, value={}", k, v.c_str());
   }
 

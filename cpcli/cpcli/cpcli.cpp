@@ -12,6 +12,7 @@
 
 #include "color.hpp"
 #include "constant.hpp"
+#include "cpcli.hpp"
 #include "nlohmann/json.hpp"
 #include "operations.hpp"
 #include "spdlog/spdlog.h"
@@ -25,9 +26,8 @@ using std::to_string;
 using json = nlohmann::json;
 
 // TODO add return code
-int main(int argc, char *argv[]) {
+int cpcli_process(int argc, char *argv[]) {
   signal(SIGINT, [](int) { hande_sigint(); }); // implement SIGINT
-
   std::chrono::high_resolution_clock::time_point t_start = std::chrono::high_resolution_clock::now();
 
   fs::path root_dir;   // where source files and problem_config file located
@@ -589,4 +589,5 @@ int main(int argc, char *argv[]) {
     print_duration(t_start);
   }
   // ------------------------------ PRINT REPORT END -------------------------------
+  return 0;
 }
