@@ -15,7 +15,9 @@
 #include "cpcli.hpp"
 #include "nlohmann/json.hpp"
 #include "operations.hpp"
+#include "path_manager.hpp"
 #include "spdlog/spdlog.h"
+#include "template_manager.hpp"
 #include "utils.hpp"
 
 namespace fs = std::filesystem;
@@ -184,11 +186,20 @@ int cpcli_process(int argc, char *argv[]) {
   */
   project_conf = read_project_config(project_conf_path); // read the project config into a json object
 
-  fs::path cpcli_dir = fs::canonical(project_conf["cpcli_dir"].get<string>());
-  spdlog::debug("cpcli_dir is: " + cpcli_dir.string());
+  PathManager path_manager;
+  auto status = path_manager.init(project_conf);
+  if (status != PathManagerStatus::Success) {
+    spdlog::error("Path manager return non success code. Exiting...");
+    exit(PathManagerFailToInitFromConfig);
+  }
+  TemplateManager template_manager(path_manager, "cpp");
+
+  fs::path cpcli_dir = path_manager.get_cpcli();
   check_file(cpcli_dir, "cpcli_dir not found!");
+  spdlog::debug("cpcli_dir is: " + cpcli_dir.string());
   fs::path binary_dir = cpcli_dir / "build" / "bin";
   check_file(binary_dir, "binary_dir not found!");
+  spdlog::debug("binary_dir is: " + cpcli_dir.string());
   fs::path precompiled_dir = binary_dir / "precompiled_headers";
 
   {
@@ -234,22 +245,22 @@ int cpcli_process(int argc, char *argv[]) {
   clean_up();                                        // clean up the root directory for the first time
 
   if (is_edit_config) { // edit config
-    fs::path template_dir = fs::canonical(project_conf["template_dir"].get<string>());
     string frontend_exec = project_conf["frontend_exec"].get<string>();
-    edit_config(root_dir, template_dir, frontend_exec);
+    edit_config(root_dir, template_manager, frontend_exec);
     return 0;
   }
 
-  fs::path temp_config_path = fs::canonical(project_conf["template_dir"].get<string>()) / "config.template";
+  fs::path temp_config_path = template_manager.get_config();
   problem_conf_path = root_dir / "config.json";
   problem_conf = read_problem_config(problem_conf_path, temp_config_path);
 
-  output_dir = fs::canonical(project_conf["output_dir"]);
+  output_dir = path_manager.get_output();
 
   testlib_compiler_flag = project_conf["cpp_compile_flag"].get<string>();
-  if (project_conf["include_dir"] != nullptr && project_conf["include_dir"].get<string>().size() != 0) {
-    string include_dir = "\"" + project_conf["include_dir"].get<string>() + "\"";
-    testlib_compiler_flag = project_conf["cpp_compile_flag"].get<string>() + " " + "-I" + include_dir;
+  if (path_manager.has_customize_include_dir()) {
+    string include_dir = "\"" + path_manager.get_include().generic_string() + "\"";
+    std::vector<string> command{project_conf["cpp_compile_flag"].get<string>(), "-I", include_dir};
+    testlib_compiler_flag = join(command);
   }
 
   if (is_build) {
@@ -283,7 +294,7 @@ int cpcli_process(int argc, char *argv[]) {
     // We move back to the parent directory of current task in order to copy it
     fs::current_path(root_dir.parent_path());
 
-    fs::path archive_dir = fs::canonical(project_conf["archive_dir"].get<string>());
+    auto archive_dir = path_manager.get_archive();
     if (group.empty()) {
       group = "Unsorted";
     }

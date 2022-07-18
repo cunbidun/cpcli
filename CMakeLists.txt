@@ -10,7 +10,9 @@ project(CPCLI)
 
 # Export the compile_command.json for include directive
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(INSTALL_GTEST OFF)
+set(CROW_INSTALL OFF)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 
 # Set the lib and bin output
@@ -19,13 +21,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Target
 set(TEST_TARGET_NAME "cpcli_test")
-
-# Competitve companion handler
-add_custom_target(competitive_companion 
-    WORKING_DIRECTORY ${CPCLI_SOURCE_DIR}/cc
-    COMMENT "Current working diretory is: ${PROJECT_SOURCE_DIR}/cc. Running 'npm install'..."
-    COMMAND npm install
-)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
   set(CMAKE_BUILD_TYPE "Debug")
@@ -67,6 +62,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+FetchContent_Declare(
+  crow 
+  URL https://github.com/CrowCpp/Crow/archive/refs/tags/v1.0+4.tar.gz
+)
+FetchContent_MakeAvailable(crow)
+
+FetchContent_Declare(
+  cxxopts
+  URL https://github.com/jarro2783/cxxopts/archive/refs/tags/v3.0.0.tar.gz
+)
+FetchContent_MakeAvailable(cxxopts)
 
 # Golbal include diretory
 include_directories(${CPCLI_SOURCE_DIR}/include)

@@ -6,4 +6,6 @@ target_link_libraries(${TARGET_LIB} nlohmann_json::nlohmann_json)
 target_link_libraries(${TARGET_LIB} spdlog::spdlog)
 target_link_libraries(${TARGET_LIB} utils_lib)
 target_link_libraries(${TARGET_LIB} operations_lib)
+target_link_libraries(${TARGET_LIB} path_manager_lib)
+target_link_libraries(${TARGET_LIB} template_manager_lib)
 

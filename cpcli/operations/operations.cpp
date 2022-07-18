@@ -1,6 +1,7 @@
 #include "operations.hpp"
 #include "color.hpp"
 #include "constant.hpp"
+#include "path_manager.hpp"
 #include "spdlog/spdlog.h"
 #include "utils.hpp"
 
@@ -11,20 +12,27 @@ int create_new_task(json project_conf) {
   // dummy dir for new task
   string new_task = "___n3w_t4sk";
 
-  fs::path task_dir = fs::canonical(project_conf["task_dir"].get<string>());
+  PathManager path_manager;
+  auto status = path_manager.init(project_conf);
+  if (status != PathManagerStatus::Success) {
+    spdlog::error("Path manager return non success code. Exiting...");
+    exit(PathManagerFailToInitFromConfig);
+  }
+  TemplateManager template_manager(path_manager, "cpp");
+
+  fs::path task_dir = path_manager.get_task();
   string frontend_exec = project_conf["frontend_exec"].get<string>();
-  fs::path template_dir = fs::canonical(project_conf["template_dir"].get<string>());
 
   fs::create_directory(task_dir / new_task);
   fs::current_path(task_dir / new_task);
   fs::path root_dir = fs::current_path();
 
-  fs::copy_file(template_dir / "solution.template", root_dir / "solution.cpp", fs::copy_options::overwrite_existing);
-  fs::copy_file(template_dir / "config.template", root_dir / "config.json", fs::copy_options::overwrite_existing);
-  edit_config(task_dir / new_task, template_dir, frontend_exec);
+  fs::copy_file(template_manager.get_solution(), root_dir / "solution.cpp", fs::copy_options::overwrite_existing);
+  fs::copy_file(template_manager.get_config(), root_dir / "config.json", fs::copy_options::overwrite_existing);
+  edit_config(task_dir / new_task, template_manager, frontend_exec);
 
   // read and validate the project config file
-  json problem_conf = read_problem_config(root_dir / "config.json", template_dir / "config.template");
+  json problem_conf = read_problem_config(root_dir / "config.json", template_manager.get_config());
 
   string name = problem_conf["name"].get<string>();
   fs::current_path(root_dir.parent_path());
@@ -100,28 +108,28 @@ void print_report(const string report_name, bool passed, bool rte, bool tle, boo
   }
 }
 
-void edit_config(fs::path root_dir, fs::path &template_dir, string &frontend_exec) {
+void edit_config(fs::path root_dir, TemplateManager &template_manager, string &frontend_exec) {
   // read the project config into a json object
-  json config = read_problem_config(root_dir / "config.json", template_dir / "config.template");
+  json config = read_problem_config(root_dir / "config.json", template_manager.get_config());
   string old_name = config["name"].get<string>();
 
   string command = frontend_exec + " \"" + root_dir.string() + "\"";
   system_warper(command);
 
-  config = read_problem_config(root_dir / "config.json", template_dir / "config.template");
+  config = read_problem_config(root_dir / "config.json", template_manager.get_config());
   string name = trim_copy(config["name"].get<string>());
   // TODO check if template exists
   if (config["useGeneration"]) {
-    copy_file(template_dir / "gen.template", root_dir / "gen.cpp", fs::copy_options::skip_existing);
+    copy_file(template_manager.get_gen(), root_dir / "gen.cpp", fs::copy_options::skip_existing);
   }
   if (config["interactive"]) {
-    copy_file(template_dir / "interactor.template", root_dir / "interactor.cpp", fs::copy_options::skip_existing);
+    copy_file(template_manager.get_interactor(), root_dir / "interactor.cpp", fs::copy_options::skip_existing);
   }
   if (config["knowGenAns"]) {
-    copy_file(template_dir / "slow.template", root_dir / "slow.cpp", fs::copy_options::skip_existing);
+    copy_file(template_manager.get_slow(), root_dir / "slow.cpp", fs::copy_options::skip_existing);
   }
   if (config["checker"].get<string>() == "custom") {
-    copy_file(template_dir / "checker.template", root_dir / "checker.cpp", fs::copy_options::skip_existing);
+    copy_file(template_manager.get_checker(), root_dir / "checker.cpp", fs::copy_options::skip_existing);
   }
   if (name != old_name && name.size() != 0) {
     if (old_name.size() == 0) { // new task!!!

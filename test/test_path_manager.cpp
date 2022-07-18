@@ -31,7 +31,7 @@ TEST(TestPathManager, TestInitConfigRootOnlySuccessRequired) {
 
   project_config["root"] = root;
   PathManager manager;
-  EXPECT_EQ(manager.path_manager_init(project_config), PathManagerStatus::Success);
+  EXPECT_EQ(manager.init(project_config), PathManagerStatus::Success);
   EXPECT_EQ(manager.has_customize_include_dir(), false);
   EXPECT_EQ(manager.has_customize_template_dir(), false);
 
@@ -61,7 +61,7 @@ TEST(TestPathManager, TestInitConfigRootOnlySuccessAll) {
   project_config["root"] = root;
 
   PathManager manager;
-  EXPECT_EQ(manager.path_manager_init(project_config), PathManagerStatus::Success);
+  EXPECT_EQ(manager.init(project_config), PathManagerStatus::Success);
   EXPECT_EQ(manager.has_customize_include_dir(), true);
   EXPECT_EQ(manager.has_customize_template_dir(), true);
   fs::remove_all(test_dir);
@@ -88,7 +88,7 @@ TEST(TestPathManager, TestInitConfigRootOnlyIncludeOnly) {
   project_config["root"] = root;
 
   PathManager manager;
-  EXPECT_EQ(manager.path_manager_init(project_config), PathManagerStatus::Success);
+  EXPECT_EQ(manager.init(project_config), PathManagerStatus::Success);
   EXPECT_EQ(manager.has_customize_include_dir(), true);
   EXPECT_EQ(manager.has_customize_template_dir(), false);
   fs::remove_all(test_dir);
@@ -101,6 +101,6 @@ TEST(TestPathManager, TestInitConfigRootNotExist) {
   auto root = test_dir / "cpcli_test" / "path_manager";
   project_config["root"] = root;
   PathManager manager;
-  EXPECT_EQ(manager.path_manager_init(project_config), PathManagerStatus::RootPathDoesNotExist);
+  EXPECT_EQ(manager.init(project_config), PathManagerStatus::RootPathDoesNotExist);
   fs::remove_all(test_dir);
 }

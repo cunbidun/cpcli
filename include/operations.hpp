@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "nlohmann/json.hpp"
+#include "template_manager.hpp"
 
 using json = nlohmann::json;
 
@@ -42,7 +43,7 @@ void print_duration(std::chrono::high_resolution_clock::time_point t_start);
 void print_report(const string report_name, bool passed, bool rte, bool tle, bool wa, long long runtime);
 
 // TODO add docs
-void edit_config(fs::path root_dir, fs::path &template_dir, string &frontend_exec);
+void edit_config(fs::path root_dir, TemplateManager &template_manager, string &frontend_exec);
 
 bool compile_headers(fs::path precompiled_dir, const string &cc, const string &flag, const string &debug);
 

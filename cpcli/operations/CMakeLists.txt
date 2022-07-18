@@ -4,3 +4,4 @@ add_library(${TARGET_LIB} compile_headers.cpp operations.cpp parse_config.cpp pr
 
 target_link_libraries(${TARGET_LIB} nlohmann_json::nlohmann_json)
 target_link_libraries(${TARGET_LIB} spdlog::spdlog)
+target_link_libraries(${TARGET_LIB} template_manager_lib)

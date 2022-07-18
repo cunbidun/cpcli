@@ -6,7 +6,7 @@
 
 #include <map>
 
-PathManagerStatus PathManager::path_manager_init(json project_config) {
+PathManagerStatus PathManager::init(json project_config) {
   std::filesystem::path root_path;
 
   // If the project config contains "root" attribute, infer all other path from the root.
@@ -62,7 +62,7 @@ PathManagerStatus PathManager::path_manager_init(json project_config) {
       spdlog::debug("path={} not found, ignoring", path.c_str());
     }
   }
-  spdlog::info("Path manager contents:");
+  spdlog::debug("Path manager contents:");
   for (auto [k, v] : PathManager::path_mp) {
     PathManager::path_mp[k] = std::filesystem::canonical(v);
     spdlog::debug("key={}, value={}", k, v.c_str());
@@ -79,9 +79,17 @@ bool PathManager::has_customize_include_dir() {
   return PathManager::path_mp.find("include") != PathManager::path_mp.end();
 }
 
+std::filesystem::path PathManager::get_cpcli() { return PathManager::path_mp["cpcli"]; }
+std::filesystem::path PathManager::get_task() { return PathManager::path_mp["task"]; }
+std::filesystem::path PathManager::get_output() { return PathManager::path_mp["output"]; }
+std::filesystem::path PathManager::get_archive() { return PathManager::path_mp["archive"]; }
+
+std::filesystem::path PathManager::get_template() { return PathManager::get("template"); }
+std::filesystem::path PathManager::get_include() { return PathManager::get("include"); }
 std::filesystem::path PathManager::get(string str) {
   if (path_mp.find(str) == path_mp.end()) {
     spdlog::error("key '{}' does not exists in path_mp", str);
+    exit(PathManagerKeyNotFound);
   }
   return PathManager::path_mp[str];
 }
