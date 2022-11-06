@@ -22,6 +22,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Target
 set(TEST_TARGET_NAME "cpcli_test")
 
+# Golbal include diretory
+include_directories(${CPCLI_SOURCE_DIR}/include)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
   set(CMAKE_BUILD_TYPE "Debug")
 
@@ -45,6 +48,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
     NAME coverage
     EXECUTABLE ${TEST_TARGET_NAME} 
   )
+
+  # CPCLI's tests
+  add_subdirectory(test)
 endif()
 
 # Getting Json 
@@ -74,12 +80,5 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cxxopts)
 
-# Golbal include diretory
-include_directories(${CPCLI_SOURCE_DIR}/include)
-
 # CPCLI's source code
 add_subdirectory(cpcli)
-
-# CPCLI's tests
-add_subdirectory(test)
-

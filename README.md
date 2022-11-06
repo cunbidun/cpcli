@@ -168,6 +168,8 @@ Please take a look at the [archive](https://github.com/cunbidun/competitive_prog
 5. Archive: Ctrl + Alt + A (`"$CPCLI_PATH/main.sh" "<task_dir>" 4`)
 6. New Task: Ctrl + Alt + N (`"$CPCLI_PATH/main.sh"`)
 
+## Build Documentations
+
 ## Credits
 
 1. The project is heavily inspired by [Egor Kulikov](https://github.com/EgorKulikov)'s [CHelper](https://github.com/EgorKulikov/idea-chelper).
