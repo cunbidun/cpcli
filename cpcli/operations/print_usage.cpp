@@ -9,10 +9,10 @@ void print_usage() {
   cout << endl;
 
   cout << "Required: all options require this to be set" << endl;
-  cout << "   -p, --project-config          path to the golbal config file" << endl;
+  cout << "   -p, --project-config          path to the global config file" << endl;
   cout << endl;
 
-  cout << "Optional: except for creating new task and generate precomplied headers, all options require -r to be set" << endl;
+  cout << "Optional: except for creating new task and generate precompiled headers, all options require -r to be set" << endl;
   cout << "   -r, --root-dir                the folder directory" << endl;
   cout << endl;
 

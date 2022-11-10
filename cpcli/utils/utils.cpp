@@ -74,7 +74,7 @@ bool compare_files(const std::filesystem::path &filename1, const std::filesystem
   return range_equal(begin1, end, begin2, end);
 }
 
-void hande_sigint() {
+void handle_sigint() {
   cout << std::endl;
   cout << termcolor::red << termcolor::bold << "SIGINT encountered\n";
   clean_up();
@@ -95,7 +95,7 @@ int clean_up() {
 int system_warper(const string &command) {
   int status = std::system(command.c_str());
   if (WIFSIGNALED(status) && (WTERMSIG(status) == SIGINT)) {
-    hande_sigint();
+    handle_sigint();
   }
   return WEXITSTATUS(status);
 }

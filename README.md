@@ -170,6 +170,18 @@ Please take a look at the [archive](https://github.com/cunbidun/competitive_prog
 
 ## Build Documentations
 
+### Requirements
+1. Make sure to have `sphinx` and `sphinx-rtd-theme` installed
+```bash
+$ pip install -U sphinx sphinx-rtd-theme
+```
+### Build and run docs
+```bash
+$ cd docs
+$ make clean html
+$ open build/html/index.html
+```
+
 ## Credits
 
 1. The project is heavily inspired by [Egor Kulikov](https://github.com/EgorKulikov)'s [CHelper](https://github.com/EgorKulikov/idea-chelper).

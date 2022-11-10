@@ -49,7 +49,7 @@ static inline void trim(std::string &s) {
 int clean_up();
 
 // Methods handle the SIGNINT signal
-void hande_sigint();
+void handle_sigint();
 
 // trim from start (copying)
 static inline std::string ltrim_copy(std::string s) {

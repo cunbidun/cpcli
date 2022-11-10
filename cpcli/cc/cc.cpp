@@ -116,6 +116,6 @@ int main(int argc, char *argv[]) {
     return crow::response(crow::status::OK);
   });
 
-  spdlog::info("Starting the Competitve Companion server at {}", CCPort);
+  spdlog::info("Starting the Competitive Companion server at {}", CCPort);
   cpcli.port(CCPort).run();
 }

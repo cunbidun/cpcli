@@ -3,10 +3,10 @@
 #include "spdlog/spdlog.h"
 
 TemplateManager::TemplateManager(PathManager &path_manager, std::string language) {
-  TemplateManager::has_customize_tempate_dir = false;
+  TemplateManager::has_customized_template_dir = false;
   if (path_manager.has_customize_template_dir()) {
-    TemplateManager::has_customize_tempate_dir = true;
-    TemplateManager::cusomize_path = path_manager.get_template();
+    TemplateManager::has_customized_template_dir = true;
+    TemplateManager::customized_path = path_manager.get_template();
   }
   TemplateManager::builtin_path = path_manager.get_cpcli() / "template" / language;
 }
@@ -14,9 +14,9 @@ TemplateManager::TemplateManager(PathManager &path_manager, std::string language
 std::optional<std::filesystem::path> TemplateManager::get(std::string str) {
   std::string filename = str + ".template";
   std::filesystem::path path;
-  if (TemplateManager::has_customize_tempate_dir) {
-    if (std::filesystem::exists(TemplateManager::cusomize_path / filename)) {
-      path = TemplateManager::cusomize_path / filename;
+  if (TemplateManager::has_customized_template_dir) {
+    if (std::filesystem::exists(TemplateManager::customized_path / filename)) {
+      path = TemplateManager::customized_path / filename;
     }
   }
 

@@ -29,7 +29,7 @@ using json = nlohmann::json;
 
 // TODO add return code
 int cpcli_process(int argc, char *argv[]) {
-  signal(SIGINT, [](int) { hande_sigint(); }); // implement SIGINT
+  signal(SIGINT, [](int) { handle_sigint(); }); // implement SIGINT
   std::chrono::high_resolution_clock::time_point t_start = std::chrono::high_resolution_clock::now();
 
   fs::path root_dir;   // where source files and problem_config file located
@@ -196,10 +196,10 @@ int cpcli_process(int argc, char *argv[]) {
 
   fs::path cpcli_dir = path_manager.get_cpcli();
   check_file(cpcli_dir, "cpcli_dir not found!");
-  spdlog::debug("cpcli_dir is: " + cpcli_dir.string());
+  spdlog::debug("cpcli directory is: " + cpcli_dir.string());
   fs::path binary_dir = cpcli_dir / "build" / "bin";
   check_file(binary_dir, "binary_dir not found!");
-  spdlog::debug("binary_dir is: " + cpcli_dir.string());
+  spdlog::debug("binary directory is: " + cpcli_dir.string());
   fs::path precompiled_dir = binary_dir / "precompiled_headers";
 
   {

@@ -3,6 +3,20 @@
 Getting Started
 ===============
 
+Requirements
+--------------
+Make sure you have the following installed:
+
+1. `CMake <http://www.cmake.org/>`_
+    * Ubuntu: `sudo apt-get install cmake`
+    * Mac OS X: `brew install cmake`
+    * ArchLinux: `pacman -S cmake`
+
+2. `Boost <https://www.boost.org/>`_
+    * Ubuntu: `sudo apt-get install libboost-all-dev` 
+    * Mac OS X: `brew install boost`
+    * ArchLinux: `pacman -S boost`
+
 Environment Set-up
 -------------------
 
@@ -39,11 +53,10 @@ Install and move the newly compiled binary to ``~/.local/bin``.
 
 .. code-block:: bash 
 
-  $ cd cpcli
-  $ make all
-  $ make install
+  $ cmake -DCMAKE_BUILD_TYPE=Release .. && make install
 
-If the installation process finishes successfully, you can see the version of ``cpcli_app`` by running
+If the installation process finishes successfully, the binaries will be copy to ``~/.local/bin``.
+After reopen the terminal or source the shell rc file, you can see the version of ``cpcli_app`` by running
 
 .. code-block:: bash 
 
@@ -58,12 +71,12 @@ Workspace is where you solve the problems.
 .. code-block:: bash 
 
   $ cd </path/to/your/workspace/folder>
-  $ mkdir task 
-  $ mkdir output 
-  $ mkdir template
-  $ mkdir archive
-  $ mkdir include
-  $ touch project_config.json
+  $ mkdir task  # where you solve the problems 
+  $ mkdir output  # where you find the latest solution to submit
+  $ mkdir template  # where you put your template files (optional)
+  $ mkdir archive  # where you put solved problems
+  $ mkdir include  # where you put your header files (optional)
+  $ touch project_config.json  # project configuration for this workspace
 
 Make sure you create this file structure:
 
@@ -83,14 +96,13 @@ Put this inside the 	``project_config.json``
 
   {
     "frontend_exec": "java -jar </path/to/your/library/folder>/cpcli/binary/frontend/Test.jar",
-    "task_dir": "</path/to/your/workspace/folder>/task",
-    "output_dir": "</path/to/your/workspace/folder>/output",
-    "template_dir": "</path/to/your/workspace/folder>/template",
-    "archive_dir": "</path/to/your/workspace/folder>/archive",
-    "include_dir": "</path/to/your/workspace/folder>/include",
+
+    "root": "</path/to/your/workspace/folder>",
+
     "cpp_compiler": "g++",
     "cpp_compile_flag": "-DLOCAL -O2 -std=c++17",
     "cpp_debug_flag": "-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG",
+
     "use_precompiled_header": false,
     "use_cache": true
   }

@@ -1,12 +1,8 @@
 {
   "frontend_exec": "",
 
-  "include_dir": "",
-  "task_dir": "",
-  "template_dir": "",
-  "archive_dir": "",
-  "output_dir": "",
-
+  "root": "",
+  
   "cpp_compiler": "g++",
   "cpp_compile_flag": "-DLOCAL -static -O2 -std=c++17",
   "cpp_debug_flag": "-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG",

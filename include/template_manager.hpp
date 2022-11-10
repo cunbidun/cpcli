@@ -20,9 +20,9 @@ public:
   std::filesystem::path get_interactor();
 
 private:
-  bool has_customize_tempate_dir;
+  bool has_customized_template_dir;
   std::filesystem::path builtin_path;
-  std::filesystem::path cusomize_path;
+  std::filesystem::path customized_path;
   std::optional<std::filesystem::path> get(std::string str);
   std::filesystem::path get_path(std::string str);
 };
