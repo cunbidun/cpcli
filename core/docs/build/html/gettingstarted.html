@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting Started &mdash; Competitive programming CLI 0.5.3 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Sample Text Editor Setup" href="texteditor.html" />
+    <link rel="prev" title="Overview" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Competitive programming CLI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#environment-set-up">Environment Set-up</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#library-set-up">Library Set-up</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#workspace-set-up">Workspace Set-up</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="texteditor.html">Sample Text Editor Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="issue.html">Issues</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Competitive programming CLI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Getting Started</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/gettingstarted.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started">
+<span id="gettingstarted"></span><h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this heading"></a></h1>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
+<p>Make sure you have the following installed:</p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt><a class="reference external" href="http://www.cmake.org/">CMake</a></dt><dd><ul class="simple">
+<li><p>Ubuntu: <cite>sudo apt-get install cmake</cite></p></li>
+<li><p>Mac OS X: <cite>brew install cmake</cite></p></li>
+<li><p>ArchLinux: <cite>pacman -S cmake</cite></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><a class="reference external" href="https://www.boost.org/">Boost</a></dt><dd><ul class="simple">
+<li><p>Ubuntu: <cite>sudo apt-get install libboost-all-dev</cite></p></li>
+<li><p>Mac OS X: <cite>brew install boost</cite></p></li>
+<li><p>ArchLinux: <cite>pacman -S boost</cite></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+</section>
+<section id="environment-set-up">
+<h2>Environment Set-up<a class="headerlink" href="#environment-set-up" title="Permalink to this heading"></a></h2>
+<p>Make sure the <code class="docutils literal notranslate"><span class="pre">~/.local/bin</span></code> is in your <code class="docutils literal notranslate"><span class="pre">$PATH</span></code> by running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">echo</span> <span class="nv">$PATH</span> <span class="p">|</span> grep <span class="nv">$HOME</span>/.local/bin <span class="p">|</span> wc -l
+</pre></div>
+</div>
+<p>If the output is not 0, you are good to go. Else add</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="nv">$PATH</span>:<span class="nv">$HOME</span>/.local/bin
+</pre></div>
+</div>
+<p>to your shell’s configuration files (<code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code> or <code class="docutils literal notranslate"><span class="pre">~/.zshrc</span></code>). Remember to either reopen you shell or source the rc file.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">source</span> ~/.bashrc <span class="c1"># if you use bash</span>
+$ <span class="nb">source</span> ~/.zshrc <span class="c1"># if you use zsh</span>
+</pre></div>
+</div>
+</section>
+<section id="library-set-up">
+<h2>Library Set-up<a class="headerlink" href="#library-set-up" title="Permalink to this heading"></a></h2>
+<p>Let’s start by cloning the git repository</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> &lt;/path/to/your/library/folder&gt;
+$ git clone https://github.com/cunbidun/cpcli.git
+</pre></div>
+</div>
+<p>Install and move the newly compiled binary to <code class="docutils literal notranslate"><span class="pre">~/.local/bin</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cmake -DCMAKE_BUILD_TYPE<span class="o">=</span>Release .. <span class="o">&amp;&amp;</span> make install
+</pre></div>
+</div>
+<p>If the installation process finishes successfully, the binaries will be copy to <code class="docutils literal notranslate"><span class="pre">~/.local/bin</span></code>.
+After reopen the terminal or source the shell rc file, you can see the version of <code class="docutils literal notranslate"><span class="pre">cpcli_app</span></code> by running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cpcli_app -v
+</pre></div>
+</div>
+</section>
+<section id="workspace-set-up">
+<h2>Workspace Set-up<a class="headerlink" href="#workspace-set-up" title="Permalink to this heading"></a></h2>
+<p>Workspace is where you solve the problems.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> &lt;/path/to/your/workspace/folder&gt;
+$ mkdir task  <span class="c1"># where you solve the problems</span>
+$ mkdir output  <span class="c1"># where you find the latest solution to submit</span>
+$ mkdir template  <span class="c1"># where you put your template files (optional)</span>
+$ mkdir archive  <span class="c1"># where you put solved problems</span>
+$ mkdir include  <span class="c1"># where you put your header files (optional)</span>
+$ touch project_config.json  <span class="c1"># project configuration for this workspace</span>
+</pre></div>
+</div>
+<p>Make sure you create this file structure:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>/path/to/your/workspace/folder
+├── task
+├── output
+├── template
+├── include
+├── archive
+└── project_config.json
+</pre></div>
+</div>
+<p>Put this inside the     <code class="docutils literal notranslate"><span class="pre">project_config.json</span></code></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;frontend_exec&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;java -jar &lt;/path/to/your/library/folder&gt;/cpcli/binary/frontend/Test.jar&quot;</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">  </span><span class="nt">&quot;root&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;/path/to/your/workspace/folder&gt;&quot;</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">  </span><span class="nt">&quot;cpp_compiler&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;g++&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;cpp_compile_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;-DLOCAL -O2 -std=c++17&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;cpp_debug_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG&quot;</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">  </span><span class="nt">&quot;use_precompiled_header&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;use_cache&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="texteditor.html" class="btn btn-neutral float-right" title="Sample Text Editor Setup" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, cunbidun.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

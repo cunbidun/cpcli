@@ -8,3 +8,7 @@ docs/build/*
 # MacOS stuff
 *.dSYM
 .DS_Store
+
+
+# bazel
+bazel-*

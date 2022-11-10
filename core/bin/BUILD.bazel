@@ -1,0 +1,11 @@
+cc_binary(
+	name = "cpcli_app",
+	srcs = ["cpcli_app.cpp"],
+	deps = ["@crow", "@cxxopts", "@json", "@spdlog", "//core/libs/operations", "//core/libs/constant", "//core/libs/template_manager"],
+)
+
+cc_binary(
+	name = "cpcli_cc",
+	srcs = ["cpcli_cc.cpp"],
+	deps = ["@crow", "@cxxopts", "@json", "@spdlog", "//core/libs/operations", "//core/libs/constant", "//core/libs/template_manager"],
+)

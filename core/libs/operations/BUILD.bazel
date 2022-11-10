@@ -1,0 +1,8 @@
+cc_library(
+    name = "operations",
+	srcs = ["src/print_usage.cpp", "src/parse_config.cpp", "src/operations.cpp", "src/compile_headers.cpp"],
+    deps = ["@json", "//core/libs/constant", "//core/libs/template_manager", "//core/libs/utils"],
+    hdrs = ["include/operations.hpp"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+)
