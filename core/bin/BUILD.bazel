@@ -1,11 +1,29 @@
 cc_binary(
-	name = "cpcli_app",
-	srcs = ["cpcli_app.cpp"],
-	deps = ["@crow", "@cxxopts", "@json", "@spdlog", "//core/libs/operations", "//core/libs/constant", "//core/libs/template_manager"],
+    name = "cpcli_app",
+    srcs = ["cpcli_app.cpp"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/libs/constant",
+        "//core/libs/operations",
+        "//core/libs/template_manager",
+        "@crow",
+        "@cxxopts",
+        "@json",
+        "@spdlog",
+    ],
 )
 
 cc_binary(
-	name = "cpcli_cc",
-	srcs = ["cpcli_cc.cpp"],
-	deps = ["@crow", "@cxxopts", "@json", "@spdlog", "//core/libs/operations", "//core/libs/constant", "//core/libs/template_manager"],
+    name = "cpcli_cc",
+    srcs = ["cpcli_cc.cpp"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/libs/constant",
+        "//core/libs/operations",
+        "//core/libs/template_manager",
+        "@crow",
+        "@cxxopts",
+        "@json",
+        "@spdlog",
+    ],
 )

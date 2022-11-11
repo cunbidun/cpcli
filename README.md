@@ -168,14 +168,23 @@ Please take a look at the [archive](https://github.com/cunbidun/competitive_prog
 5. Archive: Ctrl + Alt + A (`"$CPCLI_PATH/main.sh" "<task_dir>" 4`)
 6. New Task: Ctrl + Alt + N (`"$CPCLI_PATH/main.sh"`)
 
-## Build Documentations
 
-### Requirements
-1. Make sure to have `sphinx` and `sphinx-rtd-theme` installed
+## Development
+
+### Build complication database `compile_commands.json`
+
+```bash
+bazel run @hedron_compile_commands//:refresh_all
+```
+
+### Build Documentations
+
+#### Requirements
+Make sure to have `sphinx` and `sphinx-rtd-theme` installed
 ```bash
 $ pip install -U sphinx sphinx-rtd-theme
 ```
-### Build and run docs
+#### Build and run docs
 ```bash
 $ cd docs
 $ make clean html

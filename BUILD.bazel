@@ -1,0 +1,30 @@
+sh_binary(
+    name = "install",
+    srcs = ["//scripts:install.sh"],
+    data = [
+        "//core/bin:cpcli_app",
+        "//core/bin:cpcli_cc",
+        "//default/checkers:double_4",
+        "//default/checkers:double_6",
+        "//default/checkers:double_9",
+        "//default/checkers:token_checker",
+    ],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+# compilation_database(
+#     name = "compilation_database",
+#     targets = [
+#         "//core/libs/color",
+#         "//core/libs/constant",
+#         "//core/libs/operations",
+#         "//core/libs/path_manager",
+#         "//core/libs/template_manager",
+#         "//core/libs/utils",
+#         "@json",
+#         "@crow",
+#         "@spdlog",
+#         "@cxxopts",
+#     ],
+#     output_base = OUTPUT_BASE,
+# )

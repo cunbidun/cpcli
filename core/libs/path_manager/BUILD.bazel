@@ -1,8 +1,12 @@
 cc_library(
     name = "path_manager",
-	srcs = ["src/path_manager.cpp"],
-    deps = ["@json", "@spdlog", "//core/libs/constant"],
+    srcs = ["src/path_manager.cpp"],
     hdrs = ["include/path_manager.hpp"],
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],
+    deps = [
+        "//core/libs/constant",
+        "@json",
+        "@spdlog",
+    ],
 )

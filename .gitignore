@@ -11,4 +11,8 @@ docs/build/*
 
 
 # bazel
-bazel-*
+/bazel-*
+/compile_commands.json
+/.cache/
+/external
+/bazel-*

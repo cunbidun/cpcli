@@ -20,33 +20,40 @@ int main(int argc, char *argv[]) {
   using std::string;
   using json = nlohmann::json;
   namespace fs = std::filesystem;
-
-  cxxopts::Options options("cpcli_cc", "Competitive Companion Server for cpcli_app");
-  options.add_options()("p,project-config", "Project config", cxxopts::value<string>())("h,help", "Print usage");
-  auto result = options.parse(argc, argv);
-
-  if (result.count("help")) {
-    std::cout << options.help() << std::endl;
-    exit(0);
-  }
-
   fs::path project_config_path;
-  if (!result.count("project-config")) {
-    std::cout << options.help() << std::endl;
-    exit(CCNoConfigFileError);
-  } else {
-    project_config_path = result["project-config"].as<string>();
-    if (!fs::exists(project_config_path)) {
-      spdlog::error("Config file '{}' passed but not exists", project_config_path.generic_string());
+  cxxopts::Options options("cpcli_cc", "Competitive Companion Server for cpcli_app");
+  try {
+    options.add_options()("p,project-config", "Project config file", cxxopts::value<string>(), "FILE")("h,help",
+                                                                                                       "Print usage");
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help")) {
       std::cout << options.help() << std::endl;
-      exit(CCConfigFileNotFoundError);
+      exit(0);
     }
-    if (fs::status(project_config_path).type() != fs::file_type::regular) {
-      spdlog::error("Config file '{}' exists but not a regular file", project_config_path.generic_string());
+
+    if (!result.count("project-config")) {
       std::cout << options.help() << std::endl;
       exit(CCNoConfigFileError);
+    } else {
+      project_config_path = result["project-config"].as<string>();
+      if (!fs::exists(project_config_path)) {
+        spdlog::error("Config file '{}' passed but not exists", project_config_path.generic_string());
+        std::cout << options.help() << std::endl;
+        exit(CCConfigFileNotFoundError);
+      }
+      if (fs::status(project_config_path).type() != fs::file_type::regular) {
+        spdlog::error("Config file '{}' exists but not a regular file", project_config_path.generic_string());
+        std::cout << options.help() << std::endl;
+        exit(CCNoConfigFileError);
+      }
     }
+  } catch (const cxxopts::option_not_exists_exception &e) {
+    std::cout << e.what() << std::endl << std::endl;
+    std::cout << options.help() << std::endl;
+    return 1;
   }
+
   spdlog::info("Config file is set to '{}'", project_config_path.generic_string());
 
   auto reformat = [](string s) -> string {
