@@ -14,6 +14,7 @@ TemplateManager::TemplateManager(PathManager &path_manager, std::string language
 }
 /**
  * @brief A artifact directory will look like this: 
+ * 
  * ├── checkers
  * │   ├── double_4
  * │   ├── double_6
