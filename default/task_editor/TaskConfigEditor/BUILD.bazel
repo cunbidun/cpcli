@@ -1,0 +1,10 @@
+java_binary(
+    # the deploy target name is "TaskConfigEditor_deploy.jar"
+    name = "TaskConfigEditor",
+    srcs = glob(["src/*.java"]),
+    main_class = "TaskConfigEditor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@gson//jar",
+    ],
+)

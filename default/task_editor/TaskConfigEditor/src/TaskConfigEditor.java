@@ -1,7 +1,5 @@
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -13,7 +11,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,10 +18,6 @@ import java.util.List;
  */
 public class TaskConfigEditor extends JDialog {
     private static final int HEIGHT = new JLabel("Test").getPreferredSize().height;
-    private static JSONObject obj;
-    private static Boolean knowGenAns, useGeneration, hideAcceptedTest, truncateLongTest, stopAtWrongAnswer, interactive;
-    private static long numTest, timeLimit;
-    private static String checker, genParameters, generatorSeed, name, group;
     private final List<Test> tests;
     private int currentTest;
     private final JList testList;
@@ -36,14 +29,16 @@ public class TaskConfigEditor extends JDialog {
     private final JPanel outputPanel;
     private boolean updating = false;
 
-    public TaskConfigEditor(Test[] tests, String path) {
+    public TaskConfigEditor(ProblemConfig problemConfig, String path) {
         super(null, "Tests", ModalityType.APPLICATION_MODAL);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        this.tests = new ArrayList<>(problemConfig.tests);
+
         setAlwaysOnTop(true);
         setResizable(false);
-        this.tests = new ArrayList<>(Arrays.asList(tests));
 
         // #################################################################################################
-        // #                                            INFO                                               #
+        // # INFO #
         // #################################################################################################
         VariableGridLayout infoLayout = new VariableGridLayout(1, 3, 5, 5);
         infoLayout.setColFraction(0, 0.25);
@@ -55,7 +50,7 @@ public class TaskConfigEditor extends JDialog {
         JPanel taskNamePanel = new JPanel(new BorderLayout());
         taskNamePanel.add(new JLabel("Task name: "), BorderLayout.NORTH);
         JTextField taskNameTextField = new JTextField(10);
-        taskNameTextField.setText(String.valueOf(TaskConfigEditor.name));
+        taskNameTextField.setText(String.valueOf(problemConfig.name));
         taskNameTextField.setFont(Font.decode(Font.MONOSPACED));
         taskNamePanel.add(taskNameTextField);
         infoPanel.add(taskNamePanel);
@@ -65,20 +60,20 @@ public class TaskConfigEditor extends JDialog {
         JPanel groupNamePanel = new JPanel(new BorderLayout());
         groupNamePanel.add(new JLabel("Group name: "), BorderLayout.NORTH);
         JTextField groupNameTextField = new JTextField(10);
-        groupNameTextField.setText(String.valueOf(TaskConfigEditor.group));
+        groupNameTextField.setText(String.valueOf(problemConfig.group));
         groupNameTextField.setFont(Font.decode(Font.MONOSPACED));
         groupNamePanel.add(groupNameTextField);
         infoPanel.add(groupNamePanel);
         // -------------------------------- group name --------------------------------
 
-        // -------------------------------- interactive? --------------------------------
+        // -------------------------------- interactive? ------------------------------
         JCheckBox interactiveCheckBox = new JCheckBox("Interactive Task?");
-        interactiveCheckBox.setSelected(interactive);
+        interactiveCheckBox.setSelected(problemConfig.interactive);
         infoPanel.add(interactiveCheckBox);
         // -------------------------------- interactive --------------------------------
 
         // #################################################################################################
-        // #                                            MAIN                                               #
+        // # MAIN #
         // #################################################################################################
         VariableGridLayout mainLayout = new VariableGridLayout(1, 3, 5, 5);
         mainLayout.setColFraction(0, 0.25);
@@ -99,7 +94,7 @@ public class TaskConfigEditor extends JDialog {
         }
         checkBoxesAndSelectorPanel.add(checkBoxesPanel, BorderLayout.WEST);
 
-        testList = new JList(tests);
+        testList = new JList(tests.toArray());
         testList.setFixedCellHeight(HEIGHT);
         testList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         testList.setLayoutOrientation(JList.VERTICAL);
@@ -116,7 +111,8 @@ public class TaskConfigEditor extends JDialog {
         });
 
         checkBoxesAndSelectorPanel.add(testList, BorderLayout.CENTER);
-        selectorAndButtonsPanel.add(new JScrollPane(checkBoxesAndSelectorPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
+        selectorAndButtonsPanel.add(new JScrollPane(checkBoxesAndSelectorPanel,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
         JPanel buttonsPanel = new JPanel(new GridLayout(3, 1));
         JPanel upperButtonsPanel = new JPanel(new GridLayout(1, 2));
 
@@ -185,7 +181,6 @@ public class TaskConfigEditor extends JDialog {
         middleButtonsPanel.add(remove);
         buttonsPanel.add(middleButtonsPanel);
 
-
         JPanel testPanel = new JPanel(new GridLayout(2, 1, 5, 5));
         JPanel inputPanel = new JPanel(new BorderLayout());
         inputPanel.add(new JLabel("Input:"), BorderLayout.NORTH);
@@ -226,54 +221,62 @@ public class TaskConfigEditor extends JDialog {
         JPanel timeLimitPanel = new JPanel(new BorderLayout());
         timeLimitPanel.add(new JLabel("Time Limit in ms:"), BorderLayout.NORTH);
         JTextField timeLimitTextField = new JTextField(10);
-        timeLimitTextField.setText(String.valueOf(TaskConfigEditor.timeLimit));
+        timeLimitTextField.setText(String.valueOf(problemConfig.timeLimit));
         timeLimitTextField.setFont(Font.decode(Font.MONOSPACED));
         timeLimitPanel.add(timeLimitTextField);
         optionsPanel.add(timeLimitPanel);
         // -------------------------------- time limit --------------------------------
 
-        // -------------------------------- checker  --------------------------------
+        // -------------------------------- checker --------------------------------
         JPanel checkerPanel = new JPanel(new BorderLayout());
         checkerPanel.add(new JLabel("Checker:"), BorderLayout.NORTH);
         JTextField checkerTextField = new JTextField(10);
-        checkerTextField.setText(String.valueOf(TaskConfigEditor.checker));
+        checkerTextField.setText(String.valueOf(problemConfig.checker));
         checkerTextField.setFont(Font.decode(Font.MONOSPACED));
         checkerPanel.add(checkerTextField);
         optionsPanel.add(checkerPanel);
         // -------------------------------- checker --------------------------------
 
-        // -------------------------------- compact  --------------------------------
-//        JCheckBox compactCheckBox = new JCheckBox("Compact Mode?");
-//        compactCheckBox.setSelected(compact);
-//        optionsPanel.add(compactCheckBox);
+        // -------------------------------- compact --------------------------------
+        // JCheckBox compactCheckBox = new JCheckBox("Compact Mode?");
+        // compactCheckBox.setSelected(compact);
+        // optionsPanel.add(compactCheckBox);
         // -------------------------------- compact --------------------------------
 
-        // -------------------------------- truncate long test --------------------------------
+        // -------------------------------- truncate long test
+        // --------------------------------
         JCheckBox truncateLongTestCheckBox = new JCheckBox("Truncate Long Test?");
-        truncateLongTestCheckBox.setSelected(truncateLongTest);
+        truncateLongTestCheckBox.setSelected(problemConfig.truncateLongTest);
         optionsPanel.add(truncateLongTestCheckBox);
-        // -------------------------------- truncate long test --------------------------------
+        // -------------------------------- truncate long test
+        // --------------------------------
 
-        // -------------------------------- hide accepted tests --------------------------------
+        // -------------------------------- hide accepted tests
+        // --------------------------------
         JCheckBox hideAcceptedTestCheckBox = new JCheckBox("Hide Accepted Tests?");
-        hideAcceptedTestCheckBox.setSelected(hideAcceptedTest);
+        hideAcceptedTestCheckBox.setSelected(problemConfig.hideAcceptedTest);
         optionsPanel.add(hideAcceptedTestCheckBox);
-        // -------------------------------- hide accepted tests --------------------------------
+        // -------------------------------- hide accepted tests
+        // --------------------------------
 
-        // -------------------------------- stop At Wrong Answer --------------------------------
+        // -------------------------------- stop At Wrong Answer
+        // --------------------------------
         JCheckBox stopAtWrongAnswerCheckBox = new JCheckBox("Stop At Wrong Answer?");
-        stopAtWrongAnswerCheckBox.setSelected(stopAtWrongAnswer);
+        stopAtWrongAnswerCheckBox.setSelected(problemConfig.stopAtWrongAnswer);
         optionsPanel.add(stopAtWrongAnswerCheckBox);
-        // -------------------------------- stop At Wrong Answer --------------------------------
+        // -------------------------------- stop At Wrong Answer
+        // --------------------------------
 
-        // -------------------------------- know generator answer --------------------------------
+        // -------------------------------- know generator answer
+        // --------------------------------
         JCheckBox knowGenAnsCheckBox = new JCheckBox("Know generator answer?");
-        knowGenAnsCheckBox.setSelected(knowGenAns);
+        knowGenAnsCheckBox.setSelected(problemConfig.knowGenAns);
         optionsPanel.add(knowGenAnsCheckBox);
-        // -------------------------------- know generator answer --------------------------------
+        // -------------------------------- know generator answer
+        // --------------------------------
 
         // #################################################################################################
-        // #                                            GEN                                                #
+        // # GEN #
         // #################################################################################################
         VariableGridLayout genLayout = new VariableGridLayout(2, 1, 5, 5);
         genLayout.setRowFraction(1, 0.8);
@@ -285,26 +288,27 @@ public class TaskConfigEditor extends JDialog {
         JPanel numTestPanel = new JPanel(new BorderLayout());
         numTestPanel.add(new JLabel("Number of tests:"), BorderLayout.NORTH);
         JTextField numTestTextField = new JTextField(10);
-        numTestTextField.setText(String.valueOf(TaskConfigEditor.numTest));
+        numTestTextField.setText(String.valueOf(problemConfig.numTest));
         numTestTextField.setFont(Font.decode(Font.MONOSPACED));
         numTestPanel.add(numTestTextField);
         genOptions.add(numTestPanel);
         // -------------------------------- num test --------------------------------
 
-        // -------------------------------- generator seed --------------------------------
+        // -------------------------------- generator seed
+        // --------------------------------
         JPanel generatorSeedPanel = new JPanel(new BorderLayout());
         generatorSeedPanel.add(new JLabel("Generator seed:"), BorderLayout.NORTH);
         JTextField generatorSeedTextField = new JTextField(10);
-        generatorSeedTextField.setText(String.valueOf(TaskConfigEditor.generatorSeed));
+        generatorSeedTextField.setText(String.valueOf(problemConfig.generatorSeed));
         generatorSeedTextField.setFont(Font.decode(Font.MONOSPACED));
         generatorSeedPanel.add(generatorSeedTextField);
         genOptions.add(generatorSeedPanel);
-        // -------------------------------- generator seed --------------------------------
-
+        // -------------------------------- generator seed
+        // --------------------------------
 
         JPanel arg = new JPanel(new BorderLayout());
         arg.add(new JLabel("Generator argument:"), BorderLayout.NORTH);
-        JTextField argF = new JTextField(genParameters);
+        JTextField argF = new JTextField(problemConfig.genParameters);
         argF.setFont(Font.decode(Font.MONOSPACED));
         arg.add(argF);
 
@@ -312,16 +316,13 @@ public class TaskConfigEditor extends JDialog {
         genPanel.add(genOptions);
         genPanel.add(arg);
 
-
         JCheckBox genCheckBox = new JCheckBox("Generate Test?");
-        genCheckBox.setSelected(useGeneration);
+        genCheckBox.setSelected(problemConfig.useGeneration);
         genCheckBox.addActionListener(e -> genPanel.setVisible(genCheckBox.isSelected()));
 
-
-        genPanel.setVisible(useGeneration);
+        genPanel.setVisible(problemConfig.useGeneration);
         gen.add(genCheckBox);
         gen.add(genPanel);
-
 
         VariableGridLayout finalL = new VariableGridLayout(3, 1, 5, 5);
         finalL.setRowFraction(0, 0.1);
@@ -331,33 +332,27 @@ public class TaskConfigEditor extends JDialog {
         JButton save = new JButton("Save");
         save.addActionListener(e -> {
             saveCurrentTest();
-            JSONArray testArr = new JSONArray();
+            problemConfig.tests.clear();
             for (Test test : this.tests) {
-                JSONObject cur = new JSONObject();
-                cur.put("input", test.input);
-                cur.put("output", test.output);
-                cur.put("index", test.index);
-                cur.put("active", test.active);
-                testArr.add(cur);
+                problemConfig.tests.add(test);
             }
-            obj.put("tests", testArr);
-            obj.put("knowGenAns", knowGenAnsCheckBox.isSelected());
-            obj.put("useGeneration", genCheckBox.isSelected());
-            obj.put("truncateLongTest", truncateLongTestCheckBox.isSelected());
-            obj.put("stopAtWrongAnswer", stopAtWrongAnswerCheckBox.isSelected());
-            obj.put("hideAcceptedTest", hideAcceptedTestCheckBox.isSelected());
-            obj.put("interactive", interactiveCheckBox.isSelected());
-//            obj.put("compact", compactCheckBox.isSelected());
-            obj.put("numTest", Long.parseLong("0" + numTestTextField.getText()));
-            obj.put("timeLimit", Long.parseLong("0" + timeLimitTextField.getText()));
-            obj.put("genParameters", argF.getText());
-            obj.put("name", taskNameTextField.getText());
-            obj.put("group", groupNameTextField.getText());
-            obj.put("generatorSeed", generatorSeedTextField.getText());
-            obj.put("checker", checkerTextField.getText());
+            problemConfig.knowGenAns = knowGenAnsCheckBox.isSelected();
+            problemConfig.useGeneration = genCheckBox.isSelected();
+            problemConfig.truncateLongTest = truncateLongTestCheckBox.isSelected();
+            problemConfig.stopAtWrongAnswer = stopAtWrongAnswerCheckBox.isSelected();
+            problemConfig.hideAcceptedTest = hideAcceptedTestCheckBox.isSelected();
+            problemConfig.interactive = interactiveCheckBox.isSelected();
+            problemConfig.numTest = Long.parseLong("0" + numTestTextField.getText());
+            problemConfig.timeLimit = Long.parseLong("0" +
+                    timeLimitTextField.getText());
+            problemConfig.genParameters = argF.getText();
+            problemConfig.name = taskNameTextField.getText();
+            problemConfig.group = groupNameTextField.getText();
+            problemConfig.generatorSeed = generatorSeedTextField.getText();
+            problemConfig.checker = checkerTextField.getText();
             try {
                 FileWriter writer = new FileWriter(path);
-                writer.write(obj.toString());
+                writer.write(gson.toJson(problemConfig));
                 writer.flush();
                 writer.close();
             } catch (IOException ex) {
@@ -376,10 +371,10 @@ public class TaskConfigEditor extends JDialog {
         finalPanel.add(gen);
 
         setContentPane(finalPanel);
-        setSelectedTest(Math.min(0, tests.length - 1));
+        setSelectedTest(Math.min(0, tests.size() - 1));
         pack();
 
-        // -------------------------------- center  --------------------------------
+        // -------------------------------- center --------------------------------
         Toolkit it = Toolkit.getDefaultToolkit();
         Dimension d = it.getScreenSize();
 
@@ -388,31 +383,15 @@ public class TaskConfigEditor extends JDialog {
         setLocation(d.width / 2 - W / 2, d.height / 2 - H / 2);
     }
 
-    public static void main(String[] args) throws IOException, ParseException {
-        Path path = Paths.get(args[0], "config.json");
-        JSONParser jsonParser = new JSONParser();
-        FileReader reader = new FileReader(path.toString());
-        obj = (JSONObject) jsonParser.parse(reader);
-        JSONArray testArrays = (JSONArray) obj.get("tests");
-        Test[] tests = new Test[testArrays.size()];
-        for (int i = 0; i < testArrays.size(); i++) {
-            JSONObject test = (JSONObject) testArrays.get(i);
-            tests[i] = new Test((String) test.get("input"), (String) test.get("output"), (Long) test.get("index"), (Boolean) test.get("active"));
+    public static void main(String[] args) throws IOException {
+        if (args.length != 1) {
+            System.out.println("Usage: java -jar TaskConfigEditor.jar <path/to/directory/with/config.json>");
+            return;
         }
-        genParameters = (String) obj.get("genParameters");
-        name = (String) obj.get("name");
-        group = (String) obj.get("group");
-        checker = (String) obj.get("checker");
-        numTest = (Long) obj.get("numTest");
-        timeLimit = (Long) obj.get("timeLimit");
-        generatorSeed = (String) obj.get("generatorSeed");
-        useGeneration = (Boolean) obj.get("useGeneration");
-        knowGenAns = (Boolean) obj.get("knowGenAns");
-        hideAcceptedTest = (Boolean) obj.get("hideAcceptedTest");
-        truncateLongTest = (Boolean) obj.get("truncateLongTest");
-        stopAtWrongAnswer = (Boolean) obj.get("stopAtWrongAnswer");
-        interactive = (Boolean) obj.get("interactive");
-        TaskConfigEditor dialog = new TaskConfigEditor(tests, path.toString());
+        Path config_path = Paths.get(args[0], "config.json");
+        Gson gson = new Gson();
+        ProblemConfig problemConfig = gson.fromJson(new FileReader(config_path.toFile()), ProblemConfig.class);
+        TaskConfigEditor dialog = new TaskConfigEditor(problemConfig, config_path.toString());
         dialog.setVisible(true);
         System.exit(0);
     }
@@ -459,7 +438,8 @@ public class TaskConfigEditor extends JDialog {
         if (currentTest == -1) {
             return;
         }
-        tests.set(currentTest, new Test(input.getText(), knowAnswer.isSelected() ? output.getText() : null, currentTest, checkBoxes.get(currentTest).isSelected()));
+        tests.set(currentTest, new Test(input.getText(), knowAnswer.isSelected() ? output.getText() : null, currentTest,
+                checkBoxes.get(currentTest).isSelected()));
 
         outputPanel.setVisible(knowAnswer.isSelected());
     }

@@ -8,6 +8,7 @@ sh_binary(
         "//default/checkers:double_6",
         "//default/checkers:double_9",
         "//default/checkers:token_checker",
+        "//default/task_editor/TaskConfigEditor:TaskConfigEditor_deploy.jar"
     ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )

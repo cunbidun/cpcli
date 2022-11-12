@@ -1,6 +1,6 @@
 workspace(name = "cpcli")
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_jar")
 
 # boost
 http_archive(
@@ -13,6 +13,14 @@ http_archive(
 load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 
 boost_deps()
+
+# gson
+http_jar(
+    name = "gson",
+    sha256 = "0cdd163ce3598a20fc04eee71b140b24f6f2a3b35f0a499dbbdd9852e83fbfaf",
+    url = "https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10/gson-2.10.jar",
+    downloaded_file_name = "gson-2.10.jar",
+)
 
 # crow
 http_archive(
