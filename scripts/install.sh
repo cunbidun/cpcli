@@ -61,5 +61,6 @@ cp "$java_test_editor_path" "$HOME/.local/share/cpcli/frontend/TaskConfigEditor.
 
 echo "Create templates directory at $HOME/.local/share/cpcli/templates"
 mkdir -p "$HOME/.local/share/cpcli/templates"
+Topcoder
 cp -r "$cpp_template_dir" "$HOME/.local/share/cpcli/templates"
 cp -r "$common_template_dir" "$HOME/.local/share/cpcli/templates"
