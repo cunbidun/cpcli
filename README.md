@@ -167,11 +167,51 @@ Others `checker` included:
 
 ## Development
 
-### Build complication database `compile_commands.json` for autocomplete
+### Environment Setup
 
-```bash
-bazel run @hedron_compile_commands//:refresh_all
-```
+The recommend text editor for developing this project is [vscode](https://code.visualstudio.com/)
+
+1. Build the project
+   ```bash
+   bazel run //:install
+   ```
+2. Build `compile_commands.json` for autocomplete
+
+   ```bash
+   bazel run @hedron_compile_commands//:refresh_all
+   ```
+
+3. `.vscode` setup
+
+    Create a `.vscode` at the top level directory of the repository
+
+    ```
+    .vscode
+    ├── c_cpp_properties.json
+    └── settings.json
+    ```
+
+    `c_cpp_properties.json` content:
+    ```json
+    {
+        "configurations": [
+            {
+                "name": "cpcli_app",
+                "compileCommands": "${workspaceFolder}/compile_commands.json",
+            }
+        ],
+        "version": 4
+    }
+    ```
+    `settings.json` content:
+
+    ```json
+    {
+      "java.project.referencedLibraries": [
+        "bazel-bin/default/task_editor/TaskConfigEditor/TaskConfigEditor.runfiles/gson/jar/*.jar"
+      ],
+    }
+    ```
 
 ### Build and Run Java Test Editor
 
@@ -201,6 +241,6 @@ $ open build/html/index.html
 
 1. The project is heavily inspired by [Egor Kulikov](https://github.com/EgorKulikov)'s [idea-chelper](https://github.com/EgorKulikov/idea-chelper).
 
-3. Checkers and generators use [Mike Mirzayanov](https://github.com/MikeMirzayanov)'s [testlib](https://github.com/MikeMirzayanov/testlib)
+2. Checkers and generators use [Mike Mirzayanov](https://github.com/MikeMirzayanov)'s [testlib](https://github.com/MikeMirzayanov/testlib)
 
-2. The precompiled header feature is inspired by [Dushyant Singh](https://github.com/dush1729)'s script [Speed-Up-GCC-Compile-Time](https://github.com/dush1729/Speed-Up-GCC-Compile-Time).
+3. The precompiled header feature is inspired by [Dushyant Singh](https://github.com/dush1729)'s script [Speed-Up-GCC-Compile-Time](https://github.com/dush1729/Speed-Up-GCC-Compile-Time).
