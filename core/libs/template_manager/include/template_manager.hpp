@@ -4,6 +4,7 @@
 #include "path_manager.hpp"
 #include <filesystem>
 #include <nlohmann/json.hpp>
+#include <optional>
 
 static int const TemplateManagerRequiredTemplateNotFound = 168372;
 

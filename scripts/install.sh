@@ -34,6 +34,12 @@ java_test_editor_path=$(rlocation "cpcli/default/task_editor/TaskConfigEditor/Ta
 cpp_template_dir=$(rlocation "cpcli/default/templates/cpp")
 common_template_dir=$(rlocation "cpcli/default/templates/common")
 
+# --- Remove leftover files ---
+echo "Removing leftover files..."
+rm -rf "$HOME/.local/share/cpcli"
+rm -f "$HOME/.local/bin/cpcli_app"
+rm -f "$HOME/.local/bin/cpcli_cc"
+
 # --- copy binaries to ~/.local/bin ---
 echo "Copy cpcli_app binary to $HOME/.local/bin"
 cp "$cpcli_app_path" "$HOME/.local/bin"
@@ -43,7 +49,6 @@ cp "$cpcli_cc_path" "$HOME/.local/bin"
 
 # --- copy artifacts to ~/.local/share ---
 echo "Cleanup the cpcli artifacts directory at $HOME/.local/share/cpcli"
-rm -rf "$HOME/.local/share/cpcli"
 mkdir -p "$HOME/.local/share/cpcli"
 
 echo "Create checkers directory at $HOME/.local/share/cpcli/checkers"
@@ -61,6 +66,6 @@ cp "$java_test_editor_path" "$HOME/.local/share/cpcli/frontend/TaskConfigEditor.
 
 echo "Create templates directory at $HOME/.local/share/cpcli/templates"
 mkdir -p "$HOME/.local/share/cpcli/templates"
-Topcoder
+
 cp -r "$cpp_template_dir" "$HOME/.local/share/cpcli/templates"
 cp -r "$common_template_dir" "$HOME/.local/share/cpcli/templates"
