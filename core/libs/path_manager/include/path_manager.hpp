@@ -6,8 +6,9 @@
 #include <string>
 #include <vector>
 
-static int const PathManagerKeyNotFound = 268372;
-static int const PathManagerFailToInitFromConfig = 2681572;
+static int const PathManagerKeyNotFound = 268000;
+static int const PathManagerFailToInitFromConfig = 268001;
+static int const ArtifactsDirDoesNotExist = 268002;
 
 enum class PathManagerStatus {
   Success,
@@ -19,7 +20,7 @@ enum class PathManagerStatus {
   FieldDoesNotExist,
 };
 
-static inline const std::vector<std::string> REQUIRED_DIR = {"task", "archive", "output", "cpcli"};
+static inline const std::vector<std::string> REQUIRED_DIR = {"task", "archive", "output"};
 static inline const std::vector<std::string> OPTIONAL_DIR = {"include", "template"};
 
 class PathManager {
@@ -31,8 +32,14 @@ public:
   bool has_customize_template_dir();
   bool has_customize_include_dir();
 
-  // Required dir
-  std::filesystem::path get_cpcli();
+  // Required directories
+  /**
+   * @brief Get the local share path
+   *      This path is used to store the local artifacts share templates and binaries 
+   * 
+   * @return std::filesystem::path to $HOME/.local/share/cpcli on Linux and Mac
+   */
+  std::filesystem::path get_local_share(); 
   std::filesystem::path get_task();
   std::filesystem::path get_output();
   std::filesystem::path get_archive();

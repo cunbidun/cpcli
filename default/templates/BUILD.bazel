@@ -1,0 +1,11 @@
+filegroup(
+    name = "cpp_template",
+    srcs = ["cpp"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "common_template",
+    srcs = ["common"],
+    visibility = ["//visibility:public"],
+)

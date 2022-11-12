@@ -4,10 +4,10 @@
  *
  *    interactor <input_file> <screen_file> <result_file>
  *
- * The input_file will contain data that will be feed into interactor
+ * The input_file will contain data that will be fed into interactor.
  *
  * The screen_file will store interaction between solution and the interactor.
- * Later, this data will be print to screen.
+ * Later, this data will be print to screen (for debugging).
  *
  * The result_file will contain the result of the test.
  * Later, this data will be use to report error and verdict.

@@ -177,6 +177,11 @@ Please take a look at the [archive](https://github.com/cunbidun/competitive_prog
 bazel run @hedron_compile_commands//:refresh_all
 ```
 
+### To Run Java Test Editor
+```bash
+bazel run //default/task_editor/TaskConfigEditor:TaskConfigEditor default/task_editor/TaskConfigEditor/src  
+```
+
 ### Build Documentations
 
 #### Requirements

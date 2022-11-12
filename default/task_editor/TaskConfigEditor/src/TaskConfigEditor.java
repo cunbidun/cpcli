@@ -294,8 +294,7 @@ public class TaskConfigEditor extends JDialog {
         genOptions.add(numTestPanel);
         // -------------------------------- num test --------------------------------
 
-        // -------------------------------- generator seed
-        // --------------------------------
+        // ----------------------------- generator seed -----------------------------
         JPanel generatorSeedPanel = new JPanel(new BorderLayout());
         generatorSeedPanel.add(new JLabel("Generator seed:"), BorderLayout.NORTH);
         JTextField generatorSeedTextField = new JTextField(10);
@@ -303,8 +302,7 @@ public class TaskConfigEditor extends JDialog {
         generatorSeedTextField.setFont(Font.decode(Font.MONOSPACED));
         generatorSeedPanel.add(generatorSeedTextField);
         genOptions.add(generatorSeedPanel);
-        // -------------------------------- generator seed
-        // --------------------------------
+        // ----------------------------- generator seed -----------------------------
 
         JPanel arg = new JPanel(new BorderLayout());
         arg.add(new JLabel("Generator argument:"), BorderLayout.NORTH);

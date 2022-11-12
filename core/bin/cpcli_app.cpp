@@ -193,13 +193,10 @@ int cpcli_process(int argc, char *argv[]) {
   }
   TemplateManager template_manager(path_manager, "cpp");
 
-  fs::path cpcli_dir = path_manager.get_cpcli();
-  check_file(cpcli_dir, "cpcli_dir not found!");
-  spdlog::debug("cpcli directory is: " + cpcli_dir.string());
-  fs::path binary_dir = cpcli_dir / "build" / "bin";
-  check_file(binary_dir, "binary_dir not found!");
-  spdlog::debug("binary directory is: " + cpcli_dir.string());
-  fs::path precompiled_dir = binary_dir / "precompiled_headers";
+  fs::path local_share_dir = path_manager.get_local_share();
+  spdlog::debug("local_share_dir directory is: " + local_share_dir.string());
+  fs::path checker_dir = local_share_dir / "checkers";
+  fs::path precompiled_dir = local_share_dir / "precompiled_headers";
 
   {
     /*
@@ -249,7 +246,7 @@ int cpcli_process(int argc, char *argv[]) {
     return 0;
   }
 
-  fs::path temp_config_path = template_manager.get_config();
+  fs::path temp_config_path = template_manager.problem_config();
   problem_conf_path = root_dir / "config.json";
   problem_conf = read_problem_config(problem_conf_path, temp_config_path);
 
@@ -351,7 +348,7 @@ int cpcli_process(int argc, char *argv[]) {
       cout << termcolor::cyan << termcolor::bold << "Interactive task" << termcolor::reset << '\n';
     } else {
       if (problem_conf["checker"] != "custom") {
-        fs::path checker_bin_path = binary_dir / problem_conf["checker"];
+        fs::path checker_bin_path = checker_dir / problem_conf["checker"];
         check_file(checker_bin_path, "checker binary not found!");
         copy_file(checker_bin_path, root_dir / "checker", fs::copy_options::overwrite_existing);
       } else {

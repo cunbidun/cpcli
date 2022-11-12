@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
       data["timeLimit"] = 10000;
     }
 
-    std::ifstream ifs(template_manager.get_config());
+    std::ifstream ifs(template_manager.problem_config());
     auto final_config = json::parse(ifs);
     for (auto el : final_config.items()) {
       auto key = el.key();

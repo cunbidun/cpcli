@@ -28,11 +28,11 @@ int create_new_task(json project_conf) {
   fs::path root_dir = fs::current_path();
 
   fs::copy_file(template_manager.get_solution(), root_dir / "solution.cpp", fs::copy_options::overwrite_existing);
-  fs::copy_file(template_manager.get_config(), root_dir / "config.json", fs::copy_options::overwrite_existing);
+  fs::copy_file(template_manager.problem_config(), root_dir / "config.json", fs::copy_options::overwrite_existing);
   edit_config(task_dir / new_task, template_manager, frontend_exec);
 
   // read and validate the project config file
-  json problem_conf = read_problem_config(root_dir / "config.json", template_manager.get_config());
+  json problem_conf = read_problem_config(root_dir / "config.json", template_manager.problem_config());
 
   string name = problem_conf["name"].get<string>();
   fs::current_path(root_dir.parent_path());
@@ -110,13 +110,13 @@ void print_report(const string report_name, bool passed, bool rte, bool tle, boo
 
 void edit_config(fs::path root_dir, TemplateManager &template_manager, string &frontend_exec) {
   // read the project config into a json object
-  json config = read_problem_config(root_dir / "config.json", template_manager.get_config());
+  json config = read_problem_config(root_dir / "config.json", template_manager.problem_config());
   string old_name = config["name"].get<string>();
 
   string command = frontend_exec + " \"" + root_dir.string() + "\"";
   system_warper(command);
 
-  config = read_problem_config(root_dir / "config.json", template_manager.get_config());
+  config = read_problem_config(root_dir / "config.json", template_manager.problem_config());
   string name = trim_copy(config["name"].get<string>());
   // TODO check if template exists
   if (config["useGeneration"]) {

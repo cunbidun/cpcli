@@ -79,10 +79,19 @@ bool PathManager::has_customize_include_dir() {
   return PathManager::path_mp.find("include") != PathManager::path_mp.end();
 }
 
-std::filesystem::path PathManager::get_cpcli() { return PathManager::path_mp["cpcli"]; }
 std::filesystem::path PathManager::get_task() { return PathManager::path_mp["task"]; }
 std::filesystem::path PathManager::get_output() { return PathManager::path_mp["output"]; }
 std::filesystem::path PathManager::get_archive() { return PathManager::path_mp["archive"]; }
+
+std::filesystem::path PathManager::get_local_share() {
+  auto home_path = std::filesystem::path(std::getenv("HOME"));
+  auto cpcli_data_dir = home_path / ".local" / "share" / "cpcli";
+  if (!std::filesystem::exists(cpcli_data_dir) || !std::filesystem::is_directory(cpcli_data_dir)) {
+    spdlog::error("the artifacts directory '{}' does not exists or is not a directory", cpcli_data_dir.c_str());
+    exit(ArtifactsDirDoesNotExist);
+  }
+  return cpcli_data_dir;
+}
 
 std::filesystem::path PathManager::get_template() { return PathManager::get("template"); }
 std::filesystem::path PathManager::get_include() { return PathManager::get("include"); }
