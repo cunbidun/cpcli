@@ -1,0 +1,12 @@
+cc_library(
+    name = "utils",
+    srcs = ["src/utils.cpp"],
+    hdrs = ["include/utils.hpp"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/libs/color",
+        "//core/libs/constant",
+        "@spdlog",
+    ],
+)

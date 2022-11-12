@@ -1,0 +1,12 @@
+cc_library(
+    name = "template_manager",
+    srcs = ["src/template_manager.cpp"],
+    hdrs = ["include/template_manager.hpp"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/libs/path_manager",
+        "@json",
+        "@spdlog",
+    ],
+)

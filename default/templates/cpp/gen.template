@@ -1,0 +1,9 @@
+/**
+ * The gen program should accept 2 as arguments:
+ *
+ *    gen <seed> <number_of_test>
+ * 
+ * Make sure to write your generated test to text files with prefix "S".
+ * For example: "S1.in", "S2.in", ... , "S124.in"
+ */
+int main(int argc, char* argv[]) {}

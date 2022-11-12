@@ -1,0 +1,15 @@
+/**
+ * The interactor program for interactive task.
+ * The program should accept 3 file paths as arguments and can be invoke this way:
+ *
+ *    interactor <input_file> <screen_file> <result_file>
+ *
+ * The input_file will contain data that will be fed into interactor.
+ *
+ * The screen_file will store interaction between solution and the interactor.
+ * Later, this data will be print to screen (for debugging).
+ *
+ * The result_file will contain the result of the test.
+ * Later, this data will be use to report error and verdict.
+ */
+int main(int argc, char *argv[]) {}

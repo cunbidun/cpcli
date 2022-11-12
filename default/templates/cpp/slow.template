@@ -1,0 +1,8 @@
+/**
+ * Slow file should read from stdin and print to stdout.
+ *
+ * We can think of this file as an correct but slower version
+ * of the solution. It will be used to generate the correct
+ * output.
+ */
+int main() {}

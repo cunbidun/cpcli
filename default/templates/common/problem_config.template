@@ -1,0 +1,17 @@
+{
+  "numTest": 0,
+  "genParameters": "",
+  "generatorSeed": "",
+  "interactive": false,
+  "useGeneration": false,
+  "checker": "token_checker",
+  "knowGenAns": false,
+  "url": null,
+  "timeLimit": 10000,
+  "tests": [],
+  "stopAtWrongAnswer": false,
+  "name": "",
+  "truncateLongTest": false,
+  "hideAcceptedTest": true,
+  "group": ""
+}

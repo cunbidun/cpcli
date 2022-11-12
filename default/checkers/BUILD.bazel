@@ -1,0 +1,31 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "testlib",
+    hdrs = ["include/testlib.h"],
+    strip_include_prefix = "include",
+)
+
+cc_binary(
+    name = "double_4",
+    srcs = ["src/double_4.cpp"],
+    deps = [":testlib"],
+)
+
+cc_binary(
+    name = "double_6",
+    srcs = ["src/double_6.cpp"],
+    deps = [":testlib"],
+)
+
+cc_binary(
+    name = "double_9",
+    srcs = ["src/double_9.cpp"],
+    deps = [":testlib"],
+)
+
+cc_binary(
+    name = "token_checker",
+    srcs = ["src/token_checker.cpp"],
+    deps = [":testlib"],
+)
