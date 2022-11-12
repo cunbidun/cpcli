@@ -14,7 +14,7 @@ Nevertheless, it is mature enough for casual coding competition.
 ### Requirements
 
 1. [Bazel build system](https://bazel.build/)
-2. [Java JDK](https://www.java.com/en/) for running the simple task editor interface
+2. [Java JDK 11+](https://www.java.com/en/) for running the simple task editor interface
 
 ### Step by step installation
 
