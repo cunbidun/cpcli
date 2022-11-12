@@ -1,3 +1,4 @@
+#include "constant.hpp"
 #include "crow.h"
 #include "cxxopts.hpp"
 #include "nlohmann/json.hpp"
@@ -23,12 +24,17 @@ int main(int argc, char *argv[]) {
   fs::path project_config_path;
   cxxopts::Options options("cpcli_cc", "Competitive Companion Server for cpcli_app");
   try {
-    options.add_options()("p,project-config", "Project config file", cxxopts::value<string>(), "FILE")("h,help",
-                                                                                                       "Print usage");
+    options.add_options()("p,project-config", "Project config file", cxxopts::value<string>(), "FILE")(
+        "h,help", "Print usage")("v,version", "Print version");
     auto result = options.parse(argc, argv);
 
     if (result.count("help")) {
       std::cout << options.help() << std::endl;
+      exit(0);
+    }
+
+    if (result.count("version")) {
+      std::cout << VERSION << std::endl;
       exit(0);
     }
 
