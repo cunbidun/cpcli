@@ -9,7 +9,7 @@ cc_test(
         "//core/libs/operations",
         "//core/libs/template_manager",
         "@crow",
-        "@cxxopts",
+        "@cli11",
         "@gtest",
         "@gtest//:gtest_main",
         "@json",

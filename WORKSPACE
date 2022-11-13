@@ -38,20 +38,20 @@ cc_library(
     url = "https://github.com/CrowCpp/Crow/releases/download/v1.0%2B5/crow-v1.0+5.tar.gz",
 )
 
-# cxxopts
+# cli11
 http_archive(
-    name = "cxxopts",
+    name = "cli11",
     build_file_content = """
 cc_library(
-    name = "cxxopts",
-    hdrs = ["include/cxxopts.hpp"],
+    name = "cli11",
+    hdrs = glob(["include/CLI/*.hpp", "include/CLI/impl/*.hpp"]),
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],
 )
 """,
-    sha256 = "36f41fa2a46b3c1466613b63f3fa73dc24d912bc90d667147f1e43215a8c6d00",
-    strip_prefix = "cxxopts-3.0.0",
-    url = "https://github.com/jarro2783/cxxopts/archive/refs/tags/v3.0.0.tar.gz",
+    sha256 = "378da73d2d1d9a7b82ad6ed2b5bda3e7bc7093c4034a1d680a2e009eb067e7b2",
+    strip_prefix = "CLI11-2.3.1",
+    url = "https://github.com/CLIUtils/CLI11/archive/refs/tags/v2.3.1.tar.gz",
 )
 
 # nlohmann/json.hpp
