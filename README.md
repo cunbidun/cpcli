@@ -80,7 +80,7 @@ Please take a look at the [archive](https://github.com/cunbidun/competitive_prog
 #### Sample invocation
 
 ```bash
-$ cpcli_app --root-dir="/Users/cunbidun/competitive_programming/task/F - Keep Connect" --project-config=project_config.json --build
+$ cpcli_app --project-config=project_config.json task --root-dir="/Users/cunbidun/competitive_programming/task/F - Keep Connect" --build
 ```
 
 | Num | Attribute                | Type     | Description                                                                                          | Default value                                                                                     |

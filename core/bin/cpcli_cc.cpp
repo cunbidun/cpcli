@@ -1,6 +1,6 @@
+#include "CLI/CLI.hpp"
 #include "constant.hpp"
 #include "crow.h"
-#include "cxxopts.hpp"
 #include "nlohmann/json.hpp"
 #include "operations.hpp"
 #include "path_manager.hpp"
@@ -11,10 +11,6 @@
 #include <iostream>
 #include <set>
 
-const int CCNoConfigFileError = 10;
-const int CCConfigFileNotFoundError = 11;
-const int CCConfigFiletypeError = 11;
-
 const int CCPort = 8080;
 
 int main(int argc, char *argv[]) {
@@ -22,42 +18,18 @@ int main(int argc, char *argv[]) {
   using json = nlohmann::json;
   namespace fs = std::filesystem;
   fs::path project_config_path;
-  cxxopts::Options options("cpcli_cc", "Competitive Companion Server for cpcli_app");
+  CLI::App parser{"Competitive Companion Server for cpcli_app"};
+
+  parser.add_option("-p,--project-config", project_config_path, "Path to the project config file")
+      ->required(true)
+      ->check(CLI::ExistingFile)
+      ->transform([](std::filesystem::path path) { return std::filesystem::canonical(path); });
+
   try {
-    options.add_options()("p,project-config", "Project config file", cxxopts::value<string>(), "FILE")(
-        "h,help", "Print usage")("v,version", "Print version");
-    auto result = options.parse(argc, argv);
-
-    if (result.count("help")) {
-      std::cout << options.help() << std::endl;
-      exit(0);
-    }
-
-    if (result.count("version")) {
-      std::cout << VERSION << std::endl;
-      exit(0);
-    }
-
-    if (!result.count("project-config")) {
-      std::cout << options.help() << std::endl;
-      exit(CCNoConfigFileError);
-    } else {
-      project_config_path = result["project-config"].as<string>();
-      if (!fs::exists(project_config_path)) {
-        spdlog::error("Config file '{}' passed but not exists", project_config_path.generic_string());
-        std::cout << options.help() << std::endl;
-        exit(CCConfigFileNotFoundError);
-      }
-      if (fs::status(project_config_path).type() != fs::file_type::regular) {
-        spdlog::error("Config file '{}' exists but not a regular file", project_config_path.generic_string());
-        std::cout << options.help() << std::endl;
-        exit(CCNoConfigFileError);
-      }
-    }
-  } catch (const cxxopts::option_not_exists_exception &e) {
-    std::cout << e.what() << std::endl << std::endl;
-    std::cout << options.help() << std::endl;
-    return 1;
+    parser.parse(argc, argv);
+  } catch (const CLI::ParseError &e) {
+    parser.exit(e);
+    exit(1);
   }
 
   spdlog::info("Config file is set to '{}'", project_config_path.generic_string());

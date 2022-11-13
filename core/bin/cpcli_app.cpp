@@ -26,17 +26,17 @@ using std::string;
 using std::to_string;
 using json = nlohmann::json;
 
-// TODO add return code
 int cpcli_process(int argc, char *argv[]) {
   signal(SIGINT, [](int) { handle_sigint(); }); // implement SIGINT
+  auto parser_result = parse_args(argc, argv);
   std::chrono::high_resolution_clock::time_point t_start = std::chrono::high_resolution_clock::now();
+
+  // project_config's path and project_config json object
+  fs::path project_conf_path = parser_result.project_config_path;
+  json project_conf = read_project_config(project_conf_path);
 
   fs::path root_dir;   // where source files and problem_config file located
   fs::path output_dir; // where source will be put for submission
-
-  // project_config's path and project_config json object
-  fs::path project_conf_path;
-  json project_conf;
 
   // problem's config path and config json object
   fs::path problem_conf_path;
@@ -47,143 +47,6 @@ int cpcli_process(int argc, char *argv[]) {
   string testlib_compiler_flag;
   string compiler_flags = "cpp_compile_flag";
   string generator_seed;
-
-  bool is_archive = false;
-  bool is_build = false;
-  bool is_build_with_term = false;
-  bool is_debug = false;
-  bool is_edit_config = false;
-  bool is_new = false;
-  bool is_gen_header = false;
-
-  while (true) {
-    int option_index = 0;
-    static struct option long_options[] = {{"archive", no_argument, NULL, 'a'},
-                                           {"build", no_argument, NULL, 'b'},
-                                           {"build-with-term", no_argument, NULL, 'B'},
-                                           {"build-with-debug", no_argument, NULL, 'd'},
-                                           {"debug", no_argument, NULL, 'D'},
-                                           {"edit-config", no_argument, NULL, 'e'},
-                                           {"gen-headers", no_argument, NULL, 'g'},
-                                           {"help", no_argument, NULL, 'h'},
-                                           {"new", no_argument, NULL, 'n'},
-                                           {"project-config", required_argument, NULL, 'p'},
-                                           {"root-dir", required_argument, NULL, 'r'},
-                                           {"version", no_argument, NULL, 'v'},
-                                           {NULL, 0, NULL, 0}};
-
-    int c = getopt_long(argc, argv, "-:abBdDeghnp:r:v", long_options, &option_index);
-    if (c == -1)
-      break;
-
-    switch (c) {
-    // long options
-    case 0:
-      break;
-
-    // regular options
-    case 1:
-      return ARG_ERR;
-
-    case 'a':
-      spdlog::debug("Archive flag (--archive) is set");
-      is_archive = true;
-      break;
-
-    case 'b':
-      spdlog::debug("Build flag (--build) is set");
-      is_build = true;
-      break;
-
-    case 'B':
-      spdlog::debug("Build with terminal flag (--build-with-term) is set");
-      is_build_with_term = true;
-      break;
-
-    case 'd':
-      spdlog::debug("Build with debug flag (--build-with-debug) is set");
-      is_debug = true;
-      break;
-
-    case 'D':
-      spdlog::set_level(spdlog::level::debug);
-      spdlog::debug("Debug cpcli (--debug) is set");
-      break;
-
-    case 'e':
-      spdlog::debug("Edit config flag (--edit-config) is set");
-      is_edit_config = true;
-      break;
-
-    case 'g':
-      spdlog::debug("Build flag (--gen-headers) is set");
-      is_gen_header = true;
-      break;
-
-    case 'h':
-      spdlog::debug("Help flag (--help) is set");
-      print_usage();
-      return 0;
-
-    case 'n':
-      spdlog::debug("New task flag (--new) is set");
-      is_new = true;
-      break;
-
-    case 'p':
-      project_conf_path = fs::canonical(optarg);
-      spdlog::debug("Value of project_conf_path is set to {}", project_conf_path.c_str());
-      break;
-
-    case 'r':
-      root_dir = fs::canonical(optarg);
-      spdlog::debug("Value of root_dir is set to {}", root_dir.c_str());
-      break;
-
-    case 'v':
-      cout << VERSION << endl;
-      return 0;
-
-    case '?':
-      spdlog::error("Unknow options {}", char(optopt));
-      spdlog::info("Try 'cpcli_app --help' for more information");
-      return ARG_ERR;
-
-    case ':':
-      spdlog::error("Missing option for {}", char(optopt));
-      spdlog::info("Try 'cpcli_app --help' for more information");
-
-      return ARG_ERR;
-
-    default:
-      spdlog::error("getopt returned character code {}", c);
-      spdlog::info("Try 'cpcli_app --help' for more information");
-      return ARG_ERR;
-    }
-  }
-
-  /*
-    Make sure that the arguments are correct
-  */
-  {
-    int number_of_choice =
-        is_archive + is_build + is_build_with_term + is_debug + is_edit_config + is_new + is_gen_header;
-
-    if (number_of_choice == 0) {
-      spdlog::error("No operation requested");
-      return OPERATION_ERR;
-    }
-
-    if (number_of_choice == 2) {
-      spdlog::error("More than one operations requested");
-      return OPERATION_ERR;
-    }
-  }
-
-  /*
-    Parse the project config
-  */
-  project_conf = read_project_config(project_conf_path); // read the project config into a json object
 
   PathManager path_manager;
   auto status = path_manager.init(project_conf);
@@ -198,49 +61,29 @@ int cpcli_process(int argc, char *argv[]) {
   fs::path checker_dir = local_share_dir / "checkers";
   fs::path precompiled_dir = local_share_dir / "precompiled_headers";
 
-  {
-    /*
-      Create a new task.
-
-      For example:
-        cpcli_app -p path/to/project_config.json --new
-      or
-        cpcli_app -project-config=path/to/project_config.json -n
-    */
-    if (is_new) {
-      create_new_task(project_conf);
-      return 0;
-    }
+  if (parser_result.operation == ParserOperations::NewTask) {
+    create_new_task(project_conf);
+    return 0;
   }
 
-  {
-    /*
-      Generate precompiled header files
-
-      For example:
-        cpcli_app -p path/to/project_config.json -g
-      or
-        cpcli_app --project-config=path/to/project_config.json --gen-headers
-    */
-    if (is_gen_header) {
-      spdlog::debug("Generating precompiled headers");
-      spdlog::debug("precompiled_dir is: " + precompiled_dir.string());
-      spdlog::debug("cpp_compiler is: " + project_conf["cpp_compiler"].get<string>());
-      spdlog::debug("cpp_compile_flag is: " + project_conf["cpp_compile_flag"].get<string>());
-      spdlog::debug("cpp_debug_flag is: " + project_conf["cpp_debug_flag"].get<string>());
-      compile_headers(precompiled_dir,
-                      project_conf["cpp_compiler"].get<string>(),
-                      project_conf["cpp_compile_flag"].get<string>(),
-                      project_conf["cpp_debug_flag"].get<string>());
-      return 0;
-    }
+  if (parser_result.operation == ParserOperations::GenHeader) {
+    spdlog::debug("Generating precompiled headers");
+    spdlog::debug("precompiled_dir is: " + precompiled_dir.string());
+    spdlog::debug("cpp_compiler is: " + project_conf["cpp_compiler"].get<string>());
+    spdlog::debug("cpp_compile_flag is: " + project_conf["cpp_compile_flag"].get<string>());
+    spdlog::debug("cpp_debug_flag is: " + project_conf["cpp_debug_flag"].get<string>());
+    compile_headers(precompiled_dir,
+                    project_conf["cpp_compiler"].get<string>(),
+                    project_conf["cpp_compile_flag"].get<string>(),
+                    project_conf["cpp_debug_flag"].get<string>());
+    return 0;
   }
 
-  check_file(root_dir, "root directory not found!"); // check if the root_dir exists
-  fs::current_path(root_dir);                        // change directory to root_dir
-  clean_up();                                        // clean up the root directory for the first time
+  root_dir = *parser_result.root_dir;
+  fs::current_path(root_dir); // change directory to root_dir
+  clean_up();                 // clean up the root directory for the first time
 
-  if (is_edit_config) { // edit config
+  if (parser_result.operation == ParserOperations::EditTaskConfig) { // edit config
     string frontend_exec = project_conf["frontend_exec"].get<string>();
     edit_config(root_dir, template_manager, frontend_exec);
     return 0;
@@ -259,12 +102,12 @@ int cpcli_process(int argc, char *argv[]) {
     testlib_compiler_flag = join(command);
   }
 
-  if (is_build) {
+  if (parser_result.operation == ParserOperations::Build) {
     // do nothing
-  } else if (is_debug) {               // run with debug flags
-    project_conf["use_cache"] = false; // don't use cache for debugging
+  } else if (parser_result.operation == ParserOperations::BuildWithDebug) { // run with debug flags
+    project_conf["use_cache"] = false;                                      // don't use cache for debugging
     compiler_flags = "cpp_debug_flag";
-  } else if (is_build_with_term) {
+  } else if (parser_result.operation == ParserOperations::BuildWithTerm) {
     // Run with terminal. This option only uses the project config file for
     // compiler flags. No problem config will be used.
     solution_file_path = root_dir / "solution.cpp"; // NOTE support c++ for now
@@ -283,7 +126,7 @@ int cpcli_process(int argc, char *argv[]) {
     clean_up();
     print_duration(t_start);
     return 0;
-  } else if (is_archive) { // archive
+  } else if (parser_result.operation == ParserOperations::Archive) { // archive
     string name = problem_conf["name"].get<string>();
     string group = problem_conf["group"].get<string>();
 
