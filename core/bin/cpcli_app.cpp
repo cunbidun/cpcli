@@ -149,11 +149,11 @@ int cpcli_process(int argc, char *argv[]) {
   if (project_conf["use_precompiled_header"]) {
     fs::path precompiled_path = precompiled_dir / "cpp_compile_flag" / "stdc++.h";
     check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch",
-               "precompiled header not found! Please try 'cpcli_app -p project_config.json -g'");
+               "precompiled header not found! Please try 'cpcli_app project -g'");
 
     fs::path precompiled_debug_path = precompiled_dir / "cpp_debug_flag" / "stdc++.h";
     check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch",
-               "precompiled debug header not found! Please try 'cpcli_app -p project_config.json -g'");
+               "precompiled debug header not found! Please try 'cpcli_app project -g'");
 
     project_conf["cpp_compile_flag"] =
         project_conf["cpp_compile_flag"].get<string>() + " " + "-include" + " \"" + precompiled_path.string() + "\"";
