@@ -7,15 +7,12 @@ Requirements
 --------------
 Make sure you have the following installed:
 
-1. `CMake <http://www.cmake.org/>`_
-    * Ubuntu: `sudo apt-get install cmake`
-    * Mac OS X: `brew install cmake`
-    * ArchLinux: `pacman -S cmake`
+1. `Bazel <https://bazel.build/>`_
+    * Ubuntu: `Installing Bazel on Ubuntu <https://bazel.build/install/ubuntu>`_
+    * Mac OS X: `brew install bazel`
+    * ArchLinux: `pacman -S bazel`
 
-2. `Boost <https://www.boost.org/>`_
-    * Ubuntu: `sudo apt-get install libboost-all-dev` 
-    * Mac OS X: `brew install boost`
-    * ArchLinux: `pacman -S boost`
+2. `Java11+ JKD <https://www.java.com/en/>`_
 
 Environment Set-up
 -------------------
@@ -49,11 +46,11 @@ Let's start by cloning the git repository
   $ cd </path/to/your/library/folder>
   $ git clone https://github.com/cunbidun/cpcli.git
 
-Install and move the newly compiled binary to ``~/.local/bin``.
+Install and move the newly compiled binaries to ``~/.local/bin``.
 
 .. code-block:: bash 
 
-  $ cmake -DCMAKE_BUILD_TYPE=Release .. && make install
+  $ bazel run //:install
 
 If the installation process finishes successfully, the binaries will be copy to ``~/.local/bin``.
 After reopen the terminal or source the shell rc file, you can see the version of ``cpcli_app`` by running
@@ -73,10 +70,11 @@ Workspace is where you solve the problems.
   $ cd </path/to/your/workspace/folder>
   $ mkdir task  # where you solve the problems 
   $ mkdir output  # where you find the latest solution to submit
-  $ mkdir template  # where you put your template files (optional)
   $ mkdir archive  # where you put solved problems
-  $ mkdir include  # where you put your header files (optional)
   $ touch project_config.json  # project configuration for this workspace
+
+  $ mkdir include  # where you put your header files (optional)
+  $ mkdir template  # where you put your template files (optional)
 
 Make sure you create this file structure:
 
@@ -95,7 +93,7 @@ Put this inside the 	``project_config.json``
 .. code-block:: json 
 
   {
-    "frontend_exec": "java -jar </path/to/your/library/folder>/cpcli/binary/frontend/Test.jar",
+    "frontend_exec": "java -jar ~/.local/share/cpcli/frontend/TaskConfigEditor.jar",
 
     "root": "</path/to/your/workspace/folder>",
 
@@ -106,3 +104,35 @@ Put this inside the 	``project_config.json``
     "use_precompiled_header": false,
     "use_cache": true
   }
+
+
+An Example file structure:
+
+.. code-block:: text 
+
+	/path/to/your/workspace/folder
+	├── archive
+	│   ├── Archive
+	│   ├── AtCoder - ACL Beginner Contest
+	│   ├── TopCoder SRM #456
+	│   ├── Topcoder - TCO 2021 Regional Qualifier 1 DIV 1
+	│   ├── Topcoder 2021 Round 1B
+	│   ├── Topcoder Open Algo 2019
+	│   ├── Unsorted
+	│   └── vnoi.info
+	├── include
+	│   ├── genlib.hpp
+	│   ├── interactive.hpp
+	│   └── testlib.h
+	├── output
+	│   └── solution.cpp
+	├── project_config.json
+	├── task
+	│   └── F - Keep Connect
+	│       ├── config.json
+	│       └── solution.cpp
+	└── template
+		├── checker.template
+		├── gen.template
+		├── interactor.template
+		└── solution.template

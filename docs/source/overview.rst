@@ -21,6 +21,3 @@ How does ``cpcli`` test your solutions?
 2. Test the program in sample test cases and user generated test cases.
 3. Generate more tests via a test case generator if applicable. 
 4. Test the solution on newly generated test case.
-
-Files structure
--------------------------------------------------------------------
