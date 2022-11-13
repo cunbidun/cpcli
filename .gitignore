@@ -9,10 +9,11 @@ docs/build/*
 *.dSYM
 .DS_Store
 
-
 # bazel
 /bazel-*
 /compile_commands.json
 /.cache/
 /external
 /bazel-*
+
+/coverage

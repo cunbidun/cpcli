@@ -17,9 +17,9 @@ boost_deps()
 # gson
 http_jar(
     name = "gson",
+    downloaded_file_name = "gson-2.10.jar",
     sha256 = "0cdd163ce3598a20fc04eee71b140b24f6f2a3b35f0a499dbbdd9852e83fbfaf",
     url = "https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10/gson-2.10.jar",
-    downloaded_file_name = "gson-2.10.jar",
 )
 
 # crow
@@ -84,6 +84,16 @@ cc_library(
     sha256 = "ca5cae8d6cac15dae0ec63b21d6ad3530070650f68076f3a4a862ca293a858bb",
     strip_prefix = "spdlog-1.11.0",
     url = "https://github.com/gabime/spdlog/archive/refs/tags/v1.11.0.tar.gz",
+)
+
+# gtest
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "gtest",
+    commit = "58d77fa8070e8cec2dc1ed015d66b454c8d78850",
+    remote = "https://github.com/google/googletest",
+    shallow_since = "1656350095 -0400",
 )
 
 # Hedron's Compile Commands Extractor for Bazel

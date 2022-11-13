@@ -183,40 +183,58 @@ The recommend text editor for developing this project is [vscode](https://code.v
 
 3. `.vscode` setup
 
-    Create a `.vscode` at the top level directory of the repository
+   Create a `.vscode` at the top level directory of the repository
 
-    ```
-    .vscode
-    ├── c_cpp_properties.json
-    └── settings.json
-    ```
+   ```
+   .vscode
+   ├── c_cpp_properties.json
+   └── settings.json
+   ```
 
-    `c_cpp_properties.json` content:
-    ```json
-    {
-        "configurations": [
-            {
-                "name": "cpcli_app",
-                "compileCommands": "${workspaceFolder}/compile_commands.json",
-            }
-        ],
-        "version": 4
-    }
-    ```
-    `settings.json` content:
+   `c_cpp_properties.json` content:
 
-    ```json
-    {
-      "java.project.referencedLibraries": [
-        "bazel-bin/default/task_editor/TaskConfigEditor/TaskConfigEditor.runfiles/gson/jar/*.jar"
-      ],
-    }
-    ```
+   ```json
+   {
+     "configurations": [
+       {
+         "name": "cpcli_app",
+         "compileCommands": "${workspaceFolder}/compile_commands.json"
+       }
+     ],
+     "version": 4
+   }
+   ```
+
+   `settings.json` content:
+
+   ```json
+   {
+     "java.project.referencedLibraries": [
+       "bazel-bin/default/task_editor/TaskConfigEditor/TaskConfigEditor.runfiles/gson/jar/*.jar"
+     ]
+   }
+   ```
 
 ### Build and Run Java Test Editor
 
 ```bash
 bazel run //default/task_editor/TaskConfigEditor:TaskConfigEditor default/task_editor/TaskConfigEditor/src
+```
+
+### Build and run GTest
+
+```bash
+bazel test --test_output=all //core/test:cpcli_test
+```
+
+### Build code coverage report
+
+Make sure you have `lcov` installed
+
+```bash
+bazel coverage //core/test:cpcli_test --coverage_report_generator="@bazel_tools//tools/test/CoverageOutputGenerator/java/com/google/devtools/coverageoutputgenerator:Main" --instrumentation_filter="//..."
+genhtml --output coverage "$(bazel info output_path)/_coverage/_coverage_report.dat"
+open coverage/index.html
 ```
 
 ### Build Documentations

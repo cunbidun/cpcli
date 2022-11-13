@@ -1,0 +1,18 @@
+cc_test(
+    name = "cpcli_test",
+    srcs = [
+        "src/test_path_manager.cpp",
+        "src/test_util.cpp",
+    ],
+    deps = [
+        "//core/libs/constant",
+        "//core/libs/operations",
+        "//core/libs/template_manager",
+        "@crow",
+        "@cxxopts",
+        "@gtest",
+        "@gtest//:gtest_main",
+        "@json",
+        "@spdlog",
+    ],
+)
