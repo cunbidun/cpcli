@@ -3,8 +3,8 @@ cc_library(
     srcs = [
         "src/compile_headers.cpp",
         "src/operations.cpp",
+        "src/parse_args.cpp",
         "src/parse_config.cpp",
-        "src/print_usage.cpp",
     ],
     hdrs = ["include/operations.hpp"],
     strip_include_prefix = "include",
@@ -13,6 +13,8 @@ cc_library(
         "//core/libs/constant",
         "//core/libs/template_manager",
         "//core/libs/utils",
+        "@cli11",
         "@json",
+        "@spdlog",
     ],
 )

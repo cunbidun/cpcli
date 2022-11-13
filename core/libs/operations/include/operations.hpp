@@ -3,48 +3,64 @@
 
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <unistd.h>
 #include <vector>
 
+#include "CLI/CLI.hpp"
 #include "nlohmann/json.hpp"
+#include "spdlog/spdlog.h"
 #include "template_manager.hpp"
 
-using json = nlohmann::json;
-
-using std::string;
-namespace fs = std::filesystem;
+// TODO add docs
+bool check_file(std::filesystem::path path, const std::string &error_message);
 
 // TODO add docs
-void print_usage();
+nlohmann::json read_problem_config(std::filesystem::path path, std::filesystem::path temp_config_path);
 
 // TODO add docs
-bool check_file(std::filesystem::path path, const string &error_message);
+nlohmann::json read_project_config(std::filesystem::path path);
 
 // TODO add docs
-json read_problem_config(fs::path path, fs::path temp_config_path);
-
-// TODO add docs
-json read_project_config(fs::path path);
-
-// TODO add docs
-int compile_cpp(fs::path &cache_dir,
+int compile_cpp(std::filesystem::path &cache_dir,
                 bool use_cache,
-                const string &c_complier,
-                fs::path &path,
-                const string &compiler_flags,
-                const string &binary_name);
+                const std::string &c_complier,
+                std::filesystem::path &path,
+                const std::string &compiler_flags,
+                const std::string &binary_name);
 
-int create_new_task(json project_conf);
+int create_new_task(nlohmann::json project_conf);
 
 void print_duration(std::chrono::high_resolution_clock::time_point t_start);
 
 // TODO add docs
-void print_report(const string report_name, bool passed, bool rte, bool tle, bool wa, long long runtime);
+void print_report(const std::string report_name, bool passed, bool rte, bool tle, bool wa, long long runtime);
 
 // TODO add docs
-void edit_config(fs::path root_dir, TemplateManager &template_manager, string &frontend_exec);
+void edit_config(std::filesystem::path root_dir, TemplateManager &template_manager, std::string &frontend_exec);
 
-bool compile_headers(fs::path precompiled_dir, const string &cc, const string &flag, const string &debug);
+bool compile_headers(std::filesystem::path precompiled_dir,
+                     const std::string &cc,
+                     const std::string &flag,
+                     const std::string &debug);
 
+enum class ParserOperations {
+  Archive,
+  Build,
+  BuildWithTerm,
+  BuildWithDebug,
+  NewTask,
+  GenHeader,
+  EditTaskConfig,
+};
+
+class ParserReturnValues {
+public:
+  std::optional<std::filesystem::path> root_dir;
+  std::filesystem::path project_config_path;
+  ParserOperations operation;
+};
+
+ParserReturnValues parse_args(int argc, char *argv[]);
 #endif
