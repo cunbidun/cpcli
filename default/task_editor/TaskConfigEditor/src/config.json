@@ -15,8 +15,8 @@
   "tests": [
     {
       "index": 0,
-      "input": "4 4\n1 2 2 4\n3 4 4 1\n4 2 1 1\n1 3 3 1\n",
-      "output": "8\n3\n14\n",
+      "input": "4 4\n1 2 2 4\n3 4 4 1\n4 2 1 1\n1 3 3 1",
+      "output": "8\n3\n14",
       "active": true
     },
     {
@@ -34,11 +34,13 @@
     {
       "index": 3,
       "input": "1 2",
+      "output": "fff",
       "active": true
     },
     {
       "index": 4,
       "input": "21",
+      "output": "ddddd",
       "active": true
     }
   ]

@@ -4,7 +4,15 @@ import com.google.gson.GsonBuilder;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
+import javax.swing.text.Document;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.undo.UndoManager;
+
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -386,7 +394,7 @@ public class TaskConfigEditor extends JDialog {
             System.out.println("Usage: java -jar TaskConfigEditor.jar <path/to/directory/with/config.json>");
             return;
         }
-        Path config_path = Paths.get(args[0], "config.json");
+        Path config_path = Paths.get(args[0], "config.json").toAbsolutePath();
         Gson gson = new Gson();
         ProblemConfig problemConfig = gson.fromJson(new FileReader(config_path.toFile()), ProblemConfig.class);
         TaskConfigEditor dialog = new TaskConfigEditor(problemConfig, config_path.toString());
@@ -415,6 +423,8 @@ public class TaskConfigEditor extends JDialog {
             input.setVisible(false);
             output.setVisible(false);
         } else {
+            addUndoRedoFunctionality(input);
+            addUndoRedoFunctionality(output);
             input.setVisible(true);
             output.setVisible(true);
             input.setText(tests.get(index).input);
@@ -430,6 +440,43 @@ public class TaskConfigEditor extends JDialog {
         testList.repaint();
         checkBoxesPanel.repaint();
         updating = false;
+    }
+
+    private void addUndoRedoFunctionality(JTextArea textArea) {
+        UndoManager undoManager = new UndoManager();
+
+        Document document = textArea.getDocument();
+        document.addUndoableEditListener(new UndoableEditListener() {
+            @Override
+            public void undoableEditHappened(UndoableEditEvent e) {
+                undoManager.addEdit(e.getEdit());
+            }
+        });
+
+        // Map undo action
+        textArea.getInputMap(JComponent.WHEN_FOCUSED)
+                .put(KeyStroke.getKeyStroke("meta Z"), "undoKeyStroke");
+        textArea.getActionMap().put("undoKeyStroke", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    undoManager.undo();
+                } catch (CannotUndoException cue) {
+                }
+            }
+        });
+        // Map redo action
+        textArea.getInputMap(JComponent.WHEN_FOCUSED)
+                .put(KeyStroke.getKeyStroke("meta shift Z"), "redoKeyStroke");
+        textArea.getActionMap().put("redoKeyStroke", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    undoManager.redo();
+                } catch (CannotRedoException cre) {
+                }
+            }
+        });
     }
 
     private void saveCurrentTest() {
