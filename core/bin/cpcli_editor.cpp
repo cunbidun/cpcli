@@ -120,6 +120,7 @@ int main(int argc, char *argv[]) {
    * operation on task's test generator
    */
   auto generator = parser.add_subcommand("gen", "Operation on task's generator");
+  generator->require_option(1);
   auto generator_know_ans_flag = generator->add_flag("-k,--known-gen-ans", "Toggle known gen ans option");
   auto generator_flag = generator->add_flag("-g,--generator", "Toggle use generator option");
   auto generator_num_test_option =

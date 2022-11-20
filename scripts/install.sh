@@ -40,6 +40,7 @@ echo "Removing leftover files..."
 rm -rf "$HOME/.local/share/cpcli"
 rm -f "$HOME/.local/bin/cpcli_app"
 rm -f "$HOME/.local/bin/cpcli_cc"
+rm -f "$HOME/.local/bin/cpcli_editor"
 
 # --- copy binaries to ~/.local/bin ---
 echo "Copy cpcli_app binary to $HOME/.local/bin"
