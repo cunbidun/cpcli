@@ -26,6 +26,7 @@ fi
 # --- declare paths ---
 cpcli_app_path=$(rlocation "cpcli/core/bin/cpcli_app")
 cpcli_cc_path=$(rlocation "cpcli/core/bin/cpcli_cc")
+cpcli_editor=$(rlocation "cpcli/core/bin/cpcli_editor")
 double_4_path=$(rlocation "cpcli/default/checkers/double_4")
 double_6_path=$(rlocation "cpcli/default/checkers/double_6")
 double_9_path=$(rlocation "cpcli/default/checkers/double_9")
@@ -46,6 +47,9 @@ cp "$cpcli_app_path" "$HOME/.local/bin"
 
 echo "Copy cpcli_cc binary to $HOME/.local/bin"
 cp "$cpcli_cc_path" "$HOME/.local/bin"
+
+echo "Copy cli_test_editor binary to $HOME/.local/bin"
+cp "$cpcli_editor" "$HOME/.local/bin/cpcli_editor"
 
 # --- copy artifacts to ~/.local/share ---
 echo "Cleanup the cpcli artifacts directory at $HOME/.local/share/cpcli"

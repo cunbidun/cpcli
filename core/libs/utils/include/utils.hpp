@@ -71,6 +71,8 @@ static inline std::string trim_copy(std::string s) {
 // TODO add docs
 bool create_empty_file(const string &path);
 
+string read_file_to_str(const std::filesystem::path &path);
+
 // TODO add docs
 void print_file(string path, bool truncate);
 

@@ -38,6 +38,12 @@ void print_file(string path, bool truncate) {
   }
 }
 
+string read_file_to_str(const std::filesystem::path &path) {
+  std::stringstream buffer;
+  buffer << std::ifstream(path).rdbuf();
+  return buffer.str();
+}
+
 string gen_string_length_20() {
   std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());
   string s = "";

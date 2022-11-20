@@ -257,8 +257,9 @@ int cpcli_process(int argc, char *argv[]) {
         if (test["input"] != nullptr) {
           std::ofstream inf(to_string(test["index"]) + ".in");
           inf << test["input"].get<string>();
+          inf.close();
         }
-        if (test["output"] != nullptr) {
+        if (test["answer"].get<bool>()) {
           std::ofstream ouf(to_string(test["index"]) + ".out");
           ouf << test["output"].get<string>();
           ouf.close();

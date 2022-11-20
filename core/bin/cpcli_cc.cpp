@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
     for (auto it = data["tests"].begin(); it != data["tests"].end(); ++it) {
       (*it)["index"] = cnt++;
       (*it)["active"] = true;
+      (*it)["answer"] = true;
     }
     if (data.find("timeLimit") == data.end()) {
       data["timeLimit"] = 10000;

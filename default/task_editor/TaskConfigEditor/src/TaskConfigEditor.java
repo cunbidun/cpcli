@@ -172,7 +172,7 @@ public class TaskConfigEditor extends JDialog {
             int size = TaskConfigEditor.this.tests.size();
             for (int i = currentTest; i < size; i++) {
                 Test test = TaskConfigEditor.this.tests.get(i);
-                test = new Test(test.input, test.output, i, test.active);
+                test = new Test(test.input, test.output, i, test.active, test.answer);
                 TaskConfigEditor.this.tests.set(i, test);
                 checkBoxesPanel.add(createCheckBox(test));
             }
@@ -428,8 +428,8 @@ public class TaskConfigEditor extends JDialog {
             input.setVisible(true);
             output.setVisible(true);
             input.setText(tests.get(index).input);
-            knowAnswer.setSelected(tests.get(index).output != null);
-            output.setText(knowAnswer.isSelected() ? tests.get(index).output : "");
+            knowAnswer.setSelected(tests.get(index).answer);
+            output.setText(tests.get(index).output);
             outputPanel.setVisible(knowAnswer.isSelected());
         }
         currentTest = index;
@@ -483,8 +483,8 @@ public class TaskConfigEditor extends JDialog {
         if (currentTest == -1) {
             return;
         }
-        tests.set(currentTest, new Test(input.getText(), knowAnswer.isSelected() ? output.getText() : null, currentTest,
-                checkBoxes.get(currentTest).isSelected()));
+        tests.set(currentTest, new Test(input.getText(), output.getText(), currentTest,
+                checkBoxes.get(currentTest).isSelected(), knowAnswer.isSelected()));
 
         outputPanel.setVisible(knowAnswer.isSelected());
     }

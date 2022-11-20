@@ -92,7 +92,7 @@ ParserReturnValues parse_args(int argc, char *argv[]) {
         spdlog::debug("Build task with debug flags (--build-with-debug) is set");
         return_value.operation = ParserOperations::EditTaskConfig;
       },
-      "Edit the problem config file, updating the config.json");
+      "Edit the problem config file with frontend UI, updating the config.json");
   task_operations->require_option(1);
   project_subcommand->excludes(task_subcommand);
   parser.require_subcommand(1);

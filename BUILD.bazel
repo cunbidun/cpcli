@@ -4,6 +4,7 @@ sh_binary(
     data = [
         "//core/bin:cpcli_app",
         "//core/bin:cpcli_cc",
+        "//core/bin:cpcli_editor",
         "//default/checkers:double_4",
         "//default/checkers:double_6",
         "//default/checkers:double_9",

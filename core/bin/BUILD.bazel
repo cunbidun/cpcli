@@ -26,3 +26,18 @@ cc_binary(
         "@spdlog",
     ],
 )
+
+
+cc_binary(
+    name = "cpcli_editor",
+    srcs = ["cpcli_editor.cpp"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/libs/constant",
+        "//core/libs/color",
+        "//core/libs/utils",
+        "@json",
+        "@cli11",
+        "@spdlog",
+    ],
+)
