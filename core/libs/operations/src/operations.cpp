@@ -18,7 +18,7 @@ int create_new_task(nlohmann::json project_conf) {
     spdlog::error("Path manager return non success code. Exiting...");
     exit(PathManagerFailToInitFromConfig);
   }
-  TemplateManager template_manager(path_manager, "cpp");
+  TemplateManager template_manager(path_manager, "cpp",  project_conf.value("use_template_engine", false));
 
   std::filesystem::path task_dir = path_manager.get_task();
   std::string frontend_exec = project_conf["frontend_exec"].get<std::string>();
@@ -27,14 +27,12 @@ int create_new_task(nlohmann::json project_conf) {
   std::filesystem::current_path(task_dir / new_task);
   std::filesystem::path root_dir = std::filesystem::current_path();
 
-  std::filesystem::copy_file(
-      template_manager.get_solution(), root_dir / "solution.cpp", std::filesystem::copy_options::overwrite_existing);
-  std::filesystem::copy_file(
-      template_manager.problem_config(), root_dir / "config.json", std::filesystem::copy_options::overwrite_existing);
+  template_manager.render(template_manager.get_solution(), root_dir / "solution.cpp");
+  template_manager.render(template_manager.get_problem_config(), root_dir / "config.json");
   edit_config(task_dir / new_task, template_manager, frontend_exec);
 
   // read and validate the project config file
-  nlohmann::json problem_conf = read_problem_config(root_dir / "config.json", template_manager.problem_config());
+  nlohmann::json problem_conf = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
 
   std::string name = problem_conf["name"].get<std::string>();
   std::filesystem::current_path(root_dir.parent_path());
@@ -57,10 +55,10 @@ int compile_cpp(std::filesystem::path &cache_dir,
 
   if (use_cache) {
     if (check_file(binary_cache_dir, "") && compare_files(path, file_cache_dir)) {
-      copy_file(binary_cache_dir,
-                path.parent_path() / binary_name,
-                std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir for
-                                                                    // submission
+      std::filesystem::copy_file(binary_cache_dir,
+                                 path.parent_path() / binary_name,
+                                 std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir
+                                                                                     // for submission
       return 0;
     }
   }
@@ -83,8 +81,9 @@ int compile_cpp(std::filesystem::path &cache_dir,
   }
 
   if (use_cache) {
-    copy_file(path.parent_path() / binary_name, binary_cache_dir, std::filesystem::copy_options::overwrite_existing);
-    copy_file(path, file_cache_dir, std::filesystem::copy_options::overwrite_existing);
+    std::filesystem::copy_file(
+        path.parent_path() / binary_name, binary_cache_dir, std::filesystem::copy_options::overwrite_existing);
+    std::filesystem::copy_file(path, file_cache_dir, std::filesystem::copy_options::overwrite_existing);
   }
   return status;
 }
@@ -112,27 +111,25 @@ void print_report(const std::string report_name, bool passed, bool rte, bool tle
 
 void edit_config(std::filesystem::path root_dir, TemplateManager &template_manager, std::string &frontend_exec) {
   // read the project config into a nlohmann::json object
-  nlohmann::json config = read_problem_config(root_dir / "config.json", template_manager.problem_config());
+  nlohmann::json config = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
   std::string old_name = config["name"].get<std::string>();
 
   std::string command = frontend_exec + " \"" + root_dir.string() + "\"";
   system_warper(command);
 
-  config = read_problem_config(root_dir / "config.json", template_manager.problem_config());
+  config = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
   std::string name = trim_copy(config["name"].get<std::string>());
-  // TODO check if template exists
   if (config["useGeneration"]) {
-    copy_file(template_manager.get_gen(), root_dir / "gen.cpp", std::filesystem::copy_options::skip_existing);
+    template_manager.render(template_manager.get_gen(), root_dir / "gen.cpp");
   }
   if (config["interactive"]) {
-    copy_file(
-        template_manager.get_interactor(), root_dir / "interactor.cpp", std::filesystem::copy_options::skip_existing);
+    template_manager.render(template_manager.get_interactor(), root_dir / "interactor.cpp");
   }
   if (config["knowGenAns"]) {
-    copy_file(template_manager.get_slow(), root_dir / "slow.cpp", std::filesystem::copy_options::skip_existing);
+    template_manager.render(template_manager.get_slow(), root_dir / "slow.cpp");
   }
   if (config["checker"].get<std::string>() == "custom") {
-    copy_file(template_manager.get_checker(), root_dir / "checker.cpp", std::filesystem::copy_options::skip_existing);
+    template_manager.render(template_manager.get_checker(), root_dir / "checker.cpp");
   }
   if (name != old_name && name.size() != 0) {
     if (old_name.size() == 0) { // new task!!!

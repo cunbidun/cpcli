@@ -8,5 +8,6 @@ cc_library(
         "//core/libs/path_manager",
         "@json",
         "@spdlog",
+        "@inja"
     ],
 )
