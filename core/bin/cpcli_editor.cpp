@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
   auto edit = test->add_subcommand("edit", "Edit a test");
   edit->add_option<int>("num", test_index, "Test index to edit")->check(CLI::NonNegativeNumber)->required(true);
 
-  auto unknow = test->add_subcommand("unknow", "Mark a test expected output as unknown");
+  auto unknow = test->add_subcommand("unknow", "Toggle a task expected output status");
   unknow->add_option<int>("num", test_index, "Test index to edit")->check(CLI::NonNegativeNumber)->required(true);
   test->require_subcommand(1);
 
@@ -243,8 +243,8 @@ int main(int argc, char *argv[]) {
   //   exit(0);
   // }
   if (unknow->parsed()) {
-    spdlog::debug("Marking test {} as unknown", test_index);
-    test_data["tests"][test_index]["answer"] = false;
+    spdlog::debug("Toggle unknow status of test {}", test_index);
+    test_data["tests"][test_index]["answer"] = !test_data["tests"][test_index]["answer"].get<bool>();
   }
 
   if (add->parsed()) {
