@@ -152,6 +152,7 @@ int main(int argc, char *argv[]) {
       test_data["timeLimit"] = time_limit;
     }
     if (checker_option->count() > 0) {
+      // FIXME: copy checker to task folder if custom_checker is used 
       test_data["checker"] = checker_name;
     }
     if (truncate_flag->count() > 0) {
@@ -167,6 +168,7 @@ int main(int argc, char *argv[]) {
       test_data["stopOnFirstFail"] = !test_data["stopOnFirstFail"].get<bool>();
     }
     if (task_name_option->count() > 0) {
+      // FIXME: change folder name 
       test_data["name"] = task_name;
     }
     if (task_group_option->count() > 0) {
@@ -185,10 +187,11 @@ int main(int argc, char *argv[]) {
       test_data["generatorParams"] = generator_params;
     }
     if (generator_know_ans_flag->count() > 0) {
-      spdlog::debug("Generator know ans option is parsed");
+      // FIXME: copy slow.template to slow.cpp 
       test_data["knowGenAns"] = !test_data["knowGenAns"].get<bool>();
     }
     if (generator_flag->count() > 0) {
+      // FIXME: copy generator.template to generator.cpp 
       test_data["useGeneration"] = !test_data["useGeneration"].get<bool>();
     }
   }
@@ -237,11 +240,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // if (parser.count("print")) {
-  //   spdlog::debug("Printing config file...");
-  //   cout << test_data.dump(4) << std::endl;
-  //   exit(0);
-  // }
   if (unknow->parsed()) {
     spdlog::debug("Toggle unknow status of test {}", test_index);
     test_data["tests"][test_index]["answer"] = !test_data["tests"][test_index]["answer"].get<bool>();
