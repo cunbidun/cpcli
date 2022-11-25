@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
   using json = nlohmann::json;
   namespace fs = std::filesystem;
   fs::path project_config_path;
+  bool overwrite = false;
   CLI::App parser{"Competitive Companion Server for cpcli_app"};
 
   parser.add_option("-p,--project-config", project_config_path, "Path to the project config file")
@@ -25,8 +26,13 @@ int main(int argc, char *argv[]) {
       ->check(CLI::ExistingFile)
       ->transform([](std::filesystem::path path) { return std::filesystem::canonical(path); });
 
+  parser.add_flag("-o,--overwrite", overwrite, "Overwrite existing task");
+
   try {
     parser.parse(argc, argv);
+    if (overwrite) {
+      spdlog::warn("cpcli_cc will overwrite existing tasks");
+    }
   } catch (const CLI::ParseError &e) {
     parser.exit(e);
     exit(1);
@@ -51,7 +57,7 @@ int main(int argc, char *argv[]) {
     spdlog::error("Path manager return non success code. Exiting...");
     exit(PathManagerFailToInitFromConfig);
   }
-  TemplateManager template_manager(path_manager, "cpp");
+  TemplateManager template_manager(path_manager, "cpp", project_conf.value("use_template_engine", false));
 
   crow::SimpleApp cpcli;
   cpcli.loglevel(crow::LogLevel::Warning);
@@ -68,13 +74,18 @@ int main(int argc, char *argv[]) {
 
     // If the folder exists, abort creating task.
     if (fs::exists(task_dir)) {
-      spdlog::info("Task '{}' already exists. Skip creating task.", task_dir.generic_string());
-      return crow::response(crow::status::OK);
+      if (overwrite) {
+        spdlog::warn("Task {} already exists. Overwriting...", data["name"].get<string>());
+        std::filesystem::remove_all(task_dir);
+      } else {
+        spdlog::info("Task '{}' already exists. Skip creating task.", task_dir.generic_string());
+        return crow::response(crow::status::OK);
+      }
     }
     fs::create_directory(task_dir);
 
     auto solution_path = task_dir / "solution.cpp";
-    copy_file(template_manager.get_solution(), solution_path);
+    template_manager.render(template_manager.get_solution(), solution_path);
 
     int cnt = 0;
     for (auto it = data["tests"].begin(); it != data["tests"].end(); ++it) {
@@ -86,7 +97,7 @@ int main(int argc, char *argv[]) {
       data["timeLimit"] = 10000;
     }
 
-    std::ifstream ifs(template_manager.problem_config());
+    std::ifstream ifs(template_manager.get_problem_config());
     auto final_config = json::parse(ifs);
     for (auto el : final_config.items()) {
       auto key = el.key();

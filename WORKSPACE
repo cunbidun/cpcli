@@ -86,6 +86,22 @@ cc_library(
     url = "https://github.com/gabime/spdlog/archive/refs/tags/v1.11.0.tar.gz",
 )
 
+# inja
+http_archive(
+    name = "inja",
+    build_file_content = """
+cc_library(
+    name = "inja",
+    hdrs = ["single_include/inja/inja.hpp"],
+    strip_include_prefix = "single_include/inja",
+    visibility = ["//visibility:public"],
+)
+""",
+    sha256 = "a95e95ff39961be429d564689d265a2eb2f269cb180bb0028c842a7484916cb6",
+    strip_prefix = "inja-3.3.0",
+    url = "https://github.com/pantor/inja/archive/refs/tags/v3.3.0.zip",
+)
+
 # gtest
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 

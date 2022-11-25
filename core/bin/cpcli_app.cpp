@@ -54,7 +54,7 @@ int cpcli_process(int argc, char *argv[]) {
     spdlog::error("Path manager return non success code. Exiting...");
     exit(PathManagerFailToInitFromConfig);
   }
-  TemplateManager template_manager(path_manager, "cpp");
+  TemplateManager template_manager(path_manager, "cpp", project_conf.value("use_template_engine", false));
 
   fs::path local_share_dir = path_manager.get_local_share();
   spdlog::debug("local_share_dir directory is: " + local_share_dir.string());
@@ -89,7 +89,7 @@ int cpcli_process(int argc, char *argv[]) {
     return 0;
   }
 
-  fs::path temp_config_path = template_manager.problem_config();
+  fs::path temp_config_path = template_manager.get_problem_config();
   problem_conf_path = root_dir / "config.json";
   problem_conf = read_problem_config(problem_conf_path, temp_config_path);
 
