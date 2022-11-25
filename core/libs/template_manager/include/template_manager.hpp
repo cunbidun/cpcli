@@ -8,6 +8,7 @@
 
 static int const TemplateManagerRequiredTemplateNotFound = 168372;
 static int const TemplateManagerTemplateEngineError = 168375;
+static const std::string DEFAULT_TEMPLATE_DATETIME_FORMAT = "%A, %Y-%m-%d %H:%M:%S %Z";
 
 class TemplateManager {
   using json = nlohmann::json;

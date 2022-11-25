@@ -100,16 +100,17 @@ void TemplateManager::render(std::filesystem::path template_file, std::filesyste
     std::ifstream ifs(TemplateManager::customized_path / "data.json");
     auto data = json::parse(ifs);
 
-    // compute current time and add it to data
+    // Compute current time and add it to data
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
     std::tm local_time;
     localtime_r(&in_time_t, &local_time);
     std::ostringstream oss;
-    oss << std::put_time(&local_time, data.value("time_format", "%A, %Y-%m-%d %H:%M:%S %Z").c_str());
+    oss << std::put_time(&local_time, data.value("time_format", DEFAULT_TEMPLATE_DATETIME_FORMAT).c_str());
     // TODO add docs on template engine
     data["__now__"] = oss.str();
 
+    // Write the rendered template to file
     env.write(template_obj, data, location);
   } else {
     spdlog::debug(
