@@ -28,6 +28,14 @@ int main(int argc, char *argv[]) {
 
   parser.add_flag("-o,--overwrite", overwrite, "Overwrite existing task");
 
+  parser.add_flag_function(
+      "-d,--debug",
+      [](int count) {
+        spdlog::set_level(spdlog::level::debug);
+        spdlog::debug("Debug (--debug) is set");
+      },
+      "Run with debug flags (this option will print debug logs)");
+
   try {
     parser.parse(argc, argv);
     if (overwrite) {
