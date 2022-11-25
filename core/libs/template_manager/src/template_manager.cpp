@@ -63,11 +63,19 @@ std::optional<std::filesystem::path> TemplateManager::get(std::string str) {
   }
 
   if (path.empty()) {
+    // At this point, the path is empty when the customized template dir is not used or 
+    // the file is not found in the customized template dir.
+    // In both cases, we should try to find the file in the builtin template dir.
+
+    // If the requested file is project_config.template, we will find it in common template dir 
+    // Otherwise, we will find it in the language specific template dir.
     std::filesystem::path builtin_path = TemplateManager::builtin_language_template_dir;
     if (str == "problem_config") {
       builtin_path = TemplateManager::builtin_common_template_dir;
     }
     spdlog::debug("The build in template path is builtin_path={}", builtin_path.c_str());
+
+    // Check if the template file exists
     if (std::filesystem::exists(builtin_path / filename)) {
       path = builtin_path / filename;
     } else {
