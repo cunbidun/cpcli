@@ -36,6 +36,8 @@ cc_binary(
         "//core/libs/constant",
         "//core/libs/color",
         "//core/libs/utils",
+        "//core/libs/template_manager",
+        "//core/libs/path_manager",
         "@json",
         "@cli11",
         "@spdlog",

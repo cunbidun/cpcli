@@ -2,7 +2,9 @@
 #include "color.hpp"
 #include "constant.hpp"
 #include "nlohmann/json.hpp"
+#include "path_manager.hpp"
 #include "spdlog/spdlog.h"
+#include "template_manager.hpp"
 #include "utils.hpp"
 
 #include <filesystem>
@@ -14,11 +16,11 @@ using json = nlohmann::json;
 using std::cout;
 using std::vector;
 
-int print_tests(vector<int> &test_index_vector, json test_data) {
+int print_tests(vector<int> &test_index_vector, json problem_conf) {
   sort(test_index_vector.begin(), test_index_vector.end());
   for (auto i : test_index_vector) {
     cout << DASH_SEPERATOR << std::endl;
-    auto data = test_data["tests"][i];
+    auto data = problem_conf["tests"][i];
     spdlog::debug("Printing test {}. Raw test data={}", i, data.dump(4));
 
     cout << "Test #" << data["index"] << ": ";
@@ -44,18 +46,11 @@ int main(int argc, char *argv[]) {
 
   CLI::App parser{"Task Editor CLI For cpcli"};
 
-  fs::path config_path;
+  fs::path root_dir, problem_conf_path, project_conf_path;
   std::vector<int> test_index_vector;
-  int test_index = -1;
-  bool add_not_active = false;
-  bool add_not_know_ans = false;
-  string checker_name;
-  int time_limit;
-  int generator_num_test;
-  string generator_seed;
-  string generator_params;
-  string task_name;
-  string task_group;
+  bool add_not_active = false, name_changed = false, add_not_know_ans = false;
+  int test_index = -1, time_limit, generator_num_test;
+  string checker_name, generator_seed, generator_params, task_name, task_group;
 
   parser.set_version_flag("-v,--version", VERSION);
   parser.set_help_all_flag("-H,--help-all", "Print subcommand help and exit");
@@ -67,7 +62,12 @@ int main(int argc, char *argv[]) {
         spdlog::debug("Debug (--debug) is set");
       },
       "Run with debug flags (this option will print debug logs)");
-  parser.add_option("-p,--problem-config", config_path, "Path to the problem config file")
+  parser
+      .add_option("-r,--root", root_dir, "Path to the problem directory. There must be a config.json in this directory")
+      ->required(true)
+      ->transform([](std::filesystem::path path) { return std::filesystem::canonical(path); })
+      ->check(CLI::ExistingDirectory);
+  parser.add_option("-p,--project-config", project_conf_path, "Path to the project_config.json file")
       ->required(true)
       ->check(CLI::ExistingFile)
       ->transform([](std::filesystem::path path) { return std::filesystem::canonical(path); });
@@ -113,6 +113,7 @@ int main(int argc, char *argv[]) {
   auto truncate_flag = option->add_flag("-t,--truncate-long-test", "Toggle truncate long test option");
   auto interactive_flag = option->add_flag("-i,--interactive", "Toggle interactive option");
   auto stop_on_first_fail_flag = option->add_flag("-s,--stop-on-first-fail", "Toggle stop on first fail option");
+  // FIXME: add transform to trim and remove non-alphanumeric characters from name and group 
   auto task_name_option = option->add_option<string>("-n,--name", task_name, "Task name");
   auto task_group_option = option->add_option<string>("-g,--group", task_group, "Task group");
 
@@ -142,61 +143,82 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  spdlog::debug("Config file is set to '{}'", config_path.generic_string());
-  std::ifstream in_file(config_path.generic_string());
-  json test_data = json::parse(in_file);
-  spdlog::debug("Config file is parsed. Data is '{}'", test_data.dump(2));
+  // Reading project config
+  spdlog::debug("Project config file is set to '{}'", project_conf_path.generic_string());
+  std::ifstream project_config_ifs(project_conf_path.generic_string());
+  json project_conf = json::parse(project_config_ifs);
+  PathManager path_manager;
+  auto status = path_manager.init(project_conf);
+  if (status != PathManagerStatus::Success) {
+    spdlog::error("Path manager return non success code. Exiting...");
+    exit(PathManagerFailToInitFromConfig);
+  }
+  TemplateManager template_manager(path_manager, "cpp", project_conf.value("use_template_engine", false));
+
+  // Reading problem config
+  problem_conf_path = root_dir / "config.json";
+  if (!std::filesystem::exists(problem_conf_path)) {
+    spdlog::error("Root dir {} found. However a problem config file not found", root_dir.generic_string());
+    exit(1);
+  }
+  spdlog::debug("Problem config file is set to '{}'", problem_conf_path.generic_string());
+  std::ifstream in_file(problem_conf_path.generic_string());
+  json problem_conf = json::parse(in_file);
+  spdlog::debug("Problem config file is parsed. Data is '{}'", problem_conf.dump(2));
 
   if (option->parsed()) {
     if (time_limit_option->count() > 0) {
-      test_data["timeLimit"] = time_limit;
+      problem_conf["timeLimit"] = time_limit;
     }
     if (checker_option->count() > 0) {
-      // FIXME: copy checker to task folder if custom_checker is used 
-      test_data["checker"] = checker_name;
+      problem_conf["checker"] = checker_name;
+      if (checker_name == "custom") {
+        template_manager.render(template_manager.get_checker(), root_dir / "checker.cpp", false);
+      }
     }
     if (truncate_flag->count() > 0) {
-      test_data["truncateLongTest"] = !test_data["truncateLongTest"].get<bool>();
+      problem_conf["truncateLongTest"] = !problem_conf["truncateLongTest"].get<bool>();
     }
     if (interactive_flag->count() > 0) {
-      test_data["interactive"] = !test_data["interactive"].get<bool>();
+      problem_conf["interactive"] = !problem_conf["interactive"].get<bool>();
+      template_manager.render(template_manager.get_interactor(), root_dir / "interactor.cpp", false);
     }
     if (hide_option->count() > 0) {
-      test_data["hideAcceptedTestCases"] = !test_data["hideAcceptedTestCases"].get<bool>();
+      problem_conf["hideAcceptedTestCases"] = !problem_conf["hideAcceptedTestCases"].get<bool>();
     }
     if (stop_on_first_fail_flag->count() > 0) {
-      test_data["stopOnFirstFail"] = !test_data["stopOnFirstFail"].get<bool>();
+      problem_conf["stopOnFirstFail"] = !problem_conf["stopOnFirstFail"].get<bool>();
     }
     if (task_name_option->count() > 0) {
-      // FIXME: change folder name 
-      test_data["name"] = task_name;
+      problem_conf["name"] = task_name;
+      name_changed = true;
     }
     if (task_group_option->count() > 0) {
-      test_data["group"] = task_group;
+      problem_conf["group"] = task_group;
     }
   }
   if (generator->parsed()) {
     spdlog::debug("Generator is parsed");
     if (generator_num_test_option->count() > 0) {
-      test_data["numTest"] = generator_num_test;
+      problem_conf["numTest"] = generator_num_test;
     }
     if (generator_seed_option->count() > 0) {
-      test_data["generatorSeed"] = generator_seed;
+      problem_conf["generatorSeed"] = generator_seed;
     }
     if (generator_params_option->count() > 0) {
-      test_data["generatorParams"] = generator_params;
+      problem_conf["generatorParams"] = generator_params;
     }
     if (generator_know_ans_flag->count() > 0) {
-      // FIXME: copy slow.template to slow.cpp 
-      test_data["knowGenAns"] = !test_data["knowGenAns"].get<bool>();
+      problem_conf["knowGenAns"] = !problem_conf["knowGenAns"].get<bool>();
+      template_manager.render(template_manager.get_slow(), root_dir / "slow.cpp", false);
     }
     if (generator_flag->count() > 0) {
-      // FIXME: copy generator.template to generator.cpp 
-      test_data["useGeneration"] = !test_data["useGeneration"].get<bool>();
+      problem_conf["useGeneration"] = !problem_conf["useGeneration"].get<bool>();
+      template_manager.render(template_manager.get_gen(), root_dir / "gen.cpp", false);
     }
   }
 
-  if (test_index != -1 && test_index >= test_data["tests"].size()) {
+  if (test_index != -1 && test_index >= problem_conf["tests"].size()) {
     cout << termcolor::red << termcolor::bold << "Test number " << test_index << " out of range" << termcolor::reset;
     cout << std::endl;
     exit(1);
@@ -205,13 +227,13 @@ int main(int argc, char *argv[]) {
   if (print->parsed() || all->parsed() || none->parsed()) {
     if (test_index_vector.empty()) {
       spdlog::debug("Vector of tests to print is empty. Adding all tests.");
-      for (int i = 0; i < test_data["tests"].size(); ++i) {
+      for (int i = 0; i < problem_conf["tests"].size(); ++i) {
         test_index_vector.push_back(i);
       }
     }
     auto tmp = test_index_vector;
     for (int i = 0; i < (int)tmp.size(); i++) {
-      if (tmp[i] < 0 || tmp[i] >= test_data["tests"].size()) {
+      if (tmp[i] < 0 || tmp[i] >= problem_conf["tests"].size()) {
         test_index_vector.erase(test_index_vector.begin() + i);
       }
     }
@@ -224,25 +246,25 @@ int main(int argc, char *argv[]) {
 
   if (print->parsed()) {
     spdlog::debug("printing tests...");
-    print_tests(test_index_vector, test_data);
+    print_tests(test_index_vector, problem_conf);
     return 0;
   }
 
   if (all->parsed()) {
     for (auto i : test_index_vector) {
-      test_data["tests"][i]["active"] = true;
+      problem_conf["tests"][i]["active"] = true;
     }
   }
 
   if (none->parsed()) {
     for (auto i : test_index_vector) {
-      test_data["tests"][i]["active"] = false;
+      problem_conf["tests"][i]["active"] = false;
     }
   }
 
   if (unknow->parsed()) {
     spdlog::debug("Toggle unknow status of test {}", test_index);
-    test_data["tests"][test_index]["answer"] = !test_data["tests"][test_index]["answer"].get<bool>();
+    problem_conf["tests"][test_index]["answer"] = !problem_conf["tests"][test_index]["answer"].get<bool>();
   }
 
   if (add->parsed()) {
@@ -259,28 +281,28 @@ int main(int argc, char *argv[]) {
         command += "  " + output_file.generic_string();
       }
       system_warper(command);
-      test_data["tests"].push_back({
+      problem_conf["tests"].push_back({
           {"active", !add_not_active},
           {"answer", !add_not_know_ans},
           {"input", rtrim_copy(read_file_to_str(input_file))},
           {"output", rtrim_copy(read_file_to_str(output_file))},
-          {"index", test_data["tests"].size()},
+          {"index", problem_conf["tests"].size()},
       });
       fs::remove_all(cache_dir);
     } else {
-      int num_test = test_data["tests"].size();
+      int num_test = problem_conf["tests"].size();
       spdlog::debug("copy test {} to {}", test_index, num_test);
-      test_data["tests"].push_back({test_data["tests"][test_index]});
-      test_data["tests"][num_test]["index"] = num_test;
-      test_data["tests"][num_test]["active"] = !add_not_active;
-      test_data["tests"][num_test]["answer"] = !add_not_know_ans;
+      problem_conf["tests"].push_back({problem_conf["tests"][test_index]});
+      problem_conf["tests"][num_test]["index"] = num_test;
+      problem_conf["tests"][num_test]["active"] = !add_not_active;
+      problem_conf["tests"][num_test]["answer"] = !add_not_know_ans;
     }
   }
   if (del->parsed()) {
     spdlog::debug("delete test #{}", test_index);
-    test_data["tests"].erase(test_index);
-    for (int i = test_index; i < test_data["tests"].size(); ++i) {
-      test_data["tests"][i]["index"] = i;
+    problem_conf["tests"].erase(test_index);
+    for (int i = test_index; i < problem_conf["tests"].size(); ++i) {
+      problem_conf["tests"][i]["index"] = i;
     }
   }
   if (edit->parsed()) {
@@ -291,17 +313,20 @@ int main(int argc, char *argv[]) {
     auto output_file = cache_dir / "output";
     std::ofstream inf(input_file);
     std::ofstream ouf(output_file);
-    inf << test_data["tests"][test_index]["input"].get<string>();
-    ouf << test_data["tests"][test_index]["output"].get<string>();
+    inf << problem_conf["tests"][test_index]["input"].get<string>();
+    ouf << problem_conf["tests"][test_index]["output"].get<string>();
     inf.close();
     ouf.close();
     string command = "$EDITOR " + input_file.generic_string() + "  " + output_file.generic_string();
     system_warper(command);
-    test_data["tests"][test_index]["input"] = rtrim_copy(read_file_to_str(input_file));
-    test_data["tests"][test_index]["output"] = rtrim_copy(read_file_to_str(output_file));
+    problem_conf["tests"][test_index]["input"] = rtrim_copy(read_file_to_str(input_file));
+    problem_conf["tests"][test_index]["output"] = rtrim_copy(read_file_to_str(output_file));
     fs::remove_all(cache_dir);
   }
-  std::ofstream out_file(config_path.generic_string());
-  out_file << test_data.dump(2);
+  std::ofstream out_file(problem_conf_path.generic_string());
+  out_file << problem_conf.dump(2);
+  if (name_changed) {
+    std::filesystem::rename(root_dir, problem_conf["name"].get<string>());
+  }
   return 0;
 }

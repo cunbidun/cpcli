@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     fs::create_directory(task_dir);
 
     auto solution_path = task_dir / "solution.cpp";
-    template_manager.render(template_manager.get_solution(), solution_path);
+    template_manager.render(template_manager.get_solution(), solution_path, true);
 
     int cnt = 0;
     for (auto it = data["tests"].begin(); it != data["tests"].end(); ++it) {

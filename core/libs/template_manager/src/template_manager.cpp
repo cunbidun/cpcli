@@ -99,7 +99,11 @@ std::filesystem::path TemplateManager::get_path(std::string str) {
   exit(TemplateManagerRequiredTemplateNotFound);
 };
 
-void TemplateManager::render(std::filesystem::path template_file, std::filesystem::path location) {
+void TemplateManager::render(std::filesystem::path template_file, std::filesystem::path location, bool overwrite) {
+  if (!overwrite && std::filesystem::exists(location)) {
+    spdlog::warn("File {} already exists, skip rendering", location.c_str());
+    return;
+  }
   if (use_template_engine) {
     spdlog::debug(
         "Rendering template {} to {} with use_template_engine enable", template_file.c_str(), location.c_str());

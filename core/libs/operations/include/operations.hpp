@@ -1,17 +1,18 @@
 #ifndef _cpcli_operations_hpp_
 #define _cpcli_operations_hpp_
 
+#include "CLI/CLI.hpp"
+#include "nlohmann/json.hpp"
+#include "spdlog/spdlog.h"
+#include "template_manager.hpp"
+#include "utils.hpp"
+
 #include <filesystem>
 #include <iostream>
 #include <optional>
 #include <string>
 #include <unistd.h>
 #include <vector>
-
-#include "CLI/CLI.hpp"
-#include "nlohmann/json.hpp"
-#include "spdlog/spdlog.h"
-#include "template_manager.hpp"
 
 // TODO add docs
 bool check_file(std::filesystem::path path, const std::string &error_message);

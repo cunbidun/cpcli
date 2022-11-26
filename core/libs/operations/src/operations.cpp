@@ -18,7 +18,7 @@ int create_new_task(nlohmann::json project_conf) {
     spdlog::error("Path manager return non success code. Exiting...");
     exit(PathManagerFailToInitFromConfig);
   }
-  TemplateManager template_manager(path_manager, "cpp",  project_conf.value("use_template_engine", false));
+  TemplateManager template_manager(path_manager, "cpp", project_conf.value("use_template_engine", false));
 
   std::filesystem::path task_dir = path_manager.get_task();
   std::string frontend_exec = project_conf["frontend_exec"].get<std::string>();
@@ -27,8 +27,8 @@ int create_new_task(nlohmann::json project_conf) {
   std::filesystem::current_path(task_dir / new_task);
   std::filesystem::path root_dir = std::filesystem::current_path();
 
-  template_manager.render(template_manager.get_solution(), root_dir / "solution.cpp");
-  template_manager.render(template_manager.get_problem_config(), root_dir / "config.json");
+  template_manager.render(template_manager.get_solution(), root_dir / "solution.cpp", true);
+  template_manager.render(template_manager.get_problem_config(), root_dir / "config.json", true);
   edit_config(task_dir / new_task, template_manager, frontend_exec);
 
   // read and validate the project config file
@@ -120,16 +120,16 @@ void edit_config(std::filesystem::path root_dir, TemplateManager &template_manag
   config = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
   std::string name = trim_copy(config["name"].get<std::string>());
   if (config["useGeneration"]) {
-    template_manager.render(template_manager.get_gen(), root_dir / "gen.cpp");
+    template_manager.render(template_manager.get_gen(), root_dir / "gen.cpp", false);
   }
   if (config["interactive"]) {
-    template_manager.render(template_manager.get_interactor(), root_dir / "interactor.cpp");
+    template_manager.render(template_manager.get_interactor(), root_dir / "interactor.cpp", false);
   }
   if (config["knowGenAns"]) {
-    template_manager.render(template_manager.get_slow(), root_dir / "slow.cpp");
+    template_manager.render(template_manager.get_slow(), root_dir / "slow.cpp", false);
   }
   if (config["checker"].get<std::string>() == "custom") {
-    template_manager.render(template_manager.get_checker(), root_dir / "checker.cpp");
+    template_manager.render(template_manager.get_checker(), root_dir / "checker.cpp", false);
   }
   if (name != old_name && name.size() != 0) {
     if (old_name.size() == 0) { // new task!!!

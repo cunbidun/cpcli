@@ -21,7 +21,7 @@ public:
   std::filesystem::path get_problem_config();
   std::filesystem::path get_checker();
   std::filesystem::path get_interactor();
-  void render(std::filesystem::path template_file, std::filesystem::path location);
+  void render(std::filesystem::path template_file, std::filesystem::path location, bool overwrite);
 
 private:
   bool has_customized_template_dir;

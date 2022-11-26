@@ -2,6 +2,7 @@
 #define _cpcli_util_hpp_
 
 #include "color.hpp"
+
 #include <algorithm>
 #include <cctype>
 #include <chrono>
