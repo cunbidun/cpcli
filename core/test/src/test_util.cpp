@@ -14,7 +14,7 @@ TEST(test_utils, test_gen_string_length_20) {
 }
 
 TEST(TestUtil, TestEmptyFile) {
-  auto cache_dir = fs::temp_directory_path() / "cpcli_test";
+  auto cache_dir = std::filesystem::temp_directory_path() / "cpcli_test";
   string file_name = gen_string_length_20();
   auto file_path = cache_dir / file_name;
   create_empty_file(file_path);

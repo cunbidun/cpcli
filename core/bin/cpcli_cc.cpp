@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   using std::string;
   using json = nlohmann::json;
   namespace fs = std::filesystem;
-  fs::path project_config_path;
+  std::filesystem::path project_config_path;
   bool overwrite = false;
   CLI::App parser{"Competitive Companion Server for cpcli_app"};
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     auto task_dir = path_manager.get_task() / data["name"].get<string>();
 
     // If the folder exists, abort creating task.
-    if (fs::exists(task_dir)) {
+    if (std::filesystem::exists(task_dir)) {
       if (overwrite) {
         spdlog::warn("Task {} already exists. Overwriting...", data["name"].get<string>());
         std::filesystem::remove_all(task_dir);
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
         return crow::response(crow::status::OK);
       }
     }
-    fs::create_directory(task_dir);
+    std::filesystem::create_directory(task_dir);
 
     auto solution_path = task_dir / "solution.cpp";
     template_manager.render(template_manager.get_solution(), solution_path, true);

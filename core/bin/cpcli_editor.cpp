@@ -11,7 +11,6 @@
 #include <fstream>
 #include <vector>
 
-namespace fs = std::filesystem;
 using json = nlohmann::json;
 using std::cout;
 using std::vector;
@@ -46,7 +45,7 @@ int main(int argc, char *argv[]) {
 
   CLI::App parser{"Task Editor CLI For cpcli"};
 
-  fs::path root_dir, problem_conf_path, project_conf_path;
+  std::filesystem::path root_dir, problem_conf_path, project_conf_path;
   std::vector<int> test_index_vector;
   bool add_not_active = false, name_changed = false, add_not_know_ans = false;
   int test_index = -1, time_limit, generator_num_test;
@@ -270,8 +269,8 @@ int main(int argc, char *argv[]) {
   if (add->parsed()) {
     spdlog::debug("adding test...");
     if (test_index == -1) {
-      auto cache_dir = fs::temp_directory_path() / "cpcli_cli_task_editor";
-      fs::create_directories(cache_dir);
+      auto cache_dir = std::filesystem::temp_directory_path() / "cpcli_cli_task_editor";
+      std::filesystem::create_directories(cache_dir);
       auto input_file = cache_dir / "input";
       auto output_file = cache_dir / "output";
       create_empty_file(input_file);
@@ -288,7 +287,7 @@ int main(int argc, char *argv[]) {
           {"output", rtrim_copy(read_file_to_str(output_file))},
           {"index", problem_conf["tests"].size()},
       });
-      fs::remove_all(cache_dir);
+      std::filesystem::remove_all(cache_dir);
     } else {
       int num_test = problem_conf["tests"].size();
       spdlog::debug("copy test {} to {}", test_index, num_test);
@@ -307,8 +306,8 @@ int main(int argc, char *argv[]) {
   }
   if (edit->parsed()) {
     spdlog::debug("editing test #{}", test_index);
-    auto cache_dir = fs::temp_directory_path() / "cpcli_cli_task_editor";
-    fs::create_directories(cache_dir);
+    auto cache_dir = std::filesystem::temp_directory_path() / "cpcli_cli_task_editor";
+    std::filesystem::create_directories(cache_dir);
     auto input_file = cache_dir / "input";
     auto output_file = cache_dir / "output";
     std::ofstream inf(input_file);
@@ -321,7 +320,7 @@ int main(int argc, char *argv[]) {
     system_warper(command);
     problem_conf["tests"][test_index]["input"] = rtrim_copy(read_file_to_str(input_file));
     problem_conf["tests"][test_index]["output"] = rtrim_copy(read_file_to_str(output_file));
-    fs::remove_all(cache_dir);
+    std::filesystem::remove_all(cache_dir);
   }
   std::ofstream out_file(problem_conf_path.generic_string());
   out_file << problem_conf.dump(2);

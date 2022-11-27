@@ -19,11 +19,9 @@
 #include "template_manager.hpp"
 #include "utils.hpp"
 
-namespace fs = std::filesystem;
 using std::cout;
 using std::endl;
 using std::string;
-using std::to_string;
 using json = nlohmann::json;
 
 int cpcli_process(int argc, char *argv[]) {
@@ -32,17 +30,17 @@ int cpcli_process(int argc, char *argv[]) {
   std::chrono::high_resolution_clock::time_point t_start = std::chrono::high_resolution_clock::now();
 
   // project_config's path and project_config json object
-  fs::path project_conf_path = parser_result.project_config_path;
+  std::filesystem::path project_conf_path = parser_result.project_config_path;
   json project_conf = read_project_config(project_conf_path);
 
-  fs::path root_dir;   // where source files and problem_config file located
-  fs::path output_dir; // where source will be put for submission
+  std::filesystem::path root_dir;   // where source files and problem_config file located
+  std::filesystem::path output_dir; // where source will be put for submission
 
   // problem's config path and config json object
-  fs::path problem_conf_path;
+  std::filesystem::path problem_conf_path;
   json problem_conf;
 
-  fs::path solution_file_path;
+  std::filesystem::path solution_file_path;
 
   string testlib_compiler_flag;
   string compiler_flags = "cpp_compile_flag";
@@ -56,10 +54,10 @@ int cpcli_process(int argc, char *argv[]) {
   }
   TemplateManager template_manager(path_manager, "cpp", project_conf.value("use_template_engine", false));
 
-  fs::path local_share_dir = path_manager.get_local_share();
+  std::filesystem::path local_share_dir = path_manager.get_local_share();
   spdlog::debug("local_share_dir directory is: " + local_share_dir.string());
-  fs::path checker_dir = local_share_dir / "checkers";
-  fs::path precompiled_dir = local_share_dir / "precompiled_headers";
+  std::filesystem::path checker_dir = local_share_dir / "checkers";
+  std::filesystem::path precompiled_dir = local_share_dir / "precompiled_headers";
 
   if (parser_result.operation == ParserOperations::NewTask) {
     create_new_task(project_conf);
@@ -80,7 +78,7 @@ int cpcli_process(int argc, char *argv[]) {
   }
 
   root_dir = *parser_result.root_dir;
-  fs::current_path(root_dir); // change directory to root_dir
+  std::filesystem::current_path(root_dir); // change directory to root_dir
   clean_up();                 // clean up the root directory for the first time
 
   if (parser_result.operation == ParserOperations::EditTaskConfig) { // edit config
@@ -89,7 +87,7 @@ int cpcli_process(int argc, char *argv[]) {
     return 0;
   }
 
-  fs::path temp_config_path = template_manager.get_problem_config();
+  std::filesystem::path temp_config_path = template_manager.get_problem_config();
   problem_conf_path = root_dir / "config.json";
   problem_conf = read_problem_config(problem_conf_path, temp_config_path);
 
@@ -115,7 +113,7 @@ int cpcli_process(int argc, char *argv[]) {
     compile_cpp(
         root_dir, false, project_conf["cpp_compiler"], solution_file_path, project_conf[compiler_flags], "solution");
     // copy solution file to output dir for submission
-    copy_file(solution_file_path, output_dir / "solution.cpp", fs::copy_options::overwrite_existing);
+    copy_file(solution_file_path, output_dir / "solution.cpp", std::filesystem::copy_options::overwrite_existing);
     int status = system_warper("./solution");
     cout << '\n'; // add an empty line before printing the status
     if (status != 0) {
@@ -131,15 +129,15 @@ int cpcli_process(int argc, char *argv[]) {
     string group = problem_conf["group"].get<string>();
 
     // We move back to the parent directory of current task in order to copy it
-    fs::current_path(root_dir.parent_path());
+    std::filesystem::current_path(root_dir.parent_path());
 
     auto archive_dir = path_manager.get_archive();
     if (group.empty()) {
       group = "Unsorted";
     }
-    fs::create_directories(archive_dir / group / name);
-    fs::copy(name, archive_dir / group / name, fs::copy_options::recursive | fs::copy_options::update_existing);
-    fs::remove_all(name);
+    std::filesystem::create_directories(archive_dir / group / name);
+    std::filesystem::copy(name, archive_dir / group / name, std::filesystem::copy_options::recursive | std::filesystem::copy_options::update_existing);
+    std::filesystem::remove_all(name);
     return 0;
   } else {
     cout << termcolor::red << "[cpcli] unknown operation" << endl;
@@ -147,11 +145,11 @@ int cpcli_process(int argc, char *argv[]) {
   }
 
   if (project_conf["use_precompiled_header"]) {
-    fs::path precompiled_path = precompiled_dir / "cpp_compile_flag" / "stdc++.h";
+    std::filesystem::path precompiled_path = precompiled_dir / "cpp_compile_flag" / "stdc++.h";
     check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch",
                "precompiled header not found! Please try 'cpcli_app project -g'");
 
-    fs::path precompiled_debug_path = precompiled_dir / "cpp_debug_flag" / "stdc++.h";
+    std::filesystem::path precompiled_debug_path = precompiled_dir / "cpp_debug_flag" / "stdc++.h";
     check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch",
                "precompiled debug header not found! Please try 'cpcli_app project -g'");
 
@@ -170,17 +168,17 @@ int cpcli_process(int argc, char *argv[]) {
   // ----------------------------- COMPILE START ----------------------------
   {
     auto t0 = std::chrono::high_resolution_clock::now();
-    fs::path cache_dir = "";
+    std::filesystem::path cache_dir = "";
 
     bool use_cache = project_conf["use_cache"];
     if (use_cache) {
-      cache_dir = fs::temp_directory_path() / "cpcli" / to_string(std::hash<std::string>()(root_dir));
-      fs::create_directories(cache_dir);
+      cache_dir = std::filesystem::temp_directory_path() / "cpcli" / std::to_string(std::hash<std::string>()(root_dir));
+      std::filesystem::create_directories(cache_dir);
     }
 
     if (problem_conf["interactive"]) {
       problem_conf["knowGenAns"] = false;
-      fs::path interactor_file_path = root_dir / "interactor.cpp";
+      std::filesystem::path interactor_file_path = root_dir / "interactor.cpp";
       check_file(interactor_file_path, "interactor file not found!");
       compile_cpp(cache_dir,
                   use_cache,
@@ -191,11 +189,11 @@ int cpcli_process(int argc, char *argv[]) {
       cout << termcolor::cyan << termcolor::bold << "Interactive task" << termcolor::reset << '\n';
     } else {
       if (problem_conf["checker"] != "custom") {
-        fs::path checker_bin_path = checker_dir / problem_conf["checker"];
+        std::filesystem::path checker_bin_path = checker_dir / problem_conf["checker"];
         check_file(checker_bin_path, "checker binary not found!");
-        copy_file(checker_bin_path, root_dir / "checker", fs::copy_options::overwrite_existing);
+        copy_file(checker_bin_path, root_dir / "checker", std::filesystem::copy_options::overwrite_existing);
       } else {
-        fs::path checker_file_path = root_dir / "checker.cpp";
+        std::filesystem::path checker_file_path = root_dir / "checker.cpp";
         check_file(checker_file_path, "checker file not found!");
         compile_cpp(
             cache_dir, use_cache, project_conf["cpp_compiler"], checker_file_path, testlib_compiler_flag, "checker");
@@ -207,14 +205,14 @@ int cpcli_process(int argc, char *argv[]) {
     // use slow solution for generate correct output
     // require slow.cpp
     if (problem_conf["knowGenAns"]) {
-      fs::path slow_file_path = root_dir / "slow.cpp";
+      std::filesystem::path slow_file_path = root_dir / "slow.cpp";
       check_file(slow_file_path, "brute force solution file not found!");
       compile_cpp(
           cache_dir, use_cache, project_conf["cpp_compiler"], slow_file_path, project_conf[compiler_flags], "slow");
     }
 
     if (problem_conf["useGeneration"]) {
-      fs::path gen_file_path = root_dir / "gen.cpp";
+      std::filesystem::path gen_file_path = root_dir / "gen.cpp";
       check_file(gen_file_path, "gen file not found!");
       compile_cpp(cache_dir, use_cache, project_conf["cpp_compiler"], gen_file_path, testlib_compiler_flag, "gen");
       generator_seed = problem_conf["generatorSeed"];
@@ -236,7 +234,7 @@ int cpcli_process(int argc, char *argv[]) {
                 "solution");
     copy_file(solution_file_path,
               output_dir / "solution.cpp",
-              fs::copy_options::overwrite_existing); // copy solution file to output
+              std::filesystem::copy_options::overwrite_existing); // copy solution file to output
                                                      // dir for submission
 
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -249,18 +247,18 @@ int cpcli_process(int argc, char *argv[]) {
 
   // ------------------------ GENERATING TESTS START ------------------------
   {
-    fs::current_path(root_dir);
-    fs::create_directory("___test_case");
-    fs::current_path("___test_case");
+    std::filesystem::current_path(root_dir);
+    std::filesystem::create_directory("___test_case");
+    std::filesystem::current_path("___test_case");
     for (json test : problem_conf["tests"]) {
       if (test["active"]) {
         if (test["input"] != nullptr) {
-          std::ofstream inf(to_string(test["index"]) + ".in");
+          std::ofstream inf(test["index"].get<string>() + ".in");
           inf << test["input"].get<string>();
           inf.close();
         }
         if (test["answer"].get<bool>()) {
-          std::ofstream ouf(to_string(test["index"]) + ".out");
+          std::ofstream ouf(test["index"].get<string>() + ".out");
           ouf << test["output"].get<string>();
           ouf.close();
         }
@@ -269,7 +267,7 @@ int cpcli_process(int argc, char *argv[]) {
 
     if (problem_conf["useGeneration"]) {
       string command =
-          "../gen " + generator_seed + " " + to_string(problem_conf["numTest"].get<int>()); // NOTE careful with ..
+          "../gen " + generator_seed + " " + std::to_string(problem_conf["numTest"].get<int>()); // NOTE careful with ..
       int status = system_warper(command);
       if (status != 0) {
         cout << termcolor::red << termcolor::bold << "generator run time error" << termcolor::reset << endl;
@@ -285,12 +283,12 @@ int cpcli_process(int argc, char *argv[]) {
 
   // ----------------------------- TESTS START ------------------------------
   {
-    fs::current_path(root_dir);
+    std::filesystem::current_path(root_dir);
     long long time_limit = problem_conf["timeLimit"].get<long long>();
-    auto tests_folder_dir = fs::path("___test_case"); // set the root directory to argv[1]
+    auto tests_folder_dir = std::filesystem::path("___test_case"); // set the root directory to argv[1]
 
-    std::vector<std::pair<int, fs::path>> sorted_by_name;
-    for (auto &entry : fs::directory_iterator(tests_folder_dir)) {
+    std::vector<std::pair<int, std::filesystem::path>> sorted_by_name;
+    for (auto &entry : std::filesystem::directory_iterator(tests_folder_dir)) {
       if (entry.path().extension() == ".in") {
         const auto test_id = entry.path().stem().string();
         int num = 0;
@@ -415,7 +413,7 @@ int cpcli_process(int argc, char *argv[]) {
         }
       }
       cout << DASH_SEPERATOR << '\n';
-      fs::current_path(root_dir);
+      std::filesystem::current_path(root_dir);
 
       if (problem_conf["stopAtWrongAnswer"] && (wa || rte || tle)) {
         print_report("Fail detected", all_passed, all_rte, all_tle, all_wa, all_runtime);

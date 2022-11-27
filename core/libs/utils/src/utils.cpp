@@ -89,12 +89,12 @@ void handle_sigint() {
 
 int clean_up() {
   // Remove binary and ___test_case directory every time
-  fs::remove("solution");
-  fs::remove("checker");
-  fs::remove("gen");
-  fs::remove("slow");
-  fs::remove("interactor");
-  fs::remove_all("___test_case");
+  std::filesystem::remove("solution");
+  std::filesystem::remove("checker");
+  std::filesystem::remove("gen");
+  std::filesystem::remove("slow");
+  std::filesystem::remove("interactor");
+  std::filesystem::remove_all("___test_case");
   return 0;
 }
 
