@@ -8,9 +8,6 @@ const double EPS = 1E-9;
 int main(int argc, char *argv[]) {
   setName("compare two sequences of doubles, max absolute or relative error = %.10f", EPS);
   registerTestlibCmd(argc, argv);
-  if (argv[3] == std::string("___test_case/___na___")) {
-    quitf(_fail, "");
-  }
 
   int i = 0;
   while (!ans.seekEof() && !ouf.seekEof()) {

@@ -4,9 +4,6 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
   registerTestlibCmd(argc, argv);
-  if (argv[3] == std::string("___test_case/___na___")) {
-    quitf(_fail, "");
-  }
 
   int i = 0;
   while (!ans.seekEof() && !ouf.seekEof()) {

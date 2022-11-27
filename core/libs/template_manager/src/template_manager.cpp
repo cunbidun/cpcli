@@ -101,7 +101,7 @@ std::filesystem::path TemplateManager::get_path(std::string str) {
 
 void TemplateManager::render(std::filesystem::path template_file, std::filesystem::path location, bool overwrite) {
   if (!overwrite && std::filesystem::exists(location)) {
-    spdlog::warn("File {} already exists, skip rendering", location.c_str());
+    spdlog::debug("File {} already exists, skip rendering", location.c_str());
     return;
   }
   if (use_template_engine) {

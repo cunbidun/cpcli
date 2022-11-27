@@ -288,7 +288,6 @@ int cpcli_process(int argc, char *argv[]) {
     fs::current_path(root_dir);
     long long time_limit = problem_conf["timeLimit"].get<long long>();
     auto tests_folder_dir = fs::path("___test_case"); // set the root directory to argv[1]
-    create_empty_file(tests_folder_dir / "___na___");
 
     std::vector<std::pair<int, fs::path>> sorted_by_name;
     for (auto &entry : fs::directory_iterator(tests_folder_dir)) {
@@ -369,19 +368,15 @@ int cpcli_process(int argc, char *argv[]) {
         }
 
         {
-          string jans_file = out_file.string();
           if (!check_file(out_file, "")) {
-            jans_file = tests_folder_dir / "___na___";
-          }
-          // ./checker <input> <pout> <jans_file> <res>
-          string command = "./checker " + entry.string() + "  " + actual_file.string() + " " + jans_file + " " +
-                           res_file.string() + " > /dev/null 2>&1";
-          int status = system_warper(command);
-          if (status != 0) {
-            passed = 0;
-          }
-          if (status == 3) {
             undecided = 1;
+            passed = 0;
+          } else {
+            string jans_file = out_file.string();
+            // ./checker <input> <pout> <jans_file> <res>
+            string command = "./checker " + entry.string() + "  " + actual_file.string() + " " + jans_file + " " +
+                             res_file.string() + " > /dev/null 2>&1";
+            passed = system_warper(command) == 0;
           }
           wa = !passed && !undecided && !tle && !rte;
         }
