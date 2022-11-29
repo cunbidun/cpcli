@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
 
     data["name"] = reformat(data["name"].get<string>());
     data["group"] = reformat(data["group"].get<string>());
+    data["url"] = data["url"].get<string>();
 
     auto task_dir = path_manager.get_task() / data["name"].get<string>();
 

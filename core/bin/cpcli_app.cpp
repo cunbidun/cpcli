@@ -79,7 +79,7 @@ int cpcli_process(int argc, char *argv[]) {
 
   root_dir = *parser_result.root_dir;
   std::filesystem::current_path(root_dir); // change directory to root_dir
-  clean_up();                 // clean up the root directory for the first time
+  clean_up();                              // clean up the root directory for the first time
 
   if (parser_result.operation == ParserOperations::EditTaskConfig) { // edit config
     string frontend_exec = project_conf["frontend_exec"].get<string>();
@@ -136,7 +136,9 @@ int cpcli_process(int argc, char *argv[]) {
       group = "Unsorted";
     }
     std::filesystem::create_directories(archive_dir / group / name);
-    std::filesystem::copy(name, archive_dir / group / name, std::filesystem::copy_options::recursive | std::filesystem::copy_options::update_existing);
+    std::filesystem::copy(name,
+                          archive_dir / group / name,
+                          std::filesystem::copy_options::recursive | std::filesystem::copy_options::update_existing);
     std::filesystem::remove_all(name);
     return 0;
   } else {
@@ -235,7 +237,7 @@ int cpcli_process(int argc, char *argv[]) {
     copy_file(solution_file_path,
               output_dir / "solution.cpp",
               std::filesystem::copy_options::overwrite_existing); // copy solution file to output
-                                                     // dir for submission
+                                                                  // dir for submission
 
     auto t1 = std::chrono::high_resolution_clock::now();
     long long time = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
@@ -252,13 +254,14 @@ int cpcli_process(int argc, char *argv[]) {
     std::filesystem::current_path("___test_case");
     for (json test : problem_conf["tests"]) {
       if (test["active"]) {
+        spdlog::debug("Generating test {}", test["index"].get<long long>());
         if (test["input"] != nullptr) {
-          std::ofstream inf(test["index"].get<string>() + ".in");
+          std::ofstream inf(std::to_string(test["index"].get<long long>()) + ".in");
           inf << test["input"].get<string>();
           inf.close();
         }
         if (test["answer"].get<bool>()) {
-          std::ofstream ouf(test["index"].get<string>() + ".out");
+          std::ofstream ouf(std::to_string(test["index"].get<long long>()) + ".out");
           ouf << test["output"].get<string>();
           ouf.close();
         }
@@ -283,8 +286,10 @@ int cpcli_process(int argc, char *argv[]) {
 
   // ----------------------------- TESTS START ------------------------------
   {
+    spdlog::debug("Start testing");
     std::filesystem::current_path(root_dir);
     long long time_limit = problem_conf["timeLimit"].get<long long>();
+    spdlog::debug("time limit is {} ms", time_limit);
     auto tests_folder_dir = std::filesystem::path("___test_case"); // set the root directory to argv[1]
 
     std::vector<std::pair<int, std::filesystem::path>> sorted_by_name;
@@ -301,6 +306,7 @@ int cpcli_process(int argc, char *argv[]) {
       }
     }
     sort(sorted_by_name.begin(), sorted_by_name.end());
+    spdlog::debug("Found {} tests", sorted_by_name.size());
 
     for (const auto &set_entry : sorted_by_name) {
       auto entry = set_entry.second;
