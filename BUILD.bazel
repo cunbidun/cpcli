@@ -12,6 +12,7 @@ sh_binary(
         "//default/task_editor/TaskConfigEditor:TaskConfigEditor_deploy.jar",
         "//default/templates:common_template",
         "//default/templates:cpp_template",
+        "//default/templates:py_template",
     ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )

@@ -102,6 +102,23 @@ cc_library(
     url = "https://github.com/pantor/inja/archive/refs/tags/v3.3.0.zip",
 )
 
+# glob
+http_archive(
+    name = "glob",
+    build_file_content = """
+cc_library(
+    name = "glob",
+    hdrs = ["single_include/glob/glob.hpp"],
+    strip_include_prefix = "single_include/glob",
+    visibility = ["//visibility:public"],
+)
+""",
+    strip_prefix = "glob-0.0.1",
+    sha256 = "f0b74df0417d04a0116bceeca2f2401a77a1d44e7ea75b369b98b87b791853ae",
+    url = "https://github.com/p-ranav/glob/archive/refs/tags/v0.0.1.tar.gz",
+)
+    
+
 # gtest
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 

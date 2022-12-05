@@ -1,5 +1,6 @@
 #include "path_manager.hpp"
 #include "constant.hpp"
+#include "glob.hpp"
 #include "spdlog/spdlog.h"
 #include <filesystem>
 #include <iostream>
@@ -67,6 +68,7 @@ PathManagerStatus PathManager::init(json project_config) {
     PathManager::path_mp[k] = std::filesystem::canonical(v);
     spdlog::debug("key={}, value={}", k, v.c_str());
   }
+  PathManager::project_config = project_config;
 
   return PathManagerStatus::Success;
 }
@@ -95,10 +97,74 @@ std::filesystem::path PathManager::get_local_share() {
 
 std::filesystem::path PathManager::get_template() { return PathManager::get("template"); }
 std::filesystem::path PathManager::get_include() { return PathManager::get("include"); }
-std::filesystem::path PathManager::get(string str) {
+std::filesystem::path PathManager::get(std::string str) {
   if (path_mp.find(str) == path_mp.end()) {
     spdlog::error("key '{}' does not exists in path_mp", str);
     exit(PathManagerKeyNotFound);
   }
   return PathManager::path_mp[str];
+}
+
+std::filesystem::path PathManager::get_cache_dir(std::filesystem::path root_dir) {
+  auto cache_dir =
+      std::filesystem::temp_directory_path() / "cpcli" / std::to_string(std::hash<std::string>()(root_dir));
+  std::filesystem::create_directories(cache_dir);
+  return cache_dir;
+}
+
+bool PathManager::check_task_path_exist(std::filesystem::path root_dir, std::string filetype) {
+  spdlog::debug("Checking task file for root_dir={}, filetype={}", root_dir.c_str(), filetype.c_str());
+  for (auto &p : glob::glob((root_dir / filetype).generic_string() + ".*")) {
+    if (SUPPORTED_EXTENSIONS.find(p.extension()) != SUPPORTED_EXTENSIONS.end()) {
+      spdlog::debug("Found task file: {}", p.generic_string());
+      return true;
+    }
+  }
+  return false;
+}
+
+std::filesystem::path PathManager::get_task_path(std::filesystem::path root_dir, std::string filetype) {
+  spdlog::debug("Getting task file for root_dir={}, filetype={}", root_dir.c_str(), filetype.c_str());
+  auto language_config = PathManager::project_config["language_config"];
+  auto extension = language_config["default"].get<std::string>();
+  if (language_config["override"].contains(filetype)) {
+    extension = language_config["override"][filetype].get<std::string>();
+  }
+  std::vector<std::filesystem::path> path_list;
+  for (auto &p : glob::glob((root_dir / filetype).generic_string() + ".*")) {
+    spdlog::debug("Found task file: {}", p.generic_string());
+    path_list.push_back(p);
+  }
+  if (path_list.size() == 1) {
+    return path_list[0];
+  }
+  if (path_list.size() == 0) {
+    spdlog::error("No task file found for root_dir={}, filetype={}", root_dir.c_str(), filetype.c_str());
+    exit(PathManagerTaskFileNotFound);
+  }
+  for (auto &p : path_list) {
+    if (p.extension() == "." + extension) {
+      return p;
+    }
+  }
+  spdlog::error("Multiple task files found but no match extension for root_dir={}, filetype={}",
+                root_dir.c_str(),
+                filetype.c_str());
+  exit(PathManagerMultipleTaskFilesFound);
+}
+
+std::filesystem::path PathManager::get_task_solution_path(std::filesystem::path root_dir) {
+  return PathManager::get_task_path(root_dir, "solution");
+}
+std::filesystem::path PathManager::get_task_slow_path(std::filesystem::path root_dir) {
+  return PathManager::get_task_path(root_dir, "slow");
+}
+std::filesystem::path PathManager::get_task_gen_path(std::filesystem::path root_dir) {
+  return PathManager::get_task_path(root_dir, "gen");
+}
+std::filesystem::path PathManager::get_task_checker_path(std::filesystem::path root_dir) {
+  return PathManager::get_task_path(root_dir, "checker");
+}
+std::filesystem::path PathManager::get_task_interactor_path(std::filesystem::path root_dir) {
+  return PathManager::get_task_path(root_dir, "interactor");
 }

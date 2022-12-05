@@ -14,7 +14,7 @@ class TemplateManager {
   using json = nlohmann::json;
 
 public:
-  TemplateManager(PathManager &path_manager, std::string language, bool use_template_engine);
+  TemplateManager(PathManager &path_manager, json project_conf);
   std::filesystem::path get_solution();
   std::filesystem::path get_slow();
   std::filesystem::path get_gen();
@@ -22,11 +22,12 @@ public:
   std::filesystem::path get_checker();
   std::filesystem::path get_interactor();
   void render(std::filesystem::path template_file, std::filesystem::path location, bool overwrite);
+  PathManager path_manager;
 
 private:
   bool has_customized_template_dir;
   bool use_template_engine;
-  std::filesystem::path builtin_language_template_dir;
+  json project_config;
   std::filesystem::path builtin_common_template_dir;
   std::filesystem::path customized_path;
   std::optional<std::filesystem::path> get(std::string str);

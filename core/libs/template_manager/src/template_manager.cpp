@@ -5,9 +5,9 @@
 #include <fstream>
 #include <iostream>
 
-TemplateManager::TemplateManager(PathManager &path_manager, std::string language, bool use_template_engine) {
+TemplateManager::TemplateManager(PathManager &path_manager, json project_config) {
   TemplateManager::has_customized_template_dir = false;
-  TemplateManager::use_template_engine = use_template_engine;
+  TemplateManager::use_template_engine = project_config.value("use_template_engine", false);
   if (path_manager.has_customize_template_dir()) {
     TemplateManager::has_customized_template_dir = true;
     TemplateManager::customized_path = path_manager.get_template();
@@ -25,9 +25,9 @@ TemplateManager::TemplateManager(PathManager &path_manager, std::string language
       exit(TemplateManagerTemplateEngineError);
     }
   }
-
-  TemplateManager::builtin_language_template_dir = path_manager.get_local_share() / "templates" / language;
   TemplateManager::builtin_common_template_dir = path_manager.get_local_share() / "templates" / "common";
+  TemplateManager::project_config = project_config;
+  TemplateManager::path_manager = path_manager;
 }
 /**
  * @brief A artifact directory will look like this:
@@ -40,36 +40,49 @@ TemplateManager::TemplateManager(PathManager &path_manager, std::string language
  * ├── frontend
  * │   └── TaskConfigEditor.jar
  * └── templates
- *    ├── common
- *    │   ├── problem_config.template
- *    │   └── project_config.template
- *    └── cpp
- *        ├── checker.template
- *        ├── gen.template
- *        ├── interactor.template
- *        ├── slow.template
- *        └── solution.template
+ *     ├── common
+ *     │   ├── problem_config.template
+ *     │   └── project_config.template
+ *     ├── cpp
+ *     │   ├── checker.template
+ *     │   ├── gen.template
+ *     │   ├── interactor.template
+ *     │   ├── slow.template
+ *     │   └── solution.template
+ *     └── python
+ *         ├── checker.template
+ *         ├── gen.template
+ *         ├── interactor.template
+ *         ├── slow.template
+ *         └── solution.template
  *
  * @param str
  * @return std::optional<std::filesystem::path>
  */
 std::optional<std::filesystem::path> TemplateManager::get(std::string str) {
+  spdlog::debug("Get the template file for {}", str);
   std::string filename = str + ".template";
   std::filesystem::path path;
+  std::string language = project_config["language_config"]["default"].get<std::string>();
+  if (project_config["language_config"]["override"].contains(str)) {
+    language = project_config["language_config"]["override"][str].get<std::string>();
+  }
+  spdlog::debug("The language for {} is {}", str, language);
   if (TemplateManager::has_customized_template_dir) {
-    if (std::filesystem::exists(TemplateManager::customized_path / filename)) {
-      path = TemplateManager::customized_path / filename;
+    if (std::filesystem::exists(TemplateManager::customized_path / language / filename)) {
+      path = TemplateManager::customized_path / language / filename;
     }
   }
 
   if (path.empty()) {
-    // At this point, the path is empty when the customized template dir is not used or 
+    // At this point, the path is empty when the customized template dir is not used or
     // the file is not found in the customized template dir.
     // In both cases, we should try to find the file in the builtin template dir.
 
-    // If the requested file is project_config.template, we will find it in common template dir 
+    // If the requested file is project_config.template, we will find it in common template dir
     // Otherwise, we will find it in the language specific template dir.
-    std::filesystem::path builtin_path = TemplateManager::builtin_language_template_dir;
+
+    auto builtin_path = TemplateManager::path_manager.get_local_share() / "templates" / language;
     if (str == "problem_config") {
       builtin_path = TemplateManager::builtin_common_template_dir;
     }
@@ -100,6 +113,22 @@ std::filesystem::path TemplateManager::get_path(std::string str) {
 };
 
 void TemplateManager::render(std::filesystem::path template_file, std::filesystem::path location, bool overwrite) {
+  if (std::filesystem::status(location).type() != std::filesystem::file_type::directory) {
+    spdlog::error("The location {} is not a directory ", location.c_str());
+    exit(1);
+  }
+  spdlog::debug("Render the template file {} to directory {}", template_file.c_str(), location.c_str());
+  std::string filetype = template_file.stem();
+  std::string filename;
+  if (filetype == "config") {
+    filename = "config.json";
+  } else {
+    std::string extension = template_file.parent_path().filename();
+    filename = filetype + "." + extension;
+  }
+  location = location / filename;
+  spdlog::debug("File", template_file.c_str(), location.c_str());
+
   if (!overwrite && std::filesystem::exists(location)) {
     spdlog::debug("File {} already exists, skip rendering", location.c_str());
     return;
