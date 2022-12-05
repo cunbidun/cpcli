@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     spdlog::error("Path manager return non success code. Exiting...");
     exit(PathManagerFailToInitFromConfig);
   }
-  TemplateManager template_manager(path_manager, "cpp", project_conf.value("use_template_engine", false));
+  TemplateManager template_manager(path_manager, project_conf);
 
   crow::SimpleApp cpcli;
   cpcli.loglevel(crow::LogLevel::Warning);
@@ -93,8 +93,7 @@ int main(int argc, char *argv[]) {
     }
     std::filesystem::create_directory(task_dir);
 
-    auto solution_path = task_dir / "solution.cpp";
-    template_manager.render(template_manager.get_solution(), solution_path, true);
+    template_manager.render(template_manager.get_solution(), task_dir, true);
 
     int cnt = 0;
     for (auto it = data["tests"].begin(); it != data["tests"].end(); ++it) {

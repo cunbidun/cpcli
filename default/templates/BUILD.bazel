@@ -5,6 +5,12 @@ filegroup(
 )
 
 filegroup(
+    name = "py_template",
+    srcs = ["py"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "common_template",
     srcs = ["common"],
     visibility = ["//visibility:public"],

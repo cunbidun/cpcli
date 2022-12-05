@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
   auto truncate_flag = option->add_flag("-t,--truncate-long-test", "Toggle truncate long test option");
   auto interactive_flag = option->add_flag("-i,--interactive", "Toggle interactive option");
   auto stop_on_first_fail_flag = option->add_flag("-s,--stop-on-first-fail", "Toggle stop on first fail option");
-  // FIXME: add transform to trim and remove non-alphanumeric characters from name and group 
+  // FIXME: add transform to trim and remove non-alphanumeric characters from name and group
   auto task_name_option = option->add_option<string>("-n,--name", task_name, "Task name");
   auto task_group_option = option->add_option<string>("-g,--group", task_group, "Task group");
 
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
     spdlog::error("Path manager return non success code. Exiting...");
     exit(PathManagerFailToInitFromConfig);
   }
-  TemplateManager template_manager(path_manager, "cpp", project_conf.value("use_template_engine", false));
+  TemplateManager template_manager(path_manager, project_conf);
 
   // Reading problem config
   problem_conf_path = root_dir / "config.json";
@@ -171,8 +171,8 @@ int main(int argc, char *argv[]) {
     }
     if (checker_option->count() > 0) {
       problem_conf["checker"] = checker_name;
-      if (checker_name == "custom") {
-        template_manager.render(template_manager.get_checker(), root_dir / "checker.cpp", false);
+      if (checker_name == "custom" && !path_manager.check_task_path_exist(root_dir, "checker")) {
+        template_manager.render(template_manager.get_checker(), root_dir, false);
       }
     }
     if (truncate_flag->count() > 0) {
@@ -180,7 +180,9 @@ int main(int argc, char *argv[]) {
     }
     if (interactive_flag->count() > 0) {
       problem_conf["interactive"] = !problem_conf["interactive"].get<bool>();
-      template_manager.render(template_manager.get_interactor(), root_dir / "interactor.cpp", false);
+      if (problem_conf["interactive"].get<bool>() && !path_manager.check_task_path_exist(root_dir, "interactor")) {
+        template_manager.render(template_manager.get_interactor(), root_dir, false);
+      }
     }
     if (hide_option->count() > 0) {
       problem_conf["hideAcceptedTestCases"] = !problem_conf["hideAcceptedTestCases"].get<bool>();
@@ -209,11 +211,15 @@ int main(int argc, char *argv[]) {
     }
     if (generator_know_ans_flag->count() > 0) {
       problem_conf["knowGenAns"] = !problem_conf["knowGenAns"].get<bool>();
-      template_manager.render(template_manager.get_slow(), root_dir / "slow.cpp", false);
+      if (problem_conf["knowGenAns"].get<bool>() && !path_manager.check_task_path_exist(root_dir, "slow")) {
+        template_manager.render(template_manager.get_slow(), root_dir, false);
+      }
     }
     if (generator_flag->count() > 0) {
       problem_conf["useGeneration"] = !problem_conf["useGeneration"].get<bool>();
-      template_manager.render(template_manager.get_gen(), root_dir / "gen.cpp", false);
+      if (problem_conf["useGeneration"].get<bool>() && !path_manager.check_task_path_exist(root_dir, "gen")) {
+        template_manager.render(template_manager.get_gen(), root_dir, false);
+      }
     }
   }
 

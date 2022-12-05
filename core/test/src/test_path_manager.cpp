@@ -9,7 +9,6 @@
 
 using json = nlohmann::json;
 
-namespace fs = std::filesystem;
 using std::string;
 
 TEST(TestPathManager, TestInitConfigRootOnlySuccessRequired) {

@@ -8,5 +8,6 @@ cc_library(
         "//core/libs/constant",
         "@json",
         "@spdlog",
+        "@glob"
     ],
 )

@@ -18,7 +18,7 @@ int create_new_task(nlohmann::json project_conf) {
     spdlog::error("Path manager return non success code. Exiting...");
     exit(PathManagerFailToInitFromConfig);
   }
-  TemplateManager template_manager(path_manager, "cpp", project_conf.value("use_template_engine", false));
+  TemplateManager template_manager(path_manager, project_conf);
 
   std::filesystem::path task_dir = path_manager.get_task();
   std::string frontend_exec = project_conf["frontend_exec"].get<std::string>();
@@ -27,8 +27,8 @@ int create_new_task(nlohmann::json project_conf) {
   std::filesystem::current_path(task_dir / new_task);
   std::filesystem::path root_dir = std::filesystem::current_path();
 
-  template_manager.render(template_manager.get_solution(), root_dir / "solution.cpp", true);
-  template_manager.render(template_manager.get_problem_config(), root_dir / "config.json", true);
+  template_manager.render(template_manager.get_solution(), root_dir, true);
+  template_manager.render(template_manager.get_problem_config(), root_dir, true);
   edit_config(task_dir / new_task, template_manager, frontend_exec);
 
   // read and validate the project config file
@@ -42,50 +42,6 @@ int create_new_task(nlohmann::json project_conf) {
     std::filesystem::rename(new_task, name);
   }
   return 0;
-}
-
-int compile_cpp(std::filesystem::path &cache_dir,
-                bool use_cache,
-                const std::string &c_complier,
-                std::filesystem::path &path,
-                const std::string &compiler_flags,
-                const std::string &binary_name) {
-  std::filesystem::path binary_cache_dir = cache_dir / binary_name;
-  std::filesystem::path file_cache_dir = cache_dir / path.filename();
-
-  if (use_cache) {
-    if (check_file(binary_cache_dir, "") && compare_files(path, file_cache_dir)) {
-      std::filesystem::copy_file(binary_cache_dir,
-                                 path.parent_path() / binary_name,
-                                 std::filesystem::copy_options::overwrite_existing); // copy solution file to output dir
-                                                                                     // for submission
-      return 0;
-    }
-  }
-
-  std::filesystem::current_path(path.parent_path());
-  std::vector<std::string> command;
-
-  // build command
-  command.push_back(c_complier);
-  command.push_back(compiler_flags);
-  command.push_back("-o");
-  command.push_back(binary_name);
-  command.push_back("\"" + path.string() + "\"");
-
-  int status = system_warper(join(command));
-
-  if (status != 0) {
-    clean_up();
-    exit(1); // TODO set correct return code
-  }
-
-  if (use_cache) {
-    std::filesystem::copy_file(
-        path.parent_path() / binary_name, binary_cache_dir, std::filesystem::copy_options::overwrite_existing);
-    std::filesystem::copy_file(path, file_cache_dir, std::filesystem::copy_options::overwrite_existing);
-  }
-  return status;
 }
 
 void print_report(const std::string report_name, bool passed, bool rte, bool tle, bool wa, long long runtime) {
@@ -119,17 +75,18 @@ void edit_config(std::filesystem::path root_dir, TemplateManager &template_manag
 
   config = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
   std::string name = trim_copy(config["name"].get<std::string>());
-  if (config["useGeneration"]) {
-    template_manager.render(template_manager.get_gen(), root_dir / "gen.cpp", false);
+  if (config["useGeneration"] && !template_manager.path_manager.check_task_path_exist(root_dir, "gen")) {
+    template_manager.render(template_manager.get_gen(), root_dir, false);
   }
-  if (config["interactive"]) {
-    template_manager.render(template_manager.get_interactor(), root_dir / "interactor.cpp", false);
+  if (config["interactive"] && !template_manager.path_manager.check_task_path_exist(root_dir, "interactor")) {
+    template_manager.render(template_manager.get_interactor(), root_dir, false);
   }
-  if (config["knowGenAns"]) {
-    template_manager.render(template_manager.get_slow(), root_dir / "slow.cpp", false);
+  if (config["knowGenAns"] && !template_manager.path_manager.check_task_path_exist(root_dir, "slow")) {
+    template_manager.render(template_manager.get_slow(), root_dir, false);
   }
-  if (config["checker"].get<std::string>() == "custom") {
-    template_manager.render(template_manager.get_checker(), root_dir / "checker.cpp", false);
+  if (config["checker"].get<std::string>() == "custom" &&
+      !template_manager.path_manager.check_task_path_exist(root_dir, "checker")) {
+    template_manager.render(template_manager.get_checker(), root_dir, false);
   }
   if (name != old_name && name.size() != 0) {
     if (old_name.size() == 0) { // new task!!!
