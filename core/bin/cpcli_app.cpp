@@ -1,3 +1,13 @@
+#include "color.hpp"
+#include "compiler.hpp"
+#include "constant.hpp"
+#include "nlohmann/json.hpp"
+#include "operations.hpp"
+#include "path_manager.hpp"
+#include "spdlog/spdlog.h"
+#include "template_manager.hpp"
+#include "utils.hpp"
+
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -9,15 +19,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#include "color.hpp"
-#include "constant.hpp"
-#include "nlohmann/json.hpp"
-#include "operations.hpp"
-#include "path_manager.hpp"
-#include "spdlog/spdlog.h"
-#include "template_manager.hpp"
-#include "utils.hpp"
 
 using std::cout;
 using std::endl;
@@ -42,8 +43,6 @@ int cpcli_process(int argc, char *argv[]) {
 
   std::filesystem::path solution_file_path;
 
-  string testlib_compiler_flag;
-  string compiler_flags = "cpp_compile_flag";
   string generator_seed;
 
   PathManager path_manager;
@@ -52,12 +51,11 @@ int cpcli_process(int argc, char *argv[]) {
     spdlog::error("Path manager return non success code. Exiting...");
     exit(PathManagerFailToInitFromConfig);
   }
-  TemplateManager template_manager(path_manager, "cpp", project_conf.value("use_template_engine", false));
+  TemplateManager template_manager(path_manager, project_conf);
 
   std::filesystem::path local_share_dir = path_manager.get_local_share();
   spdlog::debug("local_share_dir directory is: " + local_share_dir.string());
   std::filesystem::path checker_dir = local_share_dir / "checkers";
-  std::filesystem::path precompiled_dir = local_share_dir / "precompiled_headers";
 
   if (parser_result.operation == ParserOperations::NewTask) {
     create_new_task(project_conf);
@@ -65,15 +63,17 @@ int cpcli_process(int argc, char *argv[]) {
   }
 
   if (parser_result.operation == ParserOperations::GenHeader) {
+    std::filesystem::path precompiled_dir = local_share_dir / "precompiled_headers";
+    auto cpp_config = project_conf["language_config"]["[cpp]"];
     spdlog::debug("Generating precompiled headers");
     spdlog::debug("precompiled_dir is: " + precompiled_dir.string());
-    spdlog::debug("cpp_compiler is: " + project_conf["cpp_compiler"].get<string>());
-    spdlog::debug("cpp_compile_flag is: " + project_conf["cpp_compile_flag"].get<string>());
-    spdlog::debug("cpp_debug_flag is: " + project_conf["cpp_debug_flag"].get<string>());
+    spdlog::debug("cpp_compiler is: " + cpp_config["compiler"].get<string>());
+    spdlog::debug("cpp_compile_flag is: " + cpp_config["regular_flag"].get<string>());
+    spdlog::debug("cpp_debug_flag is: " + cpp_config["debug_flag"].get<string>());
     compile_headers(precompiled_dir,
-                    project_conf["cpp_compiler"].get<string>(),
-                    project_conf["cpp_compile_flag"].get<string>(),
-                    project_conf["cpp_debug_flag"].get<string>());
+                    cpp_config["compiler"].get<string>(),
+                    cpp_config["regular_flag"].get<string>(),
+                    cpp_config["debug_flag"].get<string>());
     return 0;
   }
 
@@ -93,27 +93,16 @@ int cpcli_process(int argc, char *argv[]) {
 
   output_dir = path_manager.get_output();
 
-  testlib_compiler_flag = project_conf["cpp_compile_flag"].get<string>();
-  if (path_manager.has_customize_include_dir()) {
-    string include_dir = "\"" + path_manager.get_include().generic_string() + "\"";
-    std::vector<string> command{project_conf["cpp_compile_flag"].get<string>(), "-I", include_dir};
-    testlib_compiler_flag = join(command);
-  }
-
+  bool is_debug = false;
   if (parser_result.operation == ParserOperations::Build) {
     // do nothing
   } else if (parser_result.operation == ParserOperations::BuildWithDebug) { // run with debug flags
-    project_conf["use_cache"] = false;                                      // don't use cache for debugging
-    compiler_flags = "cpp_debug_flag";
+    is_debug = true;
   } else if (parser_result.operation == ParserOperations::BuildWithTerm) {
     // Run with terminal. This option only uses the project config file for
     // compiler flags. No problem config will be used.
-    solution_file_path = root_dir / "solution.cpp"; // NOTE support c++ for now
-    check_file(solution_file_path, "solution file not found");
-    compile_cpp(
-        root_dir, false, project_conf["cpp_compiler"], solution_file_path, project_conf[compiler_flags], "solution");
-    // copy solution file to output dir for submission
-    copy_file(solution_file_path, output_dir / "solution.cpp", std::filesystem::copy_options::overwrite_existing);
+    Compiler compiler(project_conf, path_manager, root_dir, false);
+    compiler.compile(path_manager.get_task_solution_path(root_dir));
     int status = system_warper("./solution");
     cout << '\n'; // add an empty line before printing the status
     if (status != 0) {
@@ -146,48 +135,20 @@ int cpcli_process(int argc, char *argv[]) {
     return OPERATION_ERR;
   }
 
-  if (project_conf["use_precompiled_header"]) {
-    std::filesystem::path precompiled_path = precompiled_dir / "cpp_compile_flag" / "stdc++.h";
-    check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch",
-               "precompiled header not found! Please try 'cpcli_app project -g'");
-
-    std::filesystem::path precompiled_debug_path = precompiled_dir / "cpp_debug_flag" / "stdc++.h";
-    check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch",
-               "precompiled debug header not found! Please try 'cpcli_app project -g'");
-
-    project_conf["cpp_compile_flag"] =
-        project_conf["cpp_compile_flag"].get<string>() + " " + "-include" + " \"" + precompiled_path.string() + "\"";
-    testlib_compiler_flag = testlib_compiler_flag + " " + "-include" + " \"" + precompiled_path.string() + "\"";
-    project_conf["cpp_debug_flag"] = project_conf["cpp_debug_flag"].get<string>() + " " + "-include" + " \"" +
-                                     precompiled_debug_path.string() + "\"";
-  }
-
   if (problem_conf["group"] != nullptr && problem_conf["group"].get<string>().size() != 0) {
     cout << problem_conf["group"].get<string>() << '\n';
   }
   cout << problem_conf["name"].get<string>() << '\n';
 
   // ----------------------------- COMPILE START ----------------------------
+  Compiler compiler(project_conf, path_manager, root_dir, is_debug);
   {
     auto t0 = std::chrono::high_resolution_clock::now();
     std::filesystem::path cache_dir = "";
 
-    bool use_cache = project_conf["use_cache"];
-    if (use_cache) {
-      cache_dir = std::filesystem::temp_directory_path() / "cpcli" / std::to_string(std::hash<std::string>()(root_dir));
-      std::filesystem::create_directories(cache_dir);
-    }
-
     if (problem_conf["interactive"]) {
       problem_conf["knowGenAns"] = false;
-      std::filesystem::path interactor_file_path = root_dir / "interactor.cpp";
-      check_file(interactor_file_path, "interactor file not found!");
-      compile_cpp(cache_dir,
-                  use_cache,
-                  project_conf["cpp_compiler"],
-                  interactor_file_path,
-                  testlib_compiler_flag,
-                  "interactor");
+      compiler.compile(path_manager.get_task_interactor_path(root_dir));
       cout << termcolor::cyan << termcolor::bold << "Interactive task" << termcolor::reset << '\n';
     } else {
       if (problem_conf["checker"] != "custom") {
@@ -195,28 +156,19 @@ int cpcli_process(int argc, char *argv[]) {
         check_file(checker_bin_path, "checker binary not found!");
         copy_file(checker_bin_path, root_dir / "checker", std::filesystem::copy_options::overwrite_existing);
       } else {
-        std::filesystem::path checker_file_path = root_dir / "checker.cpp";
-        check_file(checker_file_path, "checker file not found!");
-        compile_cpp(
-            cache_dir, use_cache, project_conf["cpp_compiler"], checker_file_path, testlib_compiler_flag, "checker");
+        compiler.compile(path_manager.get_task_checker_path(root_dir));
       }
       cout << termcolor::cyan << termcolor::bold << "Using " << problem_conf["checker"].get<string>() << " checker!"
            << termcolor::reset << '\n';
     }
 
     // use slow solution for generate correct output
-    // require slow.cpp
     if (problem_conf["knowGenAns"]) {
-      std::filesystem::path slow_file_path = root_dir / "slow.cpp";
-      check_file(slow_file_path, "brute force solution file not found!");
-      compile_cpp(
-          cache_dir, use_cache, project_conf["cpp_compiler"], slow_file_path, project_conf[compiler_flags], "slow");
+      compiler.compile(path_manager.get_task_slow_path(root_dir));
     }
 
     if (problem_conf["useGeneration"]) {
-      std::filesystem::path gen_file_path = root_dir / "gen.cpp";
-      check_file(gen_file_path, "gen file not found!");
-      compile_cpp(cache_dir, use_cache, project_conf["cpp_compiler"], gen_file_path, testlib_compiler_flag, "gen");
+      compiler.compile(path_manager.get_task_gen_path(root_dir));
       generator_seed = problem_conf["generatorSeed"];
       if (problem_conf["generatorSeed"].get<string>().size() == 0) {
         generator_seed = gen_string_length_20();
@@ -226,18 +178,7 @@ int cpcli_process(int argc, char *argv[]) {
     }
 
     // compile solution file
-    solution_file_path = root_dir / "solution.cpp"; // NOTE support c++ for now
-    check_file(solution_file_path, "solution file not found");
-    compile_cpp(cache_dir,
-                use_cache,
-                project_conf["cpp_compiler"],
-                solution_file_path,
-                project_conf[compiler_flags],
-                "solution");
-    copy_file(solution_file_path,
-              output_dir / "solution.cpp",
-              std::filesystem::copy_options::overwrite_existing); // copy solution file to output
-                                                                  // dir for submission
+    compiler.compile(path_manager.get_task_solution_path(root_dir));
 
     auto t1 = std::chrono::high_resolution_clock::now();
     long long time = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();

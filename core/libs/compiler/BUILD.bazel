@@ -1,0 +1,14 @@
+cc_library(
+    name = "compiler",
+    srcs = ["src/compiler.cpp"],
+    hdrs = ["include/compiler.hpp"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@json",
+        "@spdlog",
+        "//core/libs/path_manager",
+        "//core/libs/utils",
+        "//core/libs/operations",
+    ],
+)

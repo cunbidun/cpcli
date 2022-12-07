@@ -23,14 +23,6 @@ nlohmann::json read_problem_config(std::filesystem::path path, std::filesystem::
 // TODO add docs
 nlohmann::json read_project_config(std::filesystem::path path);
 
-// TODO add docs
-int compile_cpp(std::filesystem::path &cache_dir,
-                bool use_cache,
-                const std::string &c_complier,
-                std::filesystem::path &path,
-                const std::string &compiler_flags,
-                const std::string &binary_name);
-
 int create_new_task(nlohmann::json project_conf);
 
 void print_duration(std::chrono::high_resolution_clock::time_point t_start);

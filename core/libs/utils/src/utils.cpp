@@ -95,6 +95,7 @@ int clean_up() {
   std::filesystem::remove("slow");
   std::filesystem::remove("interactor");
   std::filesystem::remove_all("___test_case");
+  std::filesystem::remove_all("__pycache__");
   return 0;
 }
 
