@@ -8,7 +8,7 @@
 Compiler::Compiler(json project_conf, PathManager &path_manager, std::filesystem::path root_dir, bool is_debug)
     : project_config(project_conf), root_dir(root_dir), path_manager(path_manager), is_debug(is_debug) {}
 
-int Compiler::compile_cpp(std::filesystem::path path, bool is_soltion_file) {
+int Compiler::compile_cpp(std::filesystem::path path, bool is_solution_file) {
   /*
    * Example of cpp config:
    *
@@ -21,7 +21,7 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_soltion_file) {
    *  },
    */
   spdlog::debug(
-      "compile_cpp: '{}'. is_soltion_file: '{}'. debug is '{}'", path.generic_string(), is_soltion_file, is_debug);
+      "compile_cpp: '{}'. is_solution_file: '{}'. debug is '{}'", path.generic_string(), is_solution_file, is_debug);
   std::string language = "[cpp]";
   auto language_config = project_config["language_config"][language];
   auto cpp_compiler = language_config["compiler"].get<std::string>();
@@ -33,7 +33,7 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_soltion_file) {
   std::string binary_name = path.stem();
   std::filesystem::path binary_cache_dir = cache_dir / binary_name;
   std::filesystem::path file_cache_dir = cache_dir / path.filename();
-  if (use_cache && compare_files(path, file_cache_dir) && (!is_debug || !is_soltion_file)) {
+  if (use_cache && compare_files(path, file_cache_dir) && (!is_debug || !is_solution_file)) {
     // Use cache when when use_cache is true and the content are the same.
     // However, if the filetype is solution and we are debuging, cache will be disable
     spdlog::debug("the file is not changed, use cache");
@@ -58,14 +58,14 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_soltion_file) {
       language_config["debug_flag"] = language_config["debug_flag"].get<string>() + " " + "-include" + " \"" +
                                       precompiled_debug_path.string() + "\"";
     }
-    if (is_debug && is_soltion_file) {
+    if (is_debug && is_solution_file) {
       compiler_flags = language_config["debug_flag"].get<std::string>();
       use_cache = false;
     } else {
       compiler_flags = language_config["regular_flag"].get<std::string>();
     }
 
-    if (!is_soltion_file && path_manager.has_customize_include_dir()) {
+    if (!is_solution_file && path_manager.has_customize_include_dir()) {
       // do not add include dir for solution filetype
       string include_dir = "\"" + path_manager.get_include().generic_string() + "\"";
       std::vector<string> command{compiler_flags, "-I", include_dir};
@@ -90,7 +90,7 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_soltion_file) {
     }
   }
 
-  if (is_soltion_file) {
+  if (is_solution_file) {
     std::filesystem::copy_file(
         path, path_manager.get_output() / "solution.cpp", std::filesystem::copy_options::overwrite_existing);
   }
@@ -104,9 +104,9 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_soltion_file) {
   return 0;
 }
 
-int Compiler::compile_python(std::filesystem::path path, bool is_soltion_file) {
+int Compiler::compile_python(std::filesystem::path path, bool is_solution_file) {
   spdlog::debug(
-      "compile_python: '{}'. is_soltion_file: '{}'. debug is '{}'", path.generic_string(), is_soltion_file, is_debug);
+      "compile_python: '{}'. is_solution_file: '{}'. debug is '{}'", path.generic_string(), is_solution_file, is_debug);
 
   std::string language = "[py]";
   auto language_config = project_config["language_config"][language];

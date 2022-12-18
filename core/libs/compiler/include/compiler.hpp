@@ -17,10 +17,10 @@ public:
   Compiler(json project_conf, PathManager &path_manager, std::filesystem::path root_dir, bool is_debug);
   int compile(std::filesystem::path path);
 
-  // methods to compile specific lanugages
-  // the solution filetype will recieves special treatments
-  int compile_cpp(std::filesystem::path path, bool is_soltion_file);
-  int compile_python(std::filesystem::path path, bool is_soltion_file);
+  // methods to compile specific languages
+  // the solution filetype will receives special treatments
+  int compile_cpp(std::filesystem::path path, bool is_solution_file);
+  int compile_python(std::filesystem::path path, bool is_solution_file);
 
 private:
   json project_config;

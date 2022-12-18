@@ -29,6 +29,7 @@ TemplateManager::TemplateManager(PathManager &path_manager, json project_config)
   TemplateManager::project_config = project_config;
   TemplateManager::path_manager = path_manager;
 }
+
 /**
  * @brief A artifact directory will look like this:
  *
