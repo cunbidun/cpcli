@@ -26,12 +26,15 @@ fi
 # --- declare paths ---
 cpcli_app_path=$(rlocation "cpcli/core/bin/cpcli_app")
 cpcli_cc_path=$(rlocation "cpcli/core/bin/cpcli_cc")
-cpcli_editor=$(rlocation "cpcli/core/bin/cpcli_editor")
+
 double_4_path=$(rlocation "cpcli/default/checkers/double_4")
 double_6_path=$(rlocation "cpcli/default/checkers/double_6")
 double_9_path=$(rlocation "cpcli/default/checkers/double_9")
 token_checker_path=$(rlocation "cpcli/default/checkers/token_checker")
-java_test_editor_path=$(rlocation "cpcli/default/task_editor/TaskConfigEditor/TaskConfigEditor_deploy.jar")
+
+java_task_editor_path=$(rlocation "cpcli/default/task_editor/java_task_editor/java_task_editor_deploy.jar")
+cli_task_editor_path=$(rlocation "cpcli/default/task_editor/cli_task_editor/cli_task_editor")
+
 cpp_template_dir=$(rlocation "cpcli/default/templates/cpp")
 py_template_dir=$(rlocation "cpcli/default/templates/py")
 common_template_dir=$(rlocation "cpcli/default/templates/common")
@@ -50,9 +53,6 @@ cp "$cpcli_app_path" "$HOME/.local/bin"
 echo "Copy cpcli_cc binary to $HOME/.local/bin"
 cp "$cpcli_cc_path" "$HOME/.local/bin"
 
-echo "Copy cli_test_editor binary to $HOME/.local/bin"
-cp "$cpcli_editor" "$HOME/.local/bin/cpcli_editor"
-
 # --- copy artifacts to ~/.local/share ---
 echo "Cleanup the cpcli artifacts directory at $HOME/.local/share/cpcli"
 mkdir -p "$HOME/.local/share/cpcli"
@@ -66,9 +66,12 @@ cp "$double_6_path" "$HOME/.local/share/cpcli/checkers"
 cp "$double_9_path" "$HOME/.local/share/cpcli/checkers"
 cp "$token_checker_path" "$HOME/.local/share/cpcli/checkers"
 
-echo "Create checkers directory at $HOME/.local/share/cpcli/frontend"
-mkdir -p "$HOME/.local/share/cpcli/frontend"
-cp "$java_test_editor_path" "$HOME/.local/share/cpcli/frontend/TaskConfigEditor.jar"
+echo "Create checkers directory at $HOME/.local/share/cpcli/task-editor"
+mkdir -p "$HOME/.local/share/cpcli/task-editor"
+echo "Copying java test editor"
+cp "$java_task_editor_path" "$HOME/.local/share/cpcli/task-editor/java-task-editor.jar"
+echo "Copying cli test editor"
+cp "$cli_task_editor_path" "$HOME/.local/share/cpcli/task-editor/cli_task_editor"
 
 echo "Create templates directory at $HOME/.local/share/cpcli/templates"
 mkdir -p "$HOME/.local/share/cpcli/templates"
@@ -76,3 +79,6 @@ mkdir -p "$HOME/.local/share/cpcli/templates"
 cp -r "$cpp_template_dir" "$HOME/.local/share/cpcli/templates"
 cp -r "$py_template_dir" "$HOME/.local/share/cpcli/templates"
 cp -r "$common_template_dir" "$HOME/.local/share/cpcli/templates"
+
+echo "Current tree"
+tree "$HOME/.local/share/cpcli/"

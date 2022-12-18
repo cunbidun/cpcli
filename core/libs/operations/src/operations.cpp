@@ -8,9 +8,10 @@
 using std::cout;
 using std::endl;
 
-int create_new_task(nlohmann::json project_conf) {
+int create_new_task(std::filesystem::path project_conf_path) {
+  nlohmann::json project_conf = read_project_config(project_conf_path);
   // dummy dir for new task
-  std::string new_task = "___n3w_t4sk";
+  std::string new_task_name = "___n3w_t4sk";
 
   PathManager path_manager;
   auto status = path_manager.init(project_conf);
@@ -21,15 +22,16 @@ int create_new_task(nlohmann::json project_conf) {
   TemplateManager template_manager(path_manager, project_conf);
 
   std::filesystem::path task_dir = path_manager.get_task();
-  std::string frontend_exec = project_conf["frontend_exec"].get<std::string>();
+  std::string task_editor_exec = project_conf["task_editor_exec"].get<std::string>();
 
-  std::filesystem::create_directory(task_dir / new_task);
-  std::filesystem::current_path(task_dir / new_task);
+  std::filesystem::remove_all(new_task_name);
+  std::filesystem::create_directory(task_dir / new_task_name);
+  std::filesystem::current_path(task_dir / new_task_name);
   std::filesystem::path root_dir = std::filesystem::current_path();
 
   template_manager.render(template_manager.get_solution(), root_dir, true);
   template_manager.render(template_manager.get_problem_config(), root_dir, true);
-  edit_config(task_dir / new_task, template_manager, frontend_exec);
+  edit_config(task_dir / new_task_name, project_conf_path, template_manager, task_editor_exec);
 
   // read and validate the project config file
   nlohmann::json problem_conf = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
@@ -37,9 +39,9 @@ int create_new_task(nlohmann::json project_conf) {
   std::string name = problem_conf["name"].get<std::string>();
   std::filesystem::current_path(root_dir.parent_path());
   if (name.size() == 0 || check_file(name, "")) {
-    std::filesystem::remove_all(new_task);
+    std::filesystem::remove_all(new_task_name);
   } else {
-    std::filesystem::rename(new_task, name);
+    std::filesystem::rename(new_task_name, name);
   }
   return 0;
 }
@@ -65,12 +67,16 @@ void print_report(const std::string report_name, bool passed, bool rte, bool tle
   }
 }
 
-void edit_config(std::filesystem::path root_dir, TemplateManager &template_manager, std::string &frontend_exec) {
+void edit_config(std::filesystem::path root_dir,
+                 std::filesystem::path project_conf_path,
+                 TemplateManager &template_manager,
+                 std::string &task_editor_exec) {
   // read the project config into a nlohmann::json object
   nlohmann::json config = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
   std::string old_name = config["name"].get<std::string>();
 
-  std::string command = frontend_exec + " \"" + root_dir.string() + "\"";
+  std::string command =
+      task_editor_exec + " --root \"" + root_dir.string() + "\" --project-config \"" + project_conf_path.string() + "\"";
   system_warper(command);
 
   config = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());

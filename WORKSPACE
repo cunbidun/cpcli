@@ -22,6 +22,13 @@ http_jar(
     url = "https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10/gson-2.10.jar",
 )
 
+http_jar(
+    name = "commons_cli",
+    downloaded_file_name = "commons-cli-1.5.0.jar",
+    sha256 = "bc8bb01fc0fad250385706e20f927ddcff6173f6339b387dc879237752567ac6",
+    url = "https://repo1.maven.org/maven2/commons-cli/commons-cli/1.5.0/commons-cli-1.5.0.jar",
+)
+
 # crow
 http_archive(
     name = "crow",

@@ -62,12 +62,18 @@ int main(int argc, char *argv[]) {
       },
       "Run with debug flags (this option will print debug logs)");
   parser
-      .add_option("-r,--root", root_dir, "Path to the problem directory. There must be a config.json in this directory")
-      ->required(true)
+      .add_option("-r,--root",
+                  root_dir,
+                  "Path to the problem directory. Default to current working dir. There must be a config.json in this "
+                  "directory")
+      ->default_val(std::filesystem::current_path())
       ->transform([](std::filesystem::path path) { return std::filesystem::canonical(path); })
       ->check(CLI::ExistingDirectory);
-  parser.add_option("-p,--project-config", project_conf_path, "Path to the project_config.json file")
-      ->required(true)
+  parser
+      .add_option("-p,--project-config",
+                  project_conf_path,
+                  "Path to the project config file, default to $PWD/project_config.json")
+      ->default_val(std::filesystem::current_path() / "project_config.json")
       ->check(CLI::ExistingFile)
       ->transform([](std::filesystem::path path) { return std::filesystem::canonical(path); });
 
@@ -133,7 +139,7 @@ int main(int argc, char *argv[]) {
   test->excludes(generator);
   generator->excludes(option);
 
-  parser.require_subcommand(1);
+  parser.require_subcommand(-1);
 
   try {
     parser.parse(argc, argv);
@@ -166,6 +172,7 @@ int main(int argc, char *argv[]) {
   spdlog::debug("Problem config file is parsed. Data is '{}'", problem_conf.dump(2));
 
   if (option->parsed()) {
+    spdlog::debug("option was parsed");
     if (time_limit_option->count() > 0) {
       problem_conf["timeLimit"] = time_limit;
     }
@@ -197,9 +204,8 @@ int main(int argc, char *argv[]) {
     if (task_group_option->count() > 0) {
       problem_conf["group"] = task_group;
     }
-  }
-  if (generator->parsed()) {
-    spdlog::debug("Generator is parsed");
+  } else if (generator->parsed()) {
+    spdlog::debug("generator was parsed");
     if (generator_num_test_option->count() > 0) {
       problem_conf["numTest"] = generator_num_test;
     }
@@ -223,111 +229,120 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (test_index != -1 && test_index >= problem_conf["tests"].size()) {
-    cout << termcolor::red << termcolor::bold << "Test number " << test_index << " out of range" << termcolor::reset;
-    cout << std::endl;
-    exit(1);
-  }
-
-  if (print->parsed() || all->parsed() || none->parsed()) {
-    if (test_index_vector.empty()) {
-      spdlog::debug("Vector of tests to print is empty. Adding all tests.");
-      for (int i = 0; i < problem_conf["tests"].size(); ++i) {
-        test_index_vector.push_back(i);
-      }
-    }
-    auto tmp = test_index_vector;
-    for (int i = 0; i < (int)tmp.size(); i++) {
-      if (tmp[i] < 0 || tmp[i] >= problem_conf["tests"].size()) {
-        test_index_vector.erase(test_index_vector.begin() + i);
-      }
-    }
-    if (test_index_vector.empty()) {
-      cout << termcolor::yellow << termcolor::bold << "No tests to operate on" << termcolor::reset;
+  else if (test->parsed()) {
+    spdlog::debug("test was parsed");
+    if (test_index != -1 && test_index >= problem_conf["tests"].size()) {
+      cout << termcolor::red << termcolor::bold << "Test number " << test_index << " out of range" << termcolor::reset;
       cout << std::endl;
       exit(1);
     }
-  }
 
-  if (print->parsed()) {
-    spdlog::debug("printing tests...");
-    print_tests(test_index_vector, problem_conf);
-    return 0;
-  }
-
-  if (all->parsed()) {
-    for (auto i : test_index_vector) {
-      problem_conf["tests"][i]["active"] = true;
+    if (print->parsed() || all->parsed() || none->parsed()) {
+      if (test_index_vector.empty()) {
+        spdlog::debug("Vector of tests to print is empty. Adding all tests.");
+        for (int i = 0; i < problem_conf["tests"].size(); ++i) {
+          test_index_vector.push_back(i);
+        }
+      }
+      auto tmp = test_index_vector;
+      for (int i = 0; i < (int)tmp.size(); i++) {
+        if (tmp[i] < 0 || tmp[i] >= problem_conf["tests"].size()) {
+          test_index_vector.erase(test_index_vector.begin() + i);
+        }
+      }
+      if (test_index_vector.empty()) {
+        cout << termcolor::yellow << termcolor::bold << "No tests to operate on" << termcolor::reset;
+        cout << std::endl;
+        exit(1);
+      }
     }
-  }
 
-  if (none->parsed()) {
-    for (auto i : test_index_vector) {
-      problem_conf["tests"][i]["active"] = false;
+    if (print->parsed()) {
+      spdlog::debug("printing tests...");
+      print_tests(test_index_vector, problem_conf);
+      return 0;
     }
-  }
 
-  if (unknow->parsed()) {
-    spdlog::debug("Toggle unknow status of test {}", test_index);
-    problem_conf["tests"][test_index]["answer"] = !problem_conf["tests"][test_index]["answer"].get<bool>();
-  }
+    if (all->parsed()) {
+      for (auto i : test_index_vector) {
+        problem_conf["tests"][i]["active"] = true;
+      }
+    }
 
-  if (add->parsed()) {
-    spdlog::debug("adding test...");
-    if (test_index == -1) {
+    if (none->parsed()) {
+      for (auto i : test_index_vector) {
+        problem_conf["tests"][i]["active"] = false;
+      }
+    }
+
+    if (unknow->parsed()) {
+      spdlog::debug("Toggle unknow status of test {}", test_index);
+      problem_conf["tests"][test_index]["answer"] = !problem_conf["tests"][test_index]["answer"].get<bool>();
+    }
+
+    if (add->parsed()) {
+      spdlog::debug("adding test...");
+      if (test_index == -1) {
+        auto cache_dir = std::filesystem::temp_directory_path() / "cpcli_cli_task_editor";
+        std::filesystem::create_directories(cache_dir);
+        auto input_file = cache_dir / "input";
+        auto output_file = cache_dir / "output";
+        create_empty_file(input_file);
+        create_empty_file(output_file);
+        string command = "$EDITOR " + input_file.generic_string();
+        if (!add_not_know_ans) {
+          command += "  " + output_file.generic_string();
+        }
+        system_warper(command);
+        problem_conf["tests"].push_back({
+            {"active", !add_not_active},
+            {"answer", !add_not_know_ans},
+            {"input", rtrim_copy(read_file_to_str(input_file))},
+            {"output", rtrim_copy(read_file_to_str(output_file))},
+            {"index", problem_conf["tests"].size()},
+        });
+        std::filesystem::remove_all(cache_dir);
+      } else {
+        int num_test = problem_conf["tests"].size();
+        spdlog::debug("copy test {} to {}", test_index, num_test);
+        problem_conf["tests"].push_back({problem_conf["tests"][test_index]});
+        problem_conf["tests"][num_test]["index"] = num_test;
+        problem_conf["tests"][num_test]["active"] = !add_not_active;
+        problem_conf["tests"][num_test]["answer"] = !add_not_know_ans;
+      }
+    }
+    if (del->parsed()) {
+      spdlog::debug("delete test #{}", test_index);
+      problem_conf["tests"].erase(test_index);
+      for (int i = test_index; i < problem_conf["tests"].size(); ++i) {
+        problem_conf["tests"][i]["index"] = i;
+      }
+    }
+    if (edit->parsed()) {
+      spdlog::debug("editing test #{}", test_index);
       auto cache_dir = std::filesystem::temp_directory_path() / "cpcli_cli_task_editor";
       std::filesystem::create_directories(cache_dir);
       auto input_file = cache_dir / "input";
       auto output_file = cache_dir / "output";
-      create_empty_file(input_file);
-      create_empty_file(output_file);
-      string command = "$EDITOR " + input_file.generic_string();
-      if (!add_not_know_ans) {
-        command += "  " + output_file.generic_string();
-      }
+      std::ofstream inf(input_file);
+      std::ofstream ouf(output_file);
+      inf << problem_conf["tests"][test_index]["input"].get<string>();
+      ouf << problem_conf["tests"][test_index]["output"].get<string>();
+      inf.close();
+      ouf.close();
+      string command = "$EDITOR " + input_file.generic_string() + "  " + output_file.generic_string();
       system_warper(command);
-      problem_conf["tests"].push_back({
-          {"active", !add_not_active},
-          {"answer", !add_not_know_ans},
-          {"input", rtrim_copy(read_file_to_str(input_file))},
-          {"output", rtrim_copy(read_file_to_str(output_file))},
-          {"index", problem_conf["tests"].size()},
-      });
+      problem_conf["tests"][test_index]["input"] = rtrim_copy(read_file_to_str(input_file));
+      problem_conf["tests"][test_index]["output"] = rtrim_copy(read_file_to_str(output_file));
       std::filesystem::remove_all(cache_dir);
-    } else {
-      int num_test = problem_conf["tests"].size();
-      spdlog::debug("copy test {} to {}", test_index, num_test);
-      problem_conf["tests"].push_back({problem_conf["tests"][test_index]});
-      problem_conf["tests"][num_test]["index"] = num_test;
-      problem_conf["tests"][num_test]["active"] = !add_not_active;
-      problem_conf["tests"][num_test]["answer"] = !add_not_know_ans;
     }
-  }
-  if (del->parsed()) {
-    spdlog::debug("delete test #{}", test_index);
-    problem_conf["tests"].erase(test_index);
-    for (int i = test_index; i < problem_conf["tests"].size(); ++i) {
-      problem_conf["tests"][i]["index"] = i;
-    }
-  }
-  if (edit->parsed()) {
-    spdlog::debug("editing test #{}", test_index);
-    auto cache_dir = std::filesystem::temp_directory_path() / "cpcli_cli_task_editor";
-    std::filesystem::create_directories(cache_dir);
-    auto input_file = cache_dir / "input";
-    auto output_file = cache_dir / "output";
-    std::ofstream inf(input_file);
-    std::ofstream ouf(output_file);
-    inf << problem_conf["tests"][test_index]["input"].get<string>();
-    ouf << problem_conf["tests"][test_index]["output"].get<string>();
-    inf.close();
-    ouf.close();
-    string command = "$EDITOR " + input_file.generic_string() + "  " + output_file.generic_string();
+  } else {
+    spdlog::debug("nothing was parsed, editing the whole config file '{}'", problem_conf_path.generic_string());
+    string command = "$EDITOR \"" + problem_conf_path.generic_string()+ "\"";
     system_warper(command);
-    problem_conf["tests"][test_index]["input"] = rtrim_copy(read_file_to_str(input_file));
-    problem_conf["tests"][test_index]["output"] = rtrim_copy(read_file_to_str(output_file));
-    std::filesystem::remove_all(cache_dir);
+    exit(0);
   }
+
   std::ofstream out_file(problem_conf_path.generic_string());
   out_file << problem_conf.dump(2);
   if (name_changed) {

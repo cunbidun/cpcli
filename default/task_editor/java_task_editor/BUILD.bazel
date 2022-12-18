@@ -1,6 +1,6 @@
 java_binary(
     # the deploy target name is "TaskConfigEditor_deploy.jar"
-    name = "TaskConfigEditor",
+    name = "java_task_editor",
     srcs = glob(
         [
             "src/*.java",
@@ -10,5 +10,6 @@ java_binary(
     visibility = ["//visibility:public"],
     deps = [
         "@gson//jar",
+        "@commons_cli//jar"
     ],
 )

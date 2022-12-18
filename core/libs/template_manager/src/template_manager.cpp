@@ -60,46 +60,49 @@ TemplateManager::TemplateManager(PathManager &path_manager, json project_config)
  * @return std::optional<std::filesystem::path>
  */
 std::optional<std::filesystem::path> TemplateManager::get(std::string str) {
-  spdlog::debug("Get the template file for {}", str);
+  spdlog::debug("Getting the template file for {}", str);
   std::string filename = str + ".template";
   std::filesystem::path path;
-  std::string language = project_config["language_config"]["default"].get<std::string>();
-  if (project_config["language_config"]["override"].contains(str)) {
-    language = project_config["language_config"]["override"][str].get<std::string>();
-  }
-  spdlog::debug("The language for {} is {}", str, language);
-  if (TemplateManager::has_customized_template_dir) {
-    if (std::filesystem::exists(TemplateManager::customized_path / language / filename)) {
-      path = TemplateManager::customized_path / language / filename;
+
+  if (str == "problem_config") {
+    path = TemplateManager::builtin_common_template_dir / filename;
+  } else {
+    std::string language = project_config["language_config"]["default"].get<std::string>();
+    if (project_config["language_config"]["override"].contains(str)) {
+      language = project_config["language_config"]["override"][str].get<std::string>();
     }
-  }
-
-  if (path.empty()) {
-    // At this point, the path is empty when the customized template dir is not used or
-    // the file is not found in the customized template dir.
-    // In both cases, we should try to find the file in the builtin template dir.
-
-    // If the requested file is project_config.template, we will find it in common template dir
-    // Otherwise, we will find it in the language specific template dir.
-
-    auto builtin_path = TemplateManager::path_manager.get_local_share() / "templates" / language;
-    if (str == "problem_config") {
-      builtin_path = TemplateManager::builtin_common_template_dir;
+    spdlog::debug("The language for {} is {}", str, language);
+    if (TemplateManager::has_customized_template_dir) {
+      if (std::filesystem::exists(TemplateManager::customized_path / language / filename)) {
+        path = TemplateManager::customized_path / language / filename;
+      }
     }
-    spdlog::debug("The build in template path is builtin_path={}", builtin_path.c_str());
 
-    // Check if the template file exists
-    if (std::filesystem::exists(builtin_path / filename)) {
+    if (path.empty()) {
+      // At this point, the path is empty when the customized template dir is not used or
+      // the file is not found in the customized template dir.
+      // In both cases, we should try to find the file in the builtin template dir.
+
+      // If the requested file is project_config.template, we will find it in common template dir
+      // Otherwise, we will find it in the language specific template dir.
+
+      auto builtin_path = TemplateManager::path_manager.get_local_share() / "templates" / language;
+      spdlog::debug("The built-in template path is builtin_path={}", builtin_path.c_str());
+
       path = builtin_path / filename;
-    } else {
-      spdlog::error("No builtin template found for {} ({})", str, (builtin_path / filename).c_str());
-      return std::nullopt;
     }
+  }
+
+  // Check if the template file exists
+  if (path.empty()) {
+    spdlog::error("No template found for {} ({})", str, path.c_str());
+    return std::nullopt;
   }
   if (!path.empty() && std::filesystem::status(path).type() != std::filesystem::file_type::regular) {
     spdlog::error("Template file for {} found, but it is not a regular file", str);
     return std::nullopt;
   }
+  spdlog::debug("The template file path for {} is {}", str, path.generic_string());
   return path;
 }
 
@@ -120,14 +123,14 @@ void TemplateManager::render(std::filesystem::path template_file, std::filesyste
   spdlog::debug("Render the template file {} to directory {}", template_file.c_str(), location.c_str());
   std::string filetype = template_file.stem();
   std::string filename;
-  if (filetype == "config") {
+  if (filetype == "problem_config") {
     filename = "config.json";
   } else {
     std::string extension = template_file.parent_path().filename();
     filename = filetype + "." + extension;
   }
   location = location / filename;
-  spdlog::debug("File", template_file.c_str(), location.c_str());
+  spdlog::debug("Rendering file {} to {} ", template_file.c_str(), location.c_str());
 
   if (!overwrite && std::filesystem::exists(location)) {
     spdlog::debug("File {} already exists, skip rendering", location.c_str());

@@ -23,7 +23,7 @@ nlohmann::json read_problem_config(std::filesystem::path path, std::filesystem::
 // TODO add docs
 nlohmann::json read_project_config(std::filesystem::path path);
 
-int create_new_task(nlohmann::json project_conf);
+int create_new_task(std::filesystem::path project_conf_path);
 
 void print_duration(std::chrono::high_resolution_clock::time_point t_start);
 
@@ -31,7 +31,10 @@ void print_duration(std::chrono::high_resolution_clock::time_point t_start);
 void print_report(const std::string report_name, bool passed, bool rte, bool tle, bool wa, long long runtime);
 
 // TODO add docs
-void edit_config(std::filesystem::path root_dir, TemplateManager &template_manager, std::string &frontend_exec);
+void edit_config(std::filesystem::path root_dir,
+                 std::filesystem::path project_conf_path,
+                 TemplateManager &template_manager,
+                 std::string &task_editor_exec);
 
 bool compile_headers(std::filesystem::path precompiled_dir,
                      const std::string &cc,

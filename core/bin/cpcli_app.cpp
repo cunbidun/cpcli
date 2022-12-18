@@ -58,7 +58,7 @@ int cpcli_process(int argc, char *argv[]) {
   std::filesystem::path checker_dir = local_share_dir / "checkers";
 
   if (parser_result.operation == ParserOperations::NewTask) {
-    create_new_task(project_conf);
+    create_new_task(project_conf_path);
     return 0;
   }
 
@@ -82,8 +82,8 @@ int cpcli_process(int argc, char *argv[]) {
   clean_up();                              // clean up the root directory for the first time
 
   if (parser_result.operation == ParserOperations::EditTaskConfig) { // edit config
-    string frontend_exec = project_conf["frontend_exec"].get<string>();
-    edit_config(root_dir, template_manager, frontend_exec);
+    string task_editor_exec = project_conf["task_editor_exec"].get<string>();
+    edit_config(root_dir, project_conf_path, template_manager, task_editor_exec);
     return 0;
   }
 

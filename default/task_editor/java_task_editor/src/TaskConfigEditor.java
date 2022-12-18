@@ -21,6 +21,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.cli.*;
+
 /**
  * @author Egor Kulikov (kulikov@devexperts.com)
  */
@@ -389,19 +391,6 @@ public class TaskConfigEditor extends JDialog {
         setLocation(d.width / 2 - W / 2, d.height / 2 - H / 2);
     }
 
-    public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            System.out.println("Usage: java -jar TaskConfigEditor.jar <path/to/directory/with/config.json>");
-            return;
-        }
-        Path config_path = Paths.get(args[0], "config.json").toAbsolutePath();
-        Gson gson = new Gson();
-        ProblemConfig problemConfig = gson.fromJson(new FileReader(config_path.toFile()), ProblemConfig.class);
-        TaskConfigEditor dialog = new TaskConfigEditor(problemConfig, config_path.toString());
-        dialog.setVisible(true);
-        System.exit(0);
-    }
-
     private JCheckBox createCheckBox(final Test test) {
         final JCheckBox checkBox = new JCheckBox("", test.active);
         Dimension preferredSize = new Dimension(checkBox.getPreferredSize().width, HEIGHT);
@@ -487,5 +476,60 @@ public class TaskConfigEditor extends JDialog {
                 checkBoxes.get(currentTest).isSelected(), knowAnswer.isSelected()));
 
         outputPanel.setVisible(knowAnswer.isSelected());
+    }
+
+    private static void printHelp(Options options) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("java_task_editor", options);
+
+    }
+
+    public static void main(String[] args) throws IOException {
+        Options options = new Options();
+
+        Option helpOption = Option.builder("h")
+                .longOpt("help")
+                .required(false)
+                .hasArg(false)
+                .desc("show this help message then exit")
+                .build();
+
+        Option projectConfigOption = Option.builder("p").longOpt("project-config")
+                .argName("file")
+                .hasArg()
+                .required()
+                .desc("path to the project config")
+                .build();
+
+        Option problemDirectoryOption = Option.builder("r").longOpt("root")
+                .argName("directory")
+                .hasArg()
+                .required()
+                .desc("path to the problem directory")
+                .build();
+
+        options.addOption(helpOption);
+        options.addOption(projectConfigOption);
+        options.addOption(problemDirectoryOption);
+        CommandLineParser parser = new DefaultParser();
+        try {
+            CommandLine line = parser.parse(options, args);
+
+            if (line.hasOption(helpOption.getOpt())) {
+                printHelp(options);
+                System.exit(0);
+            }
+
+            Path config_path = Paths.get(line.getOptionValue("root"), "config.json").toAbsolutePath();
+            Gson gson = new Gson();
+            ProblemConfig problemConfig = gson.fromJson(new FileReader(config_path.toFile()), ProblemConfig.class);
+            TaskConfigEditor dialog = new TaskConfigEditor(problemConfig, config_path.toString());
+            dialog.setVisible(true);
+            System.exit(0);
+        } catch (ParseException exp) {
+            System.err.println("Parsing failed. Reason: " + exp.getMessage());
+            printHelp(options);
+        }
+
     }
 }

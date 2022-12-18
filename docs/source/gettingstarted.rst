@@ -93,7 +93,7 @@ Put this inside the 	``project_config.json``
 .. code-block:: json 
 
   {
-    "frontend_exec": "java -jar ~/.local/share/cpcli/frontend/TaskConfigEditor.jar",
+    "task_editor_exec": "java -jar ~/.local/share/cpcli/frontend/TaskConfigEditor.jar",
 
     "root": "</path/to/your/workspace/folder>",
 

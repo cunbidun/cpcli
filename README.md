@@ -34,7 +34,7 @@ This file should named `project_config.json` and place directly on the top level
 ```json
 {
   "root": "/Users/cunbidun/competitive_programming", // your workspace folder
-  "frontend_exec": "java -jar ~/.local/share/cpcli/frontend/TaskConfigEditor.jar",
+  "task_editor_exec": "java -jar ~/.local/share/cpcli/frontend/TaskConfigEditor.jar",
   "cpp_compiler": "g++",
   "cpp_compile_flag": "-DLOCAL -O2 -std=c++17",
   "cpp_debug_flag": "-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG",
@@ -90,7 +90,7 @@ $ cpcli_app --project-config=project_config.json task --root-dir="/Users/cunbidu
 | 3   | `template_dir`           | `string` | Directory for storing template (check the repo `template` folder for more info)                      | `""`                                                                                              |
 | 4   | `archive_dir`            | `string` | Directory for archiving completed task (check the repo `archive` folder for more info)               | `""`                                                                                              |
 | 6   | `include_dir`            | `string` | Store libs here                                                                                      |                                                                                                   |
-| 5   | `frontend_exec`          | `string` | Executable frontend to edit task `config.json`                                                       | Ugly java UI                                                                                      |
+| 5   | `task_editor_exec`          | `string` | Executable frontend to edit task `config.json`                                                       | Ugly java UI                                                                                      |
 | 7   | `cpp_compile_flag`       | `string` | Cpp normal complier flag                                                                             | `"-DLOCAL -static -O2 -std=c++17"`                                                                |
 | 8   | `cpp_debug_flag`         | `string` | Cpp debug flag                                                                                       | `"-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG"` |
 | 9   | `use_precompiled_header` | `bool`   | use precompiled headers                                                                              | `true`                                                                                            |
@@ -209,16 +209,17 @@ The recommend text editor for developing this project is [vscode](https://code.v
 
    ```json
    {
-     "java.project.referencedLibraries": [
-       "bazel-bin/default/task_editor/TaskConfigEditor/TaskConfigEditor.runfiles/gson/jar/*.jar"
-     ]
+    "java.project.referencedLibraries": [
+      "bazel-bin/default/task_editor/java_task_editor/java_task_editor.runfiles/gson/jar/*.jar",
+      "bazel-bin/default/task_editor/java_task_editor/java_task_editor.runfiles/common_cli/jar/*.jar"
+    ],
    }
    ```
 
 ### Build and Run Java Test Editor
 
 ```bash
-bazel run //default/task_editor/TaskConfigEditor:TaskConfigEditor default/task_editor/TaskConfigEditor/src
+bazel run //default/task_editor/java_task_editor ~/cpcli/default/task_editor
 ```
 
 ### Build and run GTest

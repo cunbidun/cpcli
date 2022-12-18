@@ -1,0 +1,15 @@
+cc_binary(
+    name = "cli_task_editor",
+    srcs = ["cli_task_editor.cpp"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/libs/constant",
+        "//core/libs/color",
+        "//core/libs/utils",
+        "//core/libs/template_manager",
+        "//core/libs/path_manager",
+        "@json",
+        "@cli11",
+        "@spdlog",
+    ],
+)
