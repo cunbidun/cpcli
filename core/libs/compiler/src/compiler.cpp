@@ -1,7 +1,8 @@
 #include "compiler.hpp"
-#include "core/libs/utils/include/utils.hpp"
+#include "inja.hpp"
 #include "path_manager.hpp"
 #include "spdlog/spdlog.h"
+#include "utils.hpp"
 
 #include <filesystem>
 
@@ -73,20 +74,23 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_solution_file) {
     }
 
     std::filesystem::current_path(path.parent_path());
-    std::vector<std::string> command;
 
-    // build command
-    command.push_back(cpp_compiler);
-    command.push_back(compiler_flags);
-    command.push_back("-o");
-    command.push_back(binary_name);
-    command.push_back("\"" + path.string() + "\"");
+    {
+      // compile and run the binary
+      std::string command_template = "{{ cpp_compiler }} {{ compiler_flags }} -o {{ binary_name }} \"{{ path }}\"";
+      inja::Environment env;
+      std::string command = env.render(command_template,
+                                       {{"cpp_compiler", cpp_compiler},
+                                        {"compiler_flags", compiler_flags},
+                                        {"binary_name", binary_name},
+                                        {"path", path.generic_string()}});
 
-    int status = system_warper(join(command));
+      int status = system_warper(command);
 
-    if (status != 0) {
-      clean_up();
-      exit(CompilerError);
+      if (status != 0) {
+        clean_up();
+        exit(CompilerError);
+      }
     }
   }
 
@@ -110,23 +114,80 @@ int Compiler::compile_python(std::filesystem::path path, bool is_solution_file) 
 
   std::string language = "[py]";
   auto language_config = project_config["language_config"][language];
-  auto compiler = language_config["compiler"].get<std::string>();
+  std::string interpreter = language_config["interpreter"].get<std::string>();
+  spdlog::debug("interpreter is {}", interpreter);
 
-  std::string command = compiler + " -m py_compile " + "\"" + path.generic_string() + "\"";
-  spdlog::debug("check python compile error with command '{}'", command);
-  if (system_warper(command) != 0) {
-    clean_up();
-    exit(CompilerError);
+  {
+    // compile and check for syntax error
+    std::string command_template = "{{ interpreter }} -m py_compile '{{ path }}'";
+    inja::Environment env;
+    std::string command = env.render(command_template, {{"interpreter", interpreter}, {"path", path.generic_string()}});
+    spdlog::debug("check python compile error with command '{}'", command);
+    if (system_warper(command) != 0) {
+      clean_up();
+      exit(CompilerError);
+    }
   }
 
   std::ofstream file(path.parent_path() / path.stem());
   file << "#!/bin/sh" << std::endl;
-  file << compiler << " " << path.filename().generic_string() << std::endl;
+  file << interpreter << " " << path.filename().generic_string() << std::endl;
   file.close();
 
   std::filesystem::permissions(
       path.parent_path() / path.stem(), std::filesystem::perms::owner_exec, std::filesystem::perm_options::add);
 
+  if (is_solution_file) {
+    std::filesystem::copy_file(
+        path, path_manager.get_output() / "solution.py", std::filesystem::copy_options::overwrite_existing);
+  }
+  return 0;
+}
+
+int Compiler::compile_java(std::filesystem::path path, bool is_solution_file) {
+  spdlog::debug(
+      "compile_java: '{}'. is_solution_file: '{}'. debug is '{}'", path.generic_string(), is_solution_file, is_debug);
+
+  std::string language = "[java]";
+  auto language_config = project_config["language_config"][language];
+  std::string compiler = language_config["compiler"].get<std::string>();
+  spdlog::debug("compiler is {}", compiler);
+  std::string runtime = language_config["runtime"].get<std::string>();
+  spdlog::debug("runtime is {}", runtime);
+
+  std::string compiler_flags;
+  if (is_debug && is_solution_file) {
+    compiler_flags = language_config["debug_flag"].get<std::string>();
+  } else {
+    compiler_flags = language_config["regular_flag"].get<std::string>();
+  }
+
+  std::string command_template = "{{ compiler }} {{ compiler_flags }} '{{ path }}'";
+  inja::Environment env;
+  std::string command = env.render(
+      command_template, {{"compiler", compiler}, {"compiler_flags", compiler_flags}, {"path", path.generic_string()}});
+  spdlog::debug("compile java with command '{}'", command);
+  if (system_warper(command) != 0) {
+    clean_up();
+    exit(CompilerError);
+  }
+
+  // Generate a shell script to run the class file
+  std::string class_name = path.stem();
+  std::string file_name = class_name;
+  file_name[0] = tolower(class_name[0]);
+  std::ofstream file(path.parent_path() / file_name);
+  file << "#!/bin/sh" << std::endl;
+  file << runtime << " " << class_name << std::endl;
+  file.close();
+
+  std::filesystem::permissions(
+      path.parent_path() / path.stem(), std::filesystem::perms::owner_exec, std::filesystem::perm_options::add);
+
+  if (is_solution_file) {
+    std::filesystem::copy_file(
+        path, path_manager.get_output() / "Solution.java", std::filesystem::copy_options::overwrite_existing);
+  }
   return 0;
 }
 
@@ -144,6 +205,8 @@ int Compiler::compile(std::filesystem::path path) {
     status = compile_python(path, filetype == "solution");
   } else if (file_extension == ".cpp") {
     status = compile_cpp(path, filetype == "solution");
+  } else if (file_extension == ".java") {
+    status = compile_java(path, filetype == "Solution");
   } else {
     spdlog::error("The file extension {} is not supported", file_extension.c_str());
     exit(CompilerLanguageNotSuported);

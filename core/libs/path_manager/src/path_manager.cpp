@@ -114,8 +114,14 @@ std::filesystem::path PathManager::get_cache_dir(std::filesystem::path root_dir)
 
 std::vector<std::filesystem::path> PathManager::get_all_task_path_filetype(std::filesystem::path root_dir,
                                                                            std::string filetype) {
-  spdlog::debug("Getitng all task files for root_dir={}, filetype={}", root_dir.c_str(), filetype.c_str());
+  spdlog::debug("Getting all task files for root_dir={}, filetype={}", root_dir.c_str(), filetype.c_str());
   std::vector<std::filesystem::path> to_return;
+  for (auto p : glob::glob((root_dir / filetype).generic_string() + ".*")) {
+    if (SUPPORTED_EXTENSIONS.find(p.extension()) != SUPPORTED_EXTENSIONS.end()) {
+      to_return.push_back(p);
+    }
+  }
+  filetype[0] = toupper(filetype[0]);
   for (auto p : glob::glob((root_dir / filetype).generic_string() + ".*")) {
     if (SUPPORTED_EXTENSIONS.find(p.extension()) != SUPPORTED_EXTENSIONS.end()) {
       to_return.push_back(p);

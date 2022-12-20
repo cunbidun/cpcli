@@ -4,6 +4,7 @@
 #include "path_manager.hpp"
 #include "spdlog/spdlog.h"
 #include "utils.hpp"
+#include "inja.hpp"
 
 using std::cout;
 using std::endl;
@@ -75,8 +76,15 @@ void edit_config(std::filesystem::path root_dir,
   nlohmann::json config = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
   std::string old_name = config["name"].get<std::string>();
 
-  std::string command =
-      task_editor_exec + " --root \"" + root_dir.string() + "\" --project-config \"" + project_conf_path.string() + "\"";
+  std::string command_template = "{{ task_editor_exec }} --root '{{ root_dir }}' --project-config '{{ project_conf_path }}'";
+
+  inja::Environment env;
+  std::string command = env.render(command_template, {
+    {"task_editor_exec", task_editor_exec},
+    {"root_dir", root_dir.generic_string()},
+    {"project_conf_path", project_conf_path .generic_string()}
+  });
+
   system_warper(command);
 
   config = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());

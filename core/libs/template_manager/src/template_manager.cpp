@@ -129,6 +129,9 @@ void TemplateManager::render(std::filesystem::path template_file, std::filesyste
   } else {
     std::string extension = template_file.parent_path().filename();
     filename = filetype + "." + extension;
+    if (extension == "java") {
+      filename[0] = toupper(filename[0]);
+    }
   }
   location = location / filename;
   spdlog::debug("Rendering file {} to {} ", template_file.c_str(), location.c_str());

@@ -5,10 +5,11 @@ cc_library(
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],
     deps = [
-        "@json",
-        "@spdlog",
+        "//core/libs/operations",
         "//core/libs/path_manager",
         "//core/libs/utils",
-        "//core/libs/operations",
+        "@inja",
+        "@json",
+        "@spdlog",
     ],
 )

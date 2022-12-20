@@ -21,6 +21,7 @@ public:
   // the solution filetype will receives special treatments
   int compile_cpp(std::filesystem::path path, bool is_solution_file);
   int compile_python(std::filesystem::path path, bool is_solution_file);
+  int compile_java(std::filesystem::path path, bool is_solution_file);
 
 private:
   json project_config;

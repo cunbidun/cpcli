@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include "constant.hpp"
+#include "glob.hpp"
 #include "spdlog/spdlog.h"
 
 using std::cout, std::string;
@@ -96,6 +97,9 @@ int clean_up() {
   std::filesystem::remove("interactor");
   std::filesystem::remove_all("___test_case");
   std::filesystem::remove_all("__pycache__");
+  for (auto p : glob::glob("*.class")) {
+    std::filesystem::remove(p);
+  }
   return 0;
 }
 

@@ -11,6 +11,12 @@ filegroup(
 )
 
 filegroup(
+    name = "java_template",
+    srcs = ["java"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "common_template",
     srcs = ["common"],
     visibility = ["//visibility:public"],
