@@ -40,7 +40,6 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_solution_file) {
     spdlog::debug("the file is not changed, use cache");
     std::filesystem::copy_file(
         binary_cache_dir, path.parent_path() / binary_name, std::filesystem::copy_options::overwrite_existing);
-    return 0;
   } else {
     spdlog::debug("the file is changed, not use cache");
     std::string compiler_flags;
