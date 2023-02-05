@@ -90,6 +90,7 @@ int cpcli_process(int argc, char *argv[]) {
   std::filesystem::path temp_config_path = template_manager.get_problem_config();
   problem_conf_path = root_dir / "config.json";
   problem_conf = read_problem_config(problem_conf_path, temp_config_path);
+  path_manager.init_problem_conf(problem_conf);
 
   output_dir = path_manager.get_output();
 
@@ -102,7 +103,7 @@ int cpcli_process(int argc, char *argv[]) {
     // Run with terminal. This option only uses the project config file for
     // compiler flags. No problem config will be used.
     Compiler compiler(project_conf, path_manager, root_dir, false);
-    compiler.compile(path_manager.get_task_solution_path(root_dir));
+    compiler.compile(path_manager.get_solution_path(root_dir));
     int status = system_warper("./solution");
     cout << '\n'; // add an empty line before printing the status
     if (status != 0) {
@@ -148,7 +149,7 @@ int cpcli_process(int argc, char *argv[]) {
 
     if (problem_conf["interactive"]) {
       problem_conf["knowGenAns"] = false;
-      compiler.compile(path_manager.get_task_interactor_path(root_dir));
+      compiler.compile(path_manager.get_interactor_path(root_dir));
       cout << termcolor::cyan << termcolor::bold << "Interactive task" << termcolor::reset << '\n';
     } else {
       if (problem_conf["checker"] != "custom") {
@@ -156,7 +157,7 @@ int cpcli_process(int argc, char *argv[]) {
         check_file(checker_bin_path, "checker binary not found!");
         copy_file(checker_bin_path, root_dir / "checker", std::filesystem::copy_options::overwrite_existing);
       } else {
-        compiler.compile(path_manager.get_task_checker_path(root_dir));
+        compiler.compile(path_manager.get_checker_path(root_dir));
       }
       cout << termcolor::cyan << termcolor::bold << "Using " << problem_conf["checker"].get<string>() << " checker!"
            << termcolor::reset << '\n';
@@ -164,7 +165,7 @@ int cpcli_process(int argc, char *argv[]) {
 
     // use slow solution for generate correct output
     if (problem_conf["knowGenAns"]) {
-      compiler.compile(path_manager.get_task_slow_path(root_dir));
+      compiler.compile(path_manager.get_slow_path(root_dir));
     }
 
     if (problem_conf["useGeneration"]) {
@@ -178,7 +179,7 @@ int cpcli_process(int argc, char *argv[]) {
     }
 
     // compile solution file
-    compiler.compile(path_manager.get_task_solution_path(root_dir));
+    compiler.compile(path_manager.get_solution_path(root_dir));
 
     auto t1 = std::chrono::high_resolution_clock::now();
     long long time = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();

@@ -17,6 +17,12 @@ filegroup(
 )
 
 filegroup(
+    name = "rs_template",
+    srcs = ["rs"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "common_template",
     srcs = ["common"],
     visibility = ["//visibility:public"],

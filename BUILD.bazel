@@ -14,6 +14,7 @@ sh_binary(
         "//default/templates:cpp_template",
         "//default/templates:py_template",
         "//default/templates:java_template",
+        "//default/templates:rs_template",
     ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )

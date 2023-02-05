@@ -23,16 +23,17 @@ enum class PathManagerStatus {
 };
 
 static inline const std::vector<std::string> REQUIRED_DIR = {"task", "archive", "output"};
-static inline const std::vector<std::string> OPTIONAL_DIR = {"include", "template"};
+static inline const std::vector<std::string> OPTIONAL_DIR = {"template"};
 
 class PathManager {
   using json = nlohmann::json;
 
 public:
-  PathManagerStatus init(json project_config);
+  PathManagerStatus init(json project_config, json problem_config = nullptr);
+
+  void init_problem_conf(json problem_config);
 
   bool has_customize_template_dir();
-  bool has_customize_include_dir();
 
   // Required directories
   /**
@@ -48,22 +49,22 @@ public:
 
   // Required optional dir
   std::filesystem::path get_template();
-  std::filesystem::path get_include();
 
   std::filesystem::path get_cache_dir(std::filesystem::path path);
-  std::filesystem::path get_task_solution_path(std::filesystem::path root_dir);
-  std::filesystem::path get_task_slow_path(std::filesystem::path root_dir);
+  std::filesystem::path get_solution_path(std::filesystem::path root_dir);
+  std::filesystem::path get_slow_path(std::filesystem::path root_dir);
   std::filesystem::path get_task_gen_path(std::filesystem::path root_dir);
-  std::filesystem::path get_task_checker_path(std::filesystem::path root_dir);
-  std::filesystem::path get_task_interactor_path(std::filesystem::path root_dir);
+  std::filesystem::path get_checker_path(std::filesystem::path root_dir);
+  std::filesystem::path get_interactor_path(std::filesystem::path root_dir);
 
   bool check_task_path_exist(std::filesystem::path root_dir, std::string filetype);
 
 private:
   json project_config;
+  json problem_config;
   std::map<std::string, std::filesystem::path> path_mp;
   std::filesystem::path get(std::string key);
-  std::filesystem::path get_task_path(std::filesystem::path root_dir, std::string filetype);
+  std::filesystem::path get_full_path_with_file_type(std::filesystem::path root_dir, std::string filetype);
   std::vector<std::filesystem::path> get_all_task_path_filetype(std::filesystem::path root_dir, std::string filetype);
 };
 

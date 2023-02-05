@@ -31,7 +31,6 @@ TEST(TestPathManager, TestInitConfigRootOnlySuccessRequired) {
   project_config["root"] = root;
   PathManager manager;
   EXPECT_EQ(manager.init(project_config), PathManagerStatus::Success);
-  EXPECT_EQ(manager.has_customize_include_dir(), false);
   EXPECT_EQ(manager.has_customize_template_dir(), false);
 
   std::filesystem::remove_all(test_dir);
@@ -55,13 +54,11 @@ TEST(TestPathManager, TestInitConfigRootOnlySuccessAll) {
   std::filesystem::create_directory(archive);
   std::filesystem::create_directory(output);
   std::filesystem::create_directory(cpcli);
-  std::filesystem::create_directory(include_dir);
   std::filesystem::create_directory(template_dir);
   project_config["root"] = root;
 
   PathManager manager;
   EXPECT_EQ(manager.init(project_config), PathManagerStatus::Success);
-  EXPECT_EQ(manager.has_customize_include_dir(), true);
   EXPECT_EQ(manager.has_customize_template_dir(), true);
   std::filesystem::remove_all(test_dir);
 }
@@ -88,7 +85,6 @@ TEST(TestPathManager, TestInitConfigRootOnlyIncludeOnly) {
 
   PathManager manager;
   EXPECT_EQ(manager.init(project_config), PathManagerStatus::Success);
-  EXPECT_EQ(manager.has_customize_include_dir(), true);
   EXPECT_EQ(manager.has_customize_template_dir(), false);
   std::filesystem::remove_all(test_dir);
 }

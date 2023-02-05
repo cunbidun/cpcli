@@ -15,4 +15,13 @@ public class ProblemConfig {
     Boolean stopAtWrongAnswer;
     Boolean interactive;
     List<Test> tests;
+    LanguageConfig languageConfig;
+}
+
+class LanguageConfig {
+    String solution;
+    String slow;
+    String gen;
+    String checker;
+    String interactor;
 }
