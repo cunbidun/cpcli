@@ -286,13 +286,17 @@ public class TaskConfigEditor extends JDialog {
         // --------------------------------
 
         // #################################################################################################
-        // # GEN #
+        // # BOTTOM
         // #################################################################################################
+        VariableGridLayout bottomLayout = new VariableGridLayout(1, 2, 5, 5);
+        bottomLayout.setColFraction(0, 0.75);
+        JPanel bottomPanel = new JPanel(bottomLayout);
+
         VariableGridLayout genLayout = new VariableGridLayout(2, 1, 5, 5);
         genLayout.setRowFraction(1, 0.8);
         JPanel gen = new JPanel(genLayout);
 
-        JPanel genOptions = new JPanel(new VariableGridLayout(1, 4, 5, 5));
+        JPanel genOptions = new JPanel(new VariableGridLayout(1, 3, 5, 5));
 
         // -------------------------------- num test --------------------------------
         JPanel numTestPanel = new JPanel(new BorderLayout());
@@ -331,12 +335,59 @@ public class TaskConfigEditor extends JDialog {
         genPanel.setVisible(problemConfig.useGeneration);
         gen.add(genCheckBox);
         gen.add(genPanel);
+        bottomPanel.add(gen);
 
-        VariableGridLayout finalL = new VariableGridLayout(3, 1, 5, 5);
-        finalL.setRowFraction(0, 0.1);
-        finalL.setRowFraction(1, 0.63);
+        // Override
+        VariableGridLayout overrideLayout = new VariableGridLayout(3, 1, 5, 5);
+        JPanel overridePanel = new JPanel(overrideLayout);
+        // -------------------------------- solution --------------------------------
+        JPanel overrideSolutionPanel = new JPanel(new BorderLayout());
+        overrideSolutionPanel.add(new JLabel("solution"), BorderLayout.NORTH);
+        JTextField overrideSolutionPanelTF = new JTextField(10);
 
-        JPanel finalPanel = new JPanel(finalL);
+        if (problemConfig.languageConfig != null) {
+            overrideSolutionPanelTF.setText(
+                    problemConfig.languageConfig.solution != null
+                            ? String.valueOf(problemConfig.languageConfig.solution)
+                            : "");
+            overrideSolutionPanelTF.setFont(Font.decode(Font.MONOSPACED));
+        }
+        overrideSolutionPanel.add(overrideSolutionPanelTF);
+        overridePanel.add(overrideSolutionPanel);
+
+        // -------------------------------- slow --------------------------------
+        JPanel overrideSlowPanel = new JPanel(new BorderLayout());
+        overrideSlowPanel.add(new JLabel("slow"), BorderLayout.NORTH);
+        JTextField overrideSlowPanelTF = new JTextField(10);
+        if (problemConfig.languageConfig != null) {
+            overrideSlowPanelTF.setText(
+                    problemConfig.languageConfig.slow != null ? String.valueOf(problemConfig.languageConfig.slow)
+                            : "");
+            overrideSlowPanelTF.setFont(Font.decode(Font.MONOSPACED));
+        }
+        overrideSlowPanel.add(overrideSlowPanelTF);
+        overridePanel.add(overrideSlowPanel);
+
+        // -------------------------------- gen --------------------------------
+        JPanel overrideGenPanel = new JPanel(new BorderLayout());
+        overrideGenPanel.add(new JLabel("gen"), BorderLayout.NORTH);
+        JTextField overrideGenPanelTF = new JTextField(10);
+        if (problemConfig.languageConfig != null) {
+            overrideGenPanelTF.setText(
+                    problemConfig.languageConfig.gen != null ? String.valueOf(problemConfig.languageConfig.gen)
+                            : "");
+            overrideGenPanelTF.setFont(Font.decode(Font.MONOSPACED));
+        }
+        overrideGenPanel.add(overrideGenPanelTF);
+        overridePanel.add(overrideGenPanel);
+
+        bottomPanel.add(overridePanel);
+
+        VariableGridLayout finalLayout = new VariableGridLayout(3, 1, 5, 5);
+        finalLayout.setRowFraction(0, 0.1);
+        finalLayout.setRowFraction(1, 0.63);
+
+        JPanel finalPanel = new JPanel(finalLayout);
         JButton save = new JButton("Save");
         save.addActionListener(e -> {
             saveCurrentTest();
@@ -358,6 +409,12 @@ public class TaskConfigEditor extends JDialog {
             problemConfig.group = groupNameTextField.getText();
             problemConfig.generatorSeed = generatorSeedTextField.getText();
             problemConfig.checker = checkerTextField.getText();
+            if (problemConfig.languageConfig == null) {
+                problemConfig.languageConfig = new LanguageConfig();
+            }
+            problemConfig.languageConfig.solution = overrideSolutionPanelTF.getText();
+            problemConfig.languageConfig.slow = overrideSlowPanelTF.getText();
+            problemConfig.languageConfig.gen = overrideGenPanelTF.getText();
             try {
                 FileWriter writer = new FileWriter(path);
                 writer.write(gson.toJson(problemConfig));
@@ -376,7 +433,7 @@ public class TaskConfigEditor extends JDialog {
 
         finalPanel.add(infoPanel);
         finalPanel.add(mainPanel);
-        finalPanel.add(gen);
+        finalPanel.add(bottomPanel);
 
         setContentPane(finalPanel);
         setSelectedTest(Math.min(0, tests.size() - 1));

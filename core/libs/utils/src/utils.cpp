@@ -67,17 +67,11 @@ bool range_equal(InputIterator1 first1, InputIterator1 last1, InputIterator2 fir
 }
 
 bool compare_files(const std::filesystem::path &filename1, const std::filesystem::path &filename2) {
-  std::filesystem::current_path(filename1.parent_path());
-  std::ifstream file1(filename1.filename());
-
-  std::filesystem::current_path(filename2.parent_path());
-  std::ifstream file2(filename2.filename());
-
+  std::ifstream file1(filename1);
+  std::ifstream file2(filename2);
   std::istreambuf_iterator<char> begin1(file1);
   std::istreambuf_iterator<char> begin2(file2);
-
   std::istreambuf_iterator<char> end;
-
   return range_equal(begin1, end, begin2, end);
 }
 

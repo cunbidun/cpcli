@@ -17,6 +17,6 @@ static inline const int INVALID_CONFIG_ERROR = 9320850;
 static inline const int RETURN_OK = 0;
 static inline const int RETURN_WA = 10;
 static inline const int RETURN_STOP_ON_WA = 11;
-static inline const std::set<std::string> SUPPORTED_EXTENSIONS = {".cpp", ".py", ".java"};
+static inline const std::set<std::string> SUPPORTED_EXTENSIONS = {".cpp", ".py", ".java", ".rs"};
 
 #endif

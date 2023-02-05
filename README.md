@@ -219,7 +219,7 @@ The recommend text editor for developing this project is [vscode](https://code.v
 ### Build and Run Java Test Editor
 
 ```bash
-bazel run //default/task_editor/java_task_editor ~/cpcli/default/task_editor
+bazel run //default/task_editor/java_task_editor --  -r ~/cpcli/default/task_editor -p ~/cpcli/default/task_editor/config.json
 ```
 
 ### Build and run GTest

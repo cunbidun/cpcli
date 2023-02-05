@@ -1,6 +1,6 @@
 cc_library(
     name = "compiler",
-    srcs = ["src/compiler.cpp"],
+    srcs = ["src/compiler.cpp", "src/rust.cpp"],
     hdrs = ["include/compiler.hpp"],
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],

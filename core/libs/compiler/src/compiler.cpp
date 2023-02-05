@@ -25,18 +25,32 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_solution_file) {
       "compile_cpp: '{}'. is_solution_file: '{}'. debug is '{}'", path.generic_string(), is_solution_file, is_debug);
   std::string language = "[cpp]";
   auto language_config = project_config["language_config"][language];
+  spdlog::debug("language config is {}", language_config.dump());
+
   auto cpp_compiler = language_config["compiler"].get<std::string>();
   spdlog::debug("cpp compiler is: {}", cpp_compiler);
   auto cache_dir = path_manager.get_cache_dir(root_dir);
   spdlog::debug("cache dir is: {}", cache_dir.generic_string());
   bool use_cache = language_config["use_cache"].get<bool>();
 
+  std::filesystem::path include_dir;
+  if (language_config.contains("include_dir")) {
+    include_dir = language_config["include_dir"].get<std::string>();
+    if (!std::filesystem::exists(include_dir)) {
+      spdlog::error("include_dir at {} does not exist", include_dir.c_str());
+      return (CompilerCppIncludeDirMissing);
+    }
+    spdlog::debug("include dir is: {}", include_dir.generic_string());
+  } else {
+    spdlog::debug("include dir for cpp is not set");
+  }
+
   std::string binary_name = path.stem();
   std::filesystem::path binary_cache_dir = cache_dir / binary_name;
   std::filesystem::path file_cache_dir = cache_dir / path.filename();
   if (use_cache && compare_files(path, file_cache_dir) && (!is_debug || !is_solution_file)) {
     // Use cache when when use_cache is true and the content are the same.
-    // However, if the filetype is solution and we are debuging, cache will be disable
+    // However, if the filetype is solution and we are debugging, cache will be disable
     spdlog::debug("the file is not changed, use cache");
     std::filesystem::copy_file(
         binary_cache_dir, path.parent_path() / binary_name, std::filesystem::copy_options::overwrite_existing);
@@ -65,10 +79,10 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_solution_file) {
       compiler_flags = language_config["regular_flag"].get<std::string>();
     }
 
-    if (!is_solution_file && path_manager.has_customize_include_dir()) {
+    if (!is_solution_file && !include_dir.empty()) {
       // do not add include dir for solution filetype
-      string include_dir = "\"" + path_manager.get_include().generic_string() + "\"";
-      std::vector<string> command{compiler_flags, "-I", include_dir};
+      string include_dir_str = "\"" + include_dir.generic_string() + "\"";
+      std::vector<string> command{compiler_flags, "-I", include_dir_str};
       compiler_flags = join(command);
     }
 
@@ -206,6 +220,8 @@ int Compiler::compile(std::filesystem::path path) {
     status = compile_cpp(path, filetype == "solution");
   } else if (file_extension == ".java") {
     status = compile_java(path, filetype == "Solution");
+  } else if (file_extension == ".rs") {
+    status = compile_rust(path, filetype == "solution");
   } else {
     spdlog::error("The file extension {} is not supported", file_extension.c_str());
     exit(CompilerLanguageNotSuported);

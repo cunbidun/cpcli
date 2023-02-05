@@ -38,6 +38,7 @@ cli_task_editor_path=$(rlocation "cpcli/default/task_editor/cli_task_editor/cli_
 cpp_template_dir=$(rlocation "cpcli/default/templates/cpp")
 py_template_dir=$(rlocation "cpcli/default/templates/py")
 java_template_dir=$(rlocation "cpcli/default/templates/java")
+rs_template_dir=$(rlocation "cpcli/default/templates/rs")
 common_template_dir=$(rlocation "cpcli/default/templates/common")
 
 # --- Remove leftover files ---
@@ -80,6 +81,7 @@ mkdir -p "$HOME/.local/share/cpcli/templates"
 cp -r "$cpp_template_dir" "$HOME/.local/share/cpcli/templates"
 cp -r "$py_template_dir" "$HOME/.local/share/cpcli/templates"
 cp -r "$java_template_dir" "$HOME/.local/share/cpcli/templates"
+cp -r "$rs_template_dir" "$HOME/.local/share/cpcli/templates"
 cp -r "$common_template_dir" "$HOME/.local/share/cpcli/templates"
 
 echo "Current tree"

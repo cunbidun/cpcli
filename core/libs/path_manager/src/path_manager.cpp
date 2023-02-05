@@ -7,7 +7,7 @@
 
 #include <map>
 
-PathManagerStatus PathManager::init(json project_config) {
+PathManagerStatus PathManager::init(json project_config, json problem_config) {
   std::filesystem::path root_path;
 
   // If the project config contains "root" attribute, infer all other path from the root.
@@ -69,16 +69,17 @@ PathManagerStatus PathManager::init(json project_config) {
     spdlog::debug("key={}, value={}", k, v.c_str());
   }
   PathManager::project_config = project_config;
+  PathManager::problem_config = problem_config;
 
   return PathManagerStatus::Success;
 }
 
-bool PathManager::has_customize_template_dir() {
-  return PathManager::path_mp.find("template") != PathManager::path_mp.end();
+void PathManager::init_problem_conf(json problem_config) {
+  PathManager::problem_config = problem_config;
 }
 
-bool PathManager::has_customize_include_dir() {
-  return PathManager::path_mp.find("include") != PathManager::path_mp.end();
+bool PathManager::has_customize_template_dir() {
+  return PathManager::path_mp.find("template") != PathManager::path_mp.end();
 }
 
 std::filesystem::path PathManager::get_task() { return PathManager::path_mp["task"]; }
@@ -96,7 +97,6 @@ std::filesystem::path PathManager::get_local_share() {
 }
 
 std::filesystem::path PathManager::get_template() { return PathManager::get("template"); }
-std::filesystem::path PathManager::get_include() { return PathManager::get("include"); }
 std::filesystem::path PathManager::get(std::string str) {
   if (path_mp.find(str) == path_mp.end()) {
     spdlog::error("key '{}' does not exists in path_mp", str);
@@ -135,7 +135,7 @@ bool PathManager::check_task_path_exist(std::filesystem::path root_dir, std::str
   return PathManager::get_all_task_path_filetype(root_dir, filetype).size() > 0;
 }
 
-std::filesystem::path PathManager::get_task_path(std::filesystem::path root_dir, std::string filetype) {
+std::filesystem::path PathManager::get_full_path_with_file_type(std::filesystem::path root_dir, std::string filetype) {
   spdlog::debug("Getting task file for root_dir={}, filetype={}", root_dir.c_str(), filetype.c_str());
   std::vector<std::filesystem::path> path_list = PathManager::get_all_task_path_filetype(root_dir, filetype);
   if (path_list.size() == 1) {
@@ -148,13 +148,25 @@ std::filesystem::path PathManager::get_task_path(std::filesystem::path root_dir,
   // If there are multiple files, we check if the default extension are one of them.
   // If so, we return that one.
   auto language_config = PathManager::project_config["language_config"];
-  auto default_ex = language_config["default"].get<std::string>();
-  if (language_config["override"].contains(filetype)) {
-    default_ex = language_config["override"][filetype].get<std::string>();
+  auto ex = language_config["default"].get<std::string>();
+  spdlog::debug("Default extension is {}", ex);
+
+  // project config override
+  if (language_config.contains("override")) {
+    ex = language_config["override"].value(filetype, ex);
+    spdlog::debug("Project config contains a override map, new extension {}", ex);
   }
-  spdlog::debug("default extension is '.{}'", default_ex);
+
+  // problem config override
+  if (!PathManager::problem_config.empty() && PathManager::problem_config.contains("languageConfig")) {
+    language_config = PathManager::problem_config["languageConfig"];
+    ex = language_config.value(filetype, ex);
+    spdlog::debug("Problem config contains a override map, new extension is '.{}'", ex);
+  }
+
+  spdlog::debug("Final extension is '.{}'", ex);
   for (auto &p : path_list) {
-    if (p.extension() == "." + default_ex) {
+    if (p.extension() == "." + ex) {
       return p;
     }
   }
@@ -164,18 +176,18 @@ std::filesystem::path PathManager::get_task_path(std::filesystem::path root_dir,
   exit(PathManagerMultipleTaskFilesFound);
 }
 
-std::filesystem::path PathManager::get_task_solution_path(std::filesystem::path root_dir) {
-  return PathManager::get_task_path(root_dir, "solution");
+std::filesystem::path PathManager::get_solution_path(std::filesystem::path root_dir) {
+  return PathManager::get_full_path_with_file_type(root_dir, "solution");
 }
-std::filesystem::path PathManager::get_task_slow_path(std::filesystem::path root_dir) {
-  return PathManager::get_task_path(root_dir, "slow");
+std::filesystem::path PathManager::get_slow_path(std::filesystem::path root_dir) {
+  return PathManager::get_full_path_with_file_type(root_dir, "slow");
 }
 std::filesystem::path PathManager::get_task_gen_path(std::filesystem::path root_dir) {
-  return PathManager::get_task_path(root_dir, "gen");
+  return PathManager::get_full_path_with_file_type(root_dir, "gen");
 }
-std::filesystem::path PathManager::get_task_checker_path(std::filesystem::path root_dir) {
-  return PathManager::get_task_path(root_dir, "checker");
+std::filesystem::path PathManager::get_checker_path(std::filesystem::path root_dir) {
+  return PathManager::get_full_path_with_file_type(root_dir, "checker");
 }
-std::filesystem::path PathManager::get_task_interactor_path(std::filesystem::path root_dir) {
-  return PathManager::get_task_path(root_dir, "interactor");
+std::filesystem::path PathManager::get_interactor_path(std::filesystem::path root_dir) {
+  return PathManager::get_full_path_with_file_type(root_dir, "interactor");
 }
