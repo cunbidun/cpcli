@@ -12,6 +12,7 @@
 #ifndef TERMCOLOR_HPP_
 #define TERMCOLOR_HPP_
 
+#include <cstdint>
 #include <cstdio>
 #include <iostream>
 
