@@ -1,10 +1,10 @@
-{ pkgs ? import <nixpkgs> {} }:
- 
- (pkgs.buildFHSUserEnv {
-   name = "bazel-env";
-   targetPkgs = pkgs: [
-     pkgs.bazel_7
-     pkgs.glibc
-     pkgs.gcc
-   ];
- }).env
+{ pkgs ? import <nixpkgs> { } }:
+pkgs.mkShell {
+  # nativeBuildInputs is usually what you want -- tools you need to run
+  nativeBuildInputs = with pkgs.buildPackages; [
+    pkgs.bazel_7
+    pkgs.glibc
+    pkgs.gcc
+    pkgs.zulu
+  ];
+}
