@@ -45,12 +45,12 @@ bool compile_headers(std::filesystem::path precompiled_dir, const string &cc, co
   std::filesystem::copy(header_path, precompiled_dir / "stdc++.h", std::filesystem::copy_options::overwrite_existing);
 
   // compile header with normal flags
-  command = cc + " " + flag + " stdc++.h";
+  command = cc + " " + flag + " -c" + " stdc++.h";
   std::system(command.c_str());
   std::filesystem::rename("stdc++.h.gch", compile_header / "stdc++.h.gch");
 
   // compile header with debug flags
-  command = cc + " " + debug + " stdc++.h";
+  command = cc + " " + debug + " -c" + " stdc++.h";
   std::system(command.c_str());
   std::filesystem::rename("stdc++.h.gch", debug_header / "stdc++.h.gch");
 
