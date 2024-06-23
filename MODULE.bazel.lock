@@ -1054,11 +1054,7 @@
         },
         "recordedRepoMappingEntries": [
           [
-<<<<<<< HEAD
-            "apple_support~1.5.0",
-=======
             "apple_support~",
->>>>>>> e766860 (Add nix develop shell)
             "bazel_tools",
             "bazel_tools"
           ]
@@ -1067,14 +1063,9 @@
     },
     "@@bazel_tools//tools/cpp:cc_configure.bzl%cc_configure_extension": {
       "general": {
-<<<<<<< HEAD
-        "bzlTransitiveDigest": "mcsWHq3xORJexV5/4eCvNOLxFOQKV6eli3fkr+tEaqE=",
-        "accumulatedFileDigests": {},
-=======
         "bzlTransitiveDigest": "PHpT2yqMGms2U4L3E/aZ+WcQalmZWm+ILdP3yiLsDhA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
->>>>>>> e766860 (Add nix develop shell)
         "envVariables": {},
         "generatedRepoSpecs": {
           "local_config_cc": {
@@ -1134,14 +1125,9 @@
     },
     "@@rules_java~//java:extensions.bzl%toolchains": {
       "general": {
-<<<<<<< HEAD
-        "bzlTransitiveDigest": "D02GmifxnV/IhYgspsJMDZ/aE8HxAjXgek5gi6FSto4=",
-        "accumulatedFileDigests": {},
-=======
         "bzlTransitiveDigest": "0N5b5J9fUzo0sgvH4F3kIEaeXunz4Wy2/UtSFV/eXUY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
->>>>>>> e766860 (Add nix develop shell)
         "envVariables": {},
         "generatedRepoSpecs": {
           "remotejdk21_linux_toolchain_config_repo": {
@@ -1635,9 +1621,9 @@
             "bazel_tools"
           ],
           [
-            "rules_java~7.1.0",
+            "rules_java~",
             "remote_java_tools",
-            "rules_java~7.1.0~toolchains~remote_java_tools"
+            "rules_java~~toolchains~remote_java_tools"
           ]
         ]
       }
