@@ -8,12 +8,9 @@
 #include "template_manager.hpp"
 #include "utils.hpp"
 
-#include <algorithm>
 #include <filesystem>
-#include <fstream>
 #include <getopt.h>
 #include <iostream>
-#include <set>
 #include <signal.h>
 #include <stdlib.h>
 #include <sys/stat.h>

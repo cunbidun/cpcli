@@ -34,7 +34,7 @@ double_6_path=$(rlocation "cpcli/default/checkers/double_6")
 double_9_path=$(rlocation "cpcli/default/checkers/double_9")
 token_checker_path=$(rlocation "cpcli/default/checkers/token_checker")
 
-java_task_editor_path=$(rlocation "cpcli/default/task_editor/java_task_editor/java_task_editor_deploy.jar")
+# java_task_editor_path=$(rlocation "cpcli/default/task_editor/java_task_editor/java_task_editor_deploy.jar")
 cli_task_editor_path=$(rlocation "cpcli/default/task_editor/cli_task_editor/cli_task_editor")
 
 cpp_template_dir=$(rlocation "cpcli/default/templates/cpp")
@@ -43,48 +43,62 @@ java_template_dir=$(rlocation "cpcli/default/templates/java")
 rs_template_dir=$(rlocation "cpcli/default/templates/rs")
 common_template_dir=$(rlocation "cpcli/default/templates/common")
 
+# check if variable $OUT is set 
+if [ -z "$OUT" ]; then
+	echo "ERROR: OUT variable is not set"
+	exit 1;
+fi
+
+# check if $OUT is a directory
+if  [ ! -d "$OUT" ]; then
+	echo "ERROR: $OUT is not a directory"
+	exit 1;
+fi
+
+mkdir -p "$OUT/bin"
+mkdir -p "$OUT/share/cpcli"
 # --- Remove leftover files ---
 echo "Removing leftover files..."
-rm -rf "$HOME/.local/share/cpcli"
-rm -f "$HOME/.local/bin/cpcli_app"
-rm -f "$HOME/.local/bin/cpcli_cc"
-rm -f "$HOME/.local/bin/cpcli_editor"
+rm -rf "$OUT/share/cpcli"
+rm -f "$OUT/bin/cpcli_app"
+rm -f "$OUT/bin/cpcli_cc"
+rm -f "$OUT/bin/cpcli_editor"
 
 # --- copy binaries to ~/.local/bin ---
-echo "Copy cpcli_app binary to $HOME/.local/bin"
-cp "$cpcli_app_path" "$HOME/.local/bin"
+echo "Copy cpcli_app binary to $OUT/bin"
+cp "$cpcli_app_path" "$OUT/bin"
 
-echo "Copy cpcli_cc binary to $HOME/.local/bin"
-cp "$cpcli_cc_path" "$HOME/.local/bin"
+echo "Copy cpcli_cc binary to $OUT/bin"
+cp "$cpcli_cc_path" "$OUT/bin"
 
 # --- copy artifacts to ~/.local/share ---
-echo "Cleanup the cpcli artifacts directory at $HOME/.local/share/cpcli"
-mkdir -p "$HOME/.local/share/cpcli"
+echo "Cleanup the cpcli artifacts directory at $OUT/share/cpcli"
+mkdir -p "$OUT/share/cpcli"
 
-echo "Create checkers directory at $HOME/.local/share/cpcli/checkers"
-mkdir -p "$HOME/.local/share/cpcli/checkers"
+echo "Create checkers directory at $OUT/share/cpcli/checkers"
+mkdir -p "$OUT/share/cpcli/checkers"
 
-echo "Copy checkers binaries to in $HOME/.local/share/cpcli/checkers"
-cp "$double_4_path" "$HOME/.local/share/cpcli/checkers"
-cp "$double_6_path" "$HOME/.local/share/cpcli/checkers"
-cp "$double_9_path" "$HOME/.local/share/cpcli/checkers"
-cp "$token_checker_path" "$HOME/.local/share/cpcli/checkers"
+echo "Copy checkers binaries to in $OUT/share/cpcli/checkers"
+cp "$double_4_path" "$OUT/share/cpcli/checkers"
+cp "$double_6_path" "$OUT/share/cpcli/checkers"
+cp "$double_9_path" "$OUT/share/cpcli/checkers"
+cp "$token_checker_path" "$OUT/share/cpcli/checkers"
 
-echo "Create checkers directory at $HOME/.local/share/cpcli/task-editor"
-mkdir -p "$HOME/.local/share/cpcli/task-editor"
-echo "Copying java test editor"
-cp "$java_task_editor_path" "$HOME/.local/share/cpcli/task-editor/java-task-editor.jar"
+echo "Create checkers directory at $OUT/share/cpcli/task-editor"
+mkdir -p "$OUT/share/cpcli/task-editor"
+# echo "Copying java test editor"
+# cp "$java_task_editor_path" "$OUT/share/cpcli/task-editor/java-task-editor.jar"
 echo "Copying cli test editor"
-cp "$cli_task_editor_path" "$HOME/.local/share/cpcli/task-editor/cli_task_editor"
+cp "$cli_task_editor_path" "$OUT/share/cpcli/task-editor/cli_task_editor"
 
-echo "Create templates directory at $HOME/.local/share/cpcli/templates"
-mkdir -p "$HOME/.local/share/cpcli/templates"
+echo "Create templates directory at $OUT/share/cpcli/templates"
+mkdir -p "$OUT/share/cpcli/templates"
 
-cp -r "$cpp_template_dir" "$HOME/.local/share/cpcli/templates"
-cp -r "$py_template_dir" "$HOME/.local/share/cpcli/templates"
-cp -r "$java_template_dir" "$HOME/.local/share/cpcli/templates"
-cp -r "$rs_template_dir" "$HOME/.local/share/cpcli/templates"
-cp -r "$common_template_dir" "$HOME/.local/share/cpcli/templates"
+cp -r "$cpp_template_dir" "$OUT/share/cpcli/templates"
+cp -r "$py_template_dir" "$OUT/share/cpcli/templates"
+cp -r "$java_template_dir" "$OUT/share/cpcli/templates"
+cp -r "$rs_template_dir" "$OUT/share/cpcli/templates"
+cp -r "$common_template_dir" "$OUT/share/cpcli/templates"
 
 echo "Current tree"
-tree "$HOME/.local/share/cpcli/"
+tree "$OUT/share/cpcli/"
