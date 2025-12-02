@@ -34,7 +34,7 @@ double_6_path=$(rlocation "cpcli/default/checkers/double_6")
 double_9_path=$(rlocation "cpcli/default/checkers/double_9")
 token_checker_path=$(rlocation "cpcli/default/checkers/token_checker")
 
-# java_task_editor_path=$(rlocation "cpcli/default/task_editor/java_task_editor/java_task_editor_deploy.jar")
+java_task_editor_path=$(rlocation "cpcli/default/task_editor/java_task_editor/java_task_editor_deploy.jar")
 cli_task_editor_path=$(rlocation "cpcli/default/task_editor/cli_task_editor/cli_task_editor")
 
 cpp_template_dir=$(rlocation "cpcli/default/templates/cpp")
@@ -87,7 +87,7 @@ cp "$token_checker_path" "$OUT/share/cpcli/checkers"
 echo "Create checkers directory at $OUT/share/cpcli/task-editor"
 mkdir -p "$OUT/share/cpcli/task-editor"
 # echo "Copying java test editor"
-# cp "$java_task_editor_path" "$OUT/share/cpcli/task-editor/java-task-editor.jar"
+cp "$java_task_editor_path" "$OUT/share/cpcli/task-editor/java-task-editor.jar"
 echo "Copying cli test editor"
 cp "$cli_task_editor_path" "$OUT/share/cpcli/task-editor/cli_task_editor"
 
