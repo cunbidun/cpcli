@@ -44,7 +44,6 @@
           # Add other dependencies your project needs
         ];
         shellHook = ''
-          export HOME=$(pwd)
           # Refresh compile_commands.json when in an interactive shell; ignore failures
           if [ -n "\${PS1:-}" ]; then
             bazel run @hedron_compile_commands//:refresh_all || true

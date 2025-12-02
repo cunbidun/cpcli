@@ -93,27 +93,49 @@ fn save_config(state: State<AppState>, config: ProblemConfig) -> Result<(), Stri
 
 #[tauri::command]
 fn get_system_theme() -> String {
-    // Try gsettings for GTK color scheme
-    if let Ok(output) = Command::new("gsettings")
-        .args(["get", "org.gnome.desktop.interface", "color-scheme"])
-        .output()
+    // macOS: Check using defaults read
+    #[cfg(target_os = "macos")]
     {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        if stdout.contains("dark") {
-            return "dark".to_string();
-        } else if stdout.contains("light") {
-            return "light".to_string();
+        if let Ok(output) = Command::new("defaults")
+            .args(["read", "-g", "AppleInterfaceStyle"])
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if stdout.trim().to_lowercase() == "dark" {
+                return "dark".to_string();
+            }
         }
+        // If the command fails or returns empty, it means light mode
+        // (AppleInterfaceStyle key doesn't exist in light mode)
+        return "light".to_string();
     }
     
-    // Fallback: check GTK_THEME environment variable
-    if let Ok(gtk_theme) = env::var("GTK_THEME") {
-        if gtk_theme.to_lowercase().contains("dark") {
-            return "dark".to_string();
+    // Linux: Try gsettings for GTK color scheme
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(output) = Command::new("gsettings")
+            .args(["get", "org.gnome.desktop.interface", "color-scheme"])
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if stdout.contains("dark") {
+                return "dark".to_string();
+            } else if stdout.contains("light") {
+                return "light".to_string();
+            }
         }
+        
+        // Fallback: check GTK_THEME environment variable
+        if let Ok(gtk_theme) = env::var("GTK_THEME") {
+            if gtk_theme.to_lowercase().contains("dark") {
+                return "dark".to_string();
+            }
+        }
+        return "light".to_string();
     }
     
-    // Default to light
+    // Default for other platforms
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     "light".to_string()
 }
 
