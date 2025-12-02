@@ -19,8 +19,8 @@
           extensions = [ "rust-src" "rust-analyzer" ];
         };
 
-        # Common dependencies for Tauri
-        libraries = with pkgs; [
+        # Common dependencies for Tauri (Linux only - macOS uses system frameworks)
+        libraries = pkgs.lib.optionals pkgs.stdenv.isLinux (with pkgs; [
           webkitgtk_4_1
           gtk3
           cairo
@@ -29,15 +29,15 @@
           dbus
           openssl
           librsvg
-        ];
+        ]);
 
         buildInputs = with pkgs; [
           rustToolchain
           cargo
           pkg-config
           nodejs
-          
-          # Tauri dependencies
+        ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+          # Linux/GTK Tauri dependencies
           webkitgtk_4_1
           gtk3
           cairo
@@ -48,13 +48,8 @@
           librsvg
           libsoup_3
         ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-          pkgs.darwin.apple_sdk.frameworks.Security
-          pkgs.darwin.apple_sdk.frameworks.CoreServices
-          pkgs.darwin.apple_sdk.frameworks.CoreFoundation
-          pkgs.darwin.apple_sdk.frameworks.Foundation
-          pkgs.darwin.apple_sdk.frameworks.AppKit
-          pkgs.darwin.apple_sdk.frameworks.WebKit
-          pkgs.darwin.apple_sdk.frameworks.Cocoa
+          # macOS uses system frameworks, just need libiconv
+          libiconv
         ];
       in
       {
@@ -62,9 +57,11 @@
           inherit buildInputs;
           
           shellHook = ''
-            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
-            export XDG_DATA_DIRS=${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$XDG_DATA_DIRS
-            export GIO_MODULE_DIR="${pkgs.glib-networking}/lib/gio/modules/"
+            ${pkgs.lib.optionalString pkgs.stdenv.isLinux ''
+              export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
+              export XDG_DATA_DIRS=${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$XDG_DATA_DIRS
+              export GIO_MODULE_DIR="${pkgs.glib-networking}/lib/gio/modules/"
+            ''}
           '';
         };
 
@@ -80,6 +77,7 @@
           nativeBuildInputs = with pkgs; [
             pkg-config
             nodejs_20
+          ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
             wrapGAppsHook
           ];
 

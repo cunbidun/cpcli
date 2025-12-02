@@ -102,7 +102,7 @@ fi
 
 if [ -d "$TAURI_DIR" ]; then
 	echo "Building Tauri task editor from $TAURI_DIR..."
-	(cd "$TAURI_DIR" && nix develop . -c npm run build && nix develop . -c cargo build --release --manifest-path src-tauri/Cargo.toml)
+	(cd "$TAURI_DIR" && nix develop . -c sh -c "npm ci && npm run build" && nix develop . -c cargo build --release --manifest-path src-tauri/Cargo.toml)
 	echo "Copying Tauri task editor"
 	cp "$TAURI_DIR/src-tauri/target/release/task-editor" "$OUT/share/cpcli/task-editor/task-editor"
 else
