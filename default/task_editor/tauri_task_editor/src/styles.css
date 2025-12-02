@@ -90,6 +90,11 @@ body {
   background-color: var(--input-bg);
 }
 
+.test-list-container:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+}
+
 .test-list {
   display: flex;
   flex-direction: column;
@@ -278,6 +283,18 @@ textarea {
 label {
   font-size: 12px;
   font-weight: 500;
+}
+
+label u {
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+label .hint {
+  font-size: 10px;
+  color: var(--text-color);
+  opacity: 0.5;
+  font-weight: 400;
 }
 
 input[type="text"],

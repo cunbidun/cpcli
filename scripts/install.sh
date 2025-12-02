@@ -91,6 +91,24 @@ mkdir -p "$OUT/share/cpcli/task-editor"
 echo "Copying cli test editor"
 cp "$cli_task_editor_path" "$OUT/share/cpcli/task-editor/cli_task_editor"
 
+# Build and copy Tauri task editor
+# BUILD_WORKSPACE_DIRECTORY is set by Bazel when running `bazel run`
+if [ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]; then
+	TAURI_DIR="$BUILD_WORKSPACE_DIRECTORY/default/task_editor/tauri_task_editor"
+else
+	# Fallback for running script directly
+	TAURI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/default/task_editor/tauri_task_editor"
+fi
+
+if [ -d "$TAURI_DIR" ]; then
+	echo "Building Tauri task editor from $TAURI_DIR..."
+	(cd "$TAURI_DIR" && nix develop . -c npm run build && nix develop . -c cargo build --release --manifest-path src-tauri/Cargo.toml)
+	echo "Copying Tauri task editor"
+	cp "$TAURI_DIR/src-tauri/target/release/task-editor" "$OUT/share/cpcli/task-editor/task-editor"
+else
+	echo "Warning: Tauri task editor directory not found at $TAURI_DIR"
+fi
+
 echo "Create templates directory at $OUT/share/cpcli/templates"
 mkdir -p "$OUT/share/cpcli/templates"
 

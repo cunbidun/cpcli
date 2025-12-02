@@ -17,3 +17,6 @@ docs/build/*
 /bazel-*
 
 /coverage
+
+.cargo
+.npm

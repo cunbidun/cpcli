@@ -159,6 +159,7 @@ const elements = {
 
   // Test list
   testList: document.getElementById('testList'),
+  testListContainer: document.getElementById('testListContainer'),
   btnAll: document.getElementById('btnAll'),
   btnNone: document.getElementById('btnNone'),
   btnNew: document.getElementById('btnNew'),
@@ -267,7 +268,7 @@ function formatTestLabel(test, index) {
   if (inputPreview.length > 15) {
     inputPreview = inputPreview.substring(0, 12) + '...';
   }
-  return `Test #${index}: ${inputPreview}`;
+  return `Test #${index + 1}: ${inputPreview}`;
 }
 
 function selectTest(index) {
@@ -351,11 +352,164 @@ function setupEventListeners() {
   // Save button
   elements.btnSave.addEventListener('click', saveConfig);
 
-  // Keyboard shortcuts
-  document.addEventListener('keydown', (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+  // Test list keyboard navigation
+  elements.testListContainer.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'j') {
       e.preventDefault();
-      saveConfig();
+      e.stopPropagation();
+      if (currentTestIndex < tests.length - 1) {
+        saveCurrentTest();
+        selectTest(currentTestIndex + 1);
+      }
+    } else if (e.key === 'ArrowUp' || e.key === 'k') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (currentTestIndex > 0) {
+        saveCurrentTest();
+        selectTest(currentTestIndex - 1);
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      inputEditor?.focus();
+    } else if (e.key === ' ') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (currentTestIndex >= 0) {
+        tests[currentTestIndex].active = !tests[currentTestIndex].active;
+        renderTestList();
+      }
+    }
+  });
+
+  // Global keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    const ctrl = e.metaKey || e.ctrlKey;
+    const isInEditor = inputEditor?.hasFocus || outputEditor?.hasFocus;
+    const isInInput = document.activeElement?.tagName === 'INPUT';
+    const isInTestList = document.activeElement === elements.testListContainer;
+    
+    // Escape - quit without save when at top level (test list focused or nothing focused)
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (isInEditor || isInInput) {
+        // If in editor/input, just blur and focus test list
+        document.activeElement?.blur();
+        elements.testListContainer.focus();
+      } else {
+        // At top level - close without saving
+        getCurrentWindow().close();
+      }
+      return;
+    }
+
+    // Space to toggle current test active (when not in editor/input)
+    if (e.key === ' ' && !isInEditor && !isInInput) {
+      e.preventDefault();
+      if (currentTestIndex >= 0) {
+        tests[currentTestIndex].active = !tests[currentTestIndex].active;
+        renderTestList();
+      }
+      return;
+    }
+
+    // Ctrl + shortcuts
+    if (ctrl) {
+      // Ctrl + 0-9 for test selection
+      const keyNum = parseInt(e.key);
+      if (!isNaN(keyNum) && e.key.length === 1) {
+        e.preventDefault();
+        if (keyNum === 0) {
+          // Ctrl+0 = None: deselect ALL tests (set all inactive)
+          tests.forEach((test) => (test.active = false));
+          renderTestList();
+        } else if (keyNum <= tests.length) {
+          // Ctrl+1-9 select test (1-indexed)
+          saveCurrentTest();
+          selectTest(keyNum - 1);
+        }
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case 's': // Save
+          e.preventDefault();
+          saveConfig();
+          break;
+        case 'n': // New test
+          e.preventDefault();
+          elements.btnNew.click();
+          break;
+        case 'd': // Delete test
+          e.preventDefault();
+          elements.btnRemove.click();
+          break;
+        case 'k': // Previous test (up)
+          e.preventDefault();
+          if (currentTestIndex > 0) {
+            saveCurrentTest();
+            selectTest(currentTestIndex - 1);
+          }
+          break;
+        case 'j': // Next test (down)
+          e.preventDefault();
+          if (currentTestIndex < tests.length - 1) {
+            saveCurrentTest();
+            selectTest(currentTestIndex + 1);
+          }
+          break;
+        case 'e': // Toggle Expected answer
+          e.preventDefault();
+          elements.knowAnswer.checked = !elements.knowAnswer.checked;
+          elements.knowAnswer.dispatchEvent(new Event('change'));
+          break;
+        case 'i': // Focus Input editor
+          e.preventDefault();
+          inputEditor?.focus();
+          break;
+        case 'o': // Focus Output editor
+          e.preventDefault();
+          outputEditor?.focus();
+          break;
+        case 't': // Focus time limit
+          e.preventDefault();
+          elements.timeLimit.focus();
+          elements.timeLimit.select();
+          break;
+        case 'w': // Toggle stop on WA
+          e.preventDefault();
+          elements.stopAtWrongAnswer.checked = !elements.stopAtWrongAnswer.checked;
+          break;
+        case 'g': // Toggle know generator answer
+          e.preventDefault();
+          elements.knowGenAns.checked = !elements.knowGenAns.checked;
+          break;
+        case 'c': // Focus checker
+          e.preventDefault();
+          elements.checker.focus();
+          elements.checker.select();
+          break;
+        case 'r': // Toggle truncate
+          e.preventDefault();
+          elements.truncateLongTest.checked = !elements.truncateLongTest.checked;
+          break;
+        case 'h': // Toggle hide accepted
+          e.preventDefault();
+          elements.hideAcceptedTest.checked = !elements.hideAcceptedTest.checked;
+          break;
+        case 'y': // Toggle interactYve
+          e.preventDefault();
+          elements.interactive.checked = !elements.interactive.checked;
+          break;
+        case 'a': // Select All tests (Ctrl+A)
+          if (!isInEditor && !isInInput) {
+            e.preventDefault();
+            tests.forEach((test) => (test.active = true));
+            renderTestList();
+          }
+          // When in editor/input, let default select-all text behavior work
+          break;
+      }
     }
   });
 }

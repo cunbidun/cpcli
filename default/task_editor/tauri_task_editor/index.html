@@ -20,7 +20,7 @@
         </div>
         <div class="field checkbox-field">
           <input type="checkbox" id="interactive" />
-          <label for="interactive">Interactive Task?</label>
+          <label for="interactive">Interactive(<u>Y</u>)?</label>
         </div>
       </div>
 
@@ -28,36 +28,36 @@
       <div class="main-panel">
         <!-- Test List Panel -->
         <div class="test-list-panel">
-          <label>Tests:</label>
-          <div class="test-list-container">
+          <label>Tests: <span class="hint">(Ctrl+1-9 select)</span></label>
+          <div class="test-list-container" tabindex="0" id="testListContainer">
             <div id="testList" class="test-list"></div>
           </div>
           <div class="test-buttons">
             <div class="button-row">
-              <button id="btnAll">All</button>
-              <button id="btnNone">None</button>
+              <button id="btnAll"><u>A</u>ll</button>
+              <button id="btnNone">N<u>0</u>ne</button>
             </div>
             <div class="button-row">
-              <button id="btnNew">New</button>
-              <button id="btnRemove">Remove</button>
+              <button id="btnNew"><u>N</u>ew</button>
+              <button id="btnRemove"><u>D</u>elete</button>
             </div>
-            <button id="btnSave" class="save-btn">Save</button>
+            <button id="btnSave" class="save-btn"><u>S</u>ave</button>
           </div>
         </div>
 
         <!-- Test Editor Panel -->
         <div class="test-editor-panel">
           <div class="input-section">
-            <label>Input:</label>
+            <label><u>I</u>nput:</label>
             <div id="testInput" class="editor-container"></div>
           </div>
           <div class="output-section">
             <div class="know-answer-row">
               <input type="checkbox" id="knowAnswer" />
-              <label for="knowAnswer">Know answer?</label>
+              <label for="knowAnswer"><u>E</u>xpected answer?</label>
             </div>
             <div id="outputContainer">
-              <label>Output:</label>
+              <label><u>O</u>utput:</label>
               <div id="testOutput" class="editor-container"></div>
             </div>
           </div>
@@ -66,28 +66,28 @@
         <!-- Options Panel -->
         <div class="options-panel">
           <div class="field">
-            <label for="timeLimit">Time Limit in ms:</label>
+            <label for="timeLimit"><u>T</u>ime Limit (ms):</label>
             <input type="number" id="timeLimit" />
           </div>
           <div class="field">
-            <label for="checker">Checker:</label>
+            <label for="checker"><u>C</u>hecker:</label>
             <input type="text" id="checker" />
           </div>
           <div class="field checkbox-field">
             <input type="checkbox" id="truncateLongTest" />
-            <label for="truncateLongTest">Truncate Long Test?</label>
+            <label for="truncateLongTest">T<u>r</u>uncate Long?</label>
           </div>
           <div class="field checkbox-field">
             <input type="checkbox" id="hideAcceptedTest" />
-            <label for="hideAcceptedTest">Hide Accepted Tests?</label>
+            <label for="hideAcceptedTest"><u>H</u>ide Accepted?</label>
           </div>
           <div class="field checkbox-field">
             <input type="checkbox" id="stopAtWrongAnswer" />
-            <label for="stopAtWrongAnswer">Stop At Wrong Answer?</label>
+            <label for="stopAtWrongAnswer">Stop on <u>W</u>A</label>
           </div>
           <div class="field checkbox-field">
             <input type="checkbox" id="knowGenAns" />
-            <label for="knowGenAns">Know generator answer?</label>
+            <label for="knowGenAns">Know <u>G</u>en Ans?</label>
           </div>
         </div>
       </div>

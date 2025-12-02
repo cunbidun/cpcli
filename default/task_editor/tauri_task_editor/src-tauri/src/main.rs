@@ -93,7 +93,7 @@ fn save_config(state: State<AppState>, config: ProblemConfig) -> Result<(), Stri
 
 #[tauri::command]
 fn get_system_theme() -> String {
-    // Try to get GTK color scheme using gsettings
+    // Try gsettings for GTK color scheme
     if let Ok(output) = Command::new("gsettings")
         .args(["get", "org.gnome.desktop.interface", "color-scheme"])
         .output()
