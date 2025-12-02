@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Config Editor</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Info Panel -->
+      <div class="info-panel">
+        <div class="field">
+          <label for="taskName">Task name:</label>
+          <input type="text" id="taskName" />
+        </div>
+        <div class="field">
+          <label for="groupName">Group name:</label>
+          <input type="text" id="groupName" />
+        </div>
+        <div class="field checkbox-field">
+          <input type="checkbox" id="interactive" />
+          <label for="interactive">Interactive Task?</label>
+        </div>
+      </div>
+
+      <!-- Main Panel -->
+      <div class="main-panel">
+        <!-- Test List Panel -->
+        <div class="test-list-panel">
+          <label>Tests:</label>
+          <div class="test-list-container">
+            <div id="testList" class="test-list"></div>
+          </div>
+          <div class="test-buttons">
+            <div class="button-row">
+              <button id="btnAll">All</button>
+              <button id="btnNone">None</button>
+            </div>
+            <div class="button-row">
+              <button id="btnNew">New</button>
+              <button id="btnRemove">Remove</button>
+            </div>
+            <button id="btnSave" class="save-btn">Save</button>
+          </div>
+        </div>
+
+        <!-- Test Editor Panel -->
+        <div class="test-editor-panel">
+          <div class="input-section">
+            <label>Input:</label>
+            <div id="testInput" class="editor-container"></div>
+          </div>
+          <div class="output-section">
+            <div class="know-answer-row">
+              <input type="checkbox" id="knowAnswer" />
+              <label for="knowAnswer">Know answer?</label>
+            </div>
+            <div id="outputContainer">
+              <label>Output:</label>
+              <div id="testOutput" class="editor-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Options Panel -->
+        <div class="options-panel">
+          <div class="field">
+            <label for="timeLimit">Time Limit in ms:</label>
+            <input type="number" id="timeLimit" />
+          </div>
+          <div class="field">
+            <label for="checker">Checker:</label>
+            <input type="text" id="checker" />
+          </div>
+          <div class="field checkbox-field">
+            <input type="checkbox" id="truncateLongTest" />
+            <label for="truncateLongTest">Truncate Long Test?</label>
+          </div>
+          <div class="field checkbox-field">
+            <input type="checkbox" id="hideAcceptedTest" />
+            <label for="hideAcceptedTest">Hide Accepted Tests?</label>
+          </div>
+          <div class="field checkbox-field">
+            <input type="checkbox" id="stopAtWrongAnswer" />
+            <label for="stopAtWrongAnswer">Stop At Wrong Answer?</label>
+          </div>
+          <div class="field checkbox-field">
+            <input type="checkbox" id="knowGenAns" />
+            <label for="knowGenAns">Know generator answer?</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Panel -->
+      <div class="bottom-panel">
+        <!-- Generator Panel -->
+        <div class="generator-panel">
+          <div class="field checkbox-field">
+            <input type="checkbox" id="useGeneration" />
+            <label for="useGeneration">Generate Test?</label>
+          </div>
+          <div id="genOptions" class="gen-options hidden">
+            <div class="gen-row">
+              <div class="field">
+                <label for="numTest">Number of tests:</label>
+                <input type="number" id="numTest" />
+              </div>
+              <div class="field">
+                <label for="generatorSeed">Generator seed:</label>
+                <input type="text" id="generatorSeed" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="genParameters">Generator argument:</label>
+              <input type="text" id="genParameters" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Override Panel -->
+        <div class="override-panel">
+          <div class="field">
+            <label for="overrideSolution">solution</label>
+            <input type="text" id="overrideSolution" />
+          </div>
+          <div class="field">
+            <label for="overrideSlow">slow</label>
+            <input type="text" id="overrideSlow" />
+          </div>
+          <div class="field">
+            <label for="overrideGen">gen</label>
+            <input type="text" id="overrideGen" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

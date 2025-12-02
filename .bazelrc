@@ -1,2 +1,3 @@
 build --cxxopt='-std=c++17'
 coverage --action_env=GCOV_PREFIX_STRIP=10
+common --enable_bzlmod

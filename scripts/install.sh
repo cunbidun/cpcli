@@ -43,16 +43,16 @@ java_template_dir=$(rlocation "cpcli/default/templates/java")
 rs_template_dir=$(rlocation "cpcli/default/templates/rs")
 common_template_dir=$(rlocation "cpcli/default/templates/common")
 
-# check if variable $OUT is set 
-if [ -z "$OUT" ]; then
-	echo "ERROR: OUT variable is not set"
-	exit 1;
+# Use provided $OUT or fall back to ~/.local when unset
+if [ -z "${OUT:-}" ]; then
+	OUT="${HOME:-$PWD}/.local"
+	echo "OUT not set; defaulting to ${OUT}"
 fi
 
-# check if $OUT is a directory
-if  [ ! -d "$OUT" ]; then
-	echo "ERROR: $OUT is not a directory"
-	exit 1;
+# ensure $OUT exists as a directory
+if [ ! -d "$OUT" ]; then
+	echo "Creating $OUT"
+	mkdir -p "$OUT"
 fi
 
 mkdir -p "$OUT/bin"

@@ -1,6 +1,36 @@
-###############################################################################
-# Bazel now uses Bzlmod by default to manage external dependencies.
-# Please consider migrating your external dependencies from WORKSPACE to MODULE.bazel.
-#
-# For more details, please check https://github.com/bazelbuild/bazel/issues/18958
-###############################################################################
+module(
+    name = "cpcli",
+    version = "0.0.0",
+    repo_name = "cpcli",
+)
+
+bazel_dep(name = "bazel_features", version = "1.38.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.14")
+bazel_dep(name = "rules_boost", version = "0.0.0")
+git_override(
+    module_name = "rules_boost",
+    commit = "1200de3174f700687c6ecf1b4d5c804586577cb4",
+    remote = "https://github.com/nelhage/rules_boost",
+)
+
+# Expose the Boost repository provided by rules_boost.
+boost_ext = use_extension("@rules_boost//:boost/repositories.bzl", "non_module_dependencies")
+use_repo(boost_ext, "boost")
+
+# Third-party archives that don't have their own modules
+cpcli_repos = use_extension("//:repositories.bzl", "cpcli_repositories")
+use_repo(
+    cpcli_repos,
+    "cli11",
+    "commons_cli",
+    "crow",
+    "glob",
+    "gson",
+    "gtest",
+    "hedron_compile_commands",
+    "inja",
+    "json",
+    "spdlog",
+)
