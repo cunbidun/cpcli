@@ -5,6 +5,7 @@ import { EditorState } from '@codemirror/state';
 import { keymap, highlightActiveLine, drawSelection, rectangularSelection, crosshairCursor, highlightSpecialChars } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { bracketMatching } from '@codemirror/language';
+import { vim } from '@replit/codemirror-vim';
 
 // State
 let config = null;
@@ -12,6 +13,8 @@ let tests = [];
 let currentTestIndex = -1;
 let inputEditor = null;
 let outputEditor = null;
+let deletedTest = null; // Store last deleted test for undo
+let deletedTestIndex = -1; // Store index where test was deleted
 
 // Theme will be set after getting from Rust backend
 let isDarkMode = false;
@@ -102,6 +105,7 @@ const darkTheme = EditorView.theme({
 // Create editor extensions (minimal setup without line numbers)
 function getExtensions() {
   const extensions = [
+    vim(),
     highlightSpecialChars(),
     history(),
     drawSelection(),
@@ -161,7 +165,6 @@ const elements = {
   testList: document.getElementById('testList'),
   testListContainer: document.getElementById('testListContainer'),
   btnAll: document.getElementById('btnAll'),
-  btnNone: document.getElementById('btnNone'),
   btnNew: document.getElementById('btnNew'),
   btnRemove: document.getElementById('btnRemove'),
   btnSave: document.getElementById('btnSave'),
@@ -297,12 +300,8 @@ function saveCurrentTest() {
 function setupEventListeners() {
   // Test list buttons
   elements.btnAll.addEventListener('click', () => {
-    tests.forEach((test) => (test.active = true));
-    renderTestList();
-  });
-
-  elements.btnNone.addEventListener('click', () => {
-    tests.forEach((test) => (test.active = false));
+    const allSelected = tests.every((test) => test.active);
+    tests.forEach((test) => (test.active = !allSelected));
     renderTestList();
   });
 
@@ -321,6 +320,13 @@ function setupEventListeners() {
 
   elements.btnRemove.addEventListener('click', () => {
     if (currentTestIndex >= 0 && tests.length > 0) {
+      // Save current editor content to the test before deleting
+      saveCurrentTest();
+      
+      // Store deleted test for undo (now with latest content)
+      deletedTest = { ...tests[currentTestIndex] };
+      deletedTestIndex = currentTestIndex;
+      
       tests.splice(currentTestIndex, 1);
       // Re-index tests
       tests.forEach((test, i) => (test.index = i));
@@ -388,6 +394,7 @@ function setupEventListeners() {
     const isInEditor = inputEditor?.hasFocus || outputEditor?.hasFocus;
     const isInInput = document.activeElement?.tagName === 'INPUT';
     const isInTestList = document.activeElement === elements.testListContainer;
+    const isFree = !isInEditor && !isInInput; // Not focused on any text input
     
     // Escape - quit without save when at top level (test list focused or nothing focused)
     if (e.key === 'Escape') {
@@ -404,7 +411,7 @@ function setupEventListeners() {
     }
 
     // Space to toggle current test active (when not in editor/input)
-    if (e.key === ' ' && !isInEditor && !isInInput) {
+    if (e.key === ' ' && isFree) {
       e.preventDefault();
       if (currentTestIndex >= 0) {
         tests[currentTestIndex].active = !tests[currentTestIndex].active;
@@ -413,29 +420,25 @@ function setupEventListeners() {
       return;
     }
 
-    // Ctrl + shortcuts
-    if (ctrl) {
-      // Ctrl + 0-9 for test selection
+    // Ctrl+S to save (always works)
+    if (ctrl && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      saveConfig();
+      return;
+    }
+
+    // When NOT in editor/input, use single keys
+    if (isFree) {
+      // Number keys 1-9 for test selection
       const keyNum = parseInt(e.key);
-      if (!isNaN(keyNum) && e.key.length === 1) {
+      if (!isNaN(keyNum) && keyNum >= 1 && keyNum <= 9 && keyNum <= tests.length) {
         e.preventDefault();
-        if (keyNum === 0) {
-          // Ctrl+0 = None: deselect ALL tests (set all inactive)
-          tests.forEach((test) => (test.active = false));
-          renderTestList();
-        } else if (keyNum <= tests.length) {
-          // Ctrl+1-9 select test (1-indexed)
-          saveCurrentTest();
-          selectTest(keyNum - 1);
-        }
+        saveCurrentTest();
+        selectTest(keyNum - 1);
         return;
       }
 
       switch (e.key.toLowerCase()) {
-        case 's': // Save
-          e.preventDefault();
-          saveConfig();
-          break;
         case 'n': // New test
           e.preventDefault();
           elements.btnNew.click();
@@ -443,6 +446,19 @@ function setupEventListeners() {
         case 'd': // Delete test
           e.preventDefault();
           elements.btnRemove.click();
+          break;
+        case 'u': // Undo deleted test
+          e.preventDefault();
+          if (deletedTest) {
+            saveCurrentTest();
+            // Insert at original position
+            tests.splice(deletedTestIndex, 0, deletedTest);
+            // Re-index tests
+            tests.forEach((test, i) => (test.index = i));
+            selectTest(deletedTestIndex);
+            deletedTest = null;
+            deletedTestIndex = -1;
+          }
           break;
         case 'k': // Previous test (up)
           e.preventDefault();
@@ -501,13 +517,11 @@ function setupEventListeners() {
           e.preventDefault();
           elements.interactive.checked = !elements.interactive.checked;
           break;
-        case 'a': // Select All tests (Ctrl+A)
-          if (!isInEditor && !isInInput) {
-            e.preventDefault();
-            tests.forEach((test) => (test.active = true));
-            renderTestList();
-          }
-          // When in editor/input, let default select-all text behavior work
+        case 'a': // Toggle All/None tests
+          e.preventDefault();
+          const allSelected = tests.every((test) => test.active);
+          tests.forEach((test) => (test.active = !allSelected));
+          renderTestList();
           break;
       }
     }
