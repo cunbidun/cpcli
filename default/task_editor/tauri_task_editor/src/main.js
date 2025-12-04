@@ -226,7 +226,7 @@ function populateForm() {
   elements.interactive.checked = config.interactive || false;
 
   elements.timeLimit.value = config.timeLimit || 0;
-  elements.checker.value = config.checker || '';
+  elements.checker.value = config.checker || 'token_checker';
   elements.truncateLongTest.checked = config.truncateLongTest || false;
   elements.hideAcceptedTest.checked = config.hideAcceptedTest || false;
   elements.stopAtWrongAnswer.checked = config.stopAtWrongAnswer || false;
@@ -392,7 +392,7 @@ function setupEventListeners() {
   document.addEventListener('keydown', (e) => {
     const ctrl = e.metaKey || e.ctrlKey;
     const isInEditor = inputEditor?.hasFocus || outputEditor?.hasFocus;
-    const isInInput = document.activeElement?.tagName === 'INPUT';
+    const isInInput = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'SELECT';
     const isInTestList = document.activeElement === elements.testListContainer;
     const isFree = !isInEditor && !isInInput; // Not focused on any text input
     
@@ -500,10 +500,9 @@ function setupEventListeners() {
           e.preventDefault();
           elements.knowGenAns.checked = !elements.knowGenAns.checked;
           break;
-        case 'c': // Focus checker
+        case 'c': // Focus checker dropdown
           e.preventDefault();
           elements.checker.focus();
-          elements.checker.select();
           break;
         case 'r': // Toggle truncate
           e.preventDefault();
