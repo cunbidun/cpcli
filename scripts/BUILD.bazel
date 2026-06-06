@@ -1,1 +1,1 @@
-exports_files(["install.sh"])
+exports_files(["assemble_install_tree.sh"])

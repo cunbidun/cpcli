@@ -1,28 +1,10 @@
 """Bzlmod module extension that recreates the old WORKSPACE repos."""
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_jar")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_skylib//lib:modules.bzl", "modules")
 
 
 def _cpcli_repositories():
-
-    # gson
-    http_jar(
-        name = "gson",
-        downloaded_file_name = "gson-2.10.jar",
-        sha256 = "0cdd163ce3598a20fc04eee71b140b24f6f2a3b35f0a499dbbdd9852e83fbfaf",
-        url = "https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10/gson-2.10.jar",
-    )
-
-    # commons-cli
-    http_jar(
-        name = "commons_cli",
-        downloaded_file_name = "commons-cli-1.5.0.jar",
-        sha256 = "bc8bb01fc0fad250385706e20f927ddcff6173f6339b387dc879237752567ac6",
-        url = "https://repo1.maven.org/maven2/commons-cli/commons-cli/1.5.0/commons-cli-1.5.0.jar",
-    )
-
     # crow
     http_archive(
         name = "crow",
@@ -120,11 +102,11 @@ cc_library(
     )
 
     # gtest
-    git_repository(
+    http_archive(
         name = "gtest",
-        commit = "58d77fa8070e8cec2dc1ed015d66b454c8d78850",
-        remote = "https://github.com/google/googletest",
-        shallow_since = "1656350095 -0400",
+        sha256 = "c6ab3b6b33f51ef7465921f8f8c10c15d7cbc510761a15a18ad85babf6d73278",
+        strip_prefix = "googletest-58d77fa8070e8cec2dc1ed015d66b454c8d78850",
+        url = "https://github.com/google/googletest/archive/58d77fa8070e8cec2dc1ed015d66b454c8d78850.tar.gz",
     )
 
     # Hedron compile commands extractor

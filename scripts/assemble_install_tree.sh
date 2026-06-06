@@ -34,7 +34,6 @@ double_6_path=$(rlocation "cpcli/default/checkers/double_6")
 double_9_path=$(rlocation "cpcli/default/checkers/double_9")
 token_checker_path=$(rlocation "cpcli/default/checkers/token_checker")
 
-java_task_editor_path=$(rlocation "cpcli/default/task_editor/java_task_editor/java_task_editor_deploy.jar")
 cli_task_editor_path=$(rlocation "cpcli/default/task_editor/cli_task_editor/cli_task_editor")
 
 cpp_template_dir=$(rlocation "cpcli/default/templates/cpp")
@@ -43,10 +42,9 @@ java_template_dir=$(rlocation "cpcli/default/templates/java")
 rs_template_dir=$(rlocation "cpcli/default/templates/rs")
 common_template_dir=$(rlocation "cpcli/default/templates/common")
 
-# Use provided $OUT or fall back to ~/.local when unset
 if [ -z "${OUT:-}" ]; then
-	OUT="${HOME:-$PWD}/.local"
-	echo "OUT not set; defaulting to ${OUT}"
+	echo "OUT must be set to the directory where the cpcli output tree should be assembled" >&2
+	exit 1
 fi
 
 # ensure $OUT exists as a directory
@@ -64,14 +62,14 @@ rm -f "$OUT/bin/cpcli_app"
 rm -f "$OUT/bin/cpcli_cc"
 rm -f "$OUT/bin/cpcli_editor"
 
-# --- copy binaries to ~/.local/bin ---
+# --- copy binaries to $OUT/bin ---
 echo "Copy cpcli_app binary to $OUT/bin"
 cp "$cpcli_app_path" "$OUT/bin"
 
 echo "Copy cpcli_cc binary to $OUT/bin"
 cp "$cpcli_cc_path" "$OUT/bin"
 
-# --- copy artifacts to ~/.local/share ---
+# --- copy artifacts to $OUT/share ---
 echo "Cleanup the cpcli artifacts directory at $OUT/share/cpcli"
 mkdir -p "$OUT/share/cpcli"
 
@@ -86,8 +84,6 @@ cp "$token_checker_path" "$OUT/share/cpcli/checkers"
 
 echo "Create checkers directory at $OUT/share/cpcli/task-editor"
 mkdir -p "$OUT/share/cpcli/task-editor"
-# echo "Copying java test editor"
-cp "$java_task_editor_path" "$OUT/share/cpcli/task-editor/java-task-editor.jar"
 echo "Copying cli test editor"
 cp "$cli_task_editor_path" "$OUT/share/cpcli/task-editor/cli_task_editor"
 
@@ -100,13 +96,26 @@ else
 	TAURI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/default/task_editor/tauri_task_editor"
 fi
 
-if [ -d "$TAURI_DIR" ]; then
+if [ -n "${CPCLI_TAURI_TASK_EDITOR_PATH:-}" ]; then
+	echo "Copying prebuilt Tauri task editor"
+	cp "$CPCLI_TAURI_TASK_EDITOR_PATH" "$OUT/share/cpcli/task-editor/tauri_task_editor"
+elif [ "${CPCLI_SKIP_TAURI_TASK_EDITOR:-}" = "1" ]; then
+	echo "Skipping Tauri task editor build"
+elif [ -d "$TAURI_DIR" ]; then
 	echo "Building Tauri task editor from $TAURI_DIR..."
 	(cd "$TAURI_DIR" && nix develop . -c sh -c "npm ci && npm run build" && nix develop . -c cargo build --release --manifest-path src-tauri/Cargo.toml)
 	echo "Copying Tauri task editor"
-	cp "$TAURI_DIR/src-tauri/target/release/task-editor" "$OUT/share/cpcli/task-editor/task-editor"
+	cp "$TAURI_DIR/src-tauri/target/release/task-editor" "$OUT/share/cpcli/task-editor/tauri_task_editor"
 else
 	echo "Warning: Tauri task editor directory not found at $TAURI_DIR"
+fi
+
+if [ -x "$OUT/share/cpcli/task-editor/tauri_task_editor" ]; then
+	ln -s tauri_task_editor "$OUT/share/cpcli/task-editor/task-editor"
+	ln -s ../share/cpcli/task-editor/tauri_task_editor "$OUT/bin/cpcli_editor"
+else
+	ln -s cli_task_editor "$OUT/share/cpcli/task-editor/task-editor"
+	ln -s ../share/cpcli/task-editor/cli_task_editor "$OUT/bin/cpcli_editor"
 fi
 
 echo "Create templates directory at $OUT/share/cpcli/templates"

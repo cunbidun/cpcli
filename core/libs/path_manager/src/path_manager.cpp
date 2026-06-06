@@ -2,6 +2,7 @@
 #include "constant.hpp"
 #include "glob.hpp"
 #include "spdlog/spdlog.h"
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 
@@ -94,6 +95,20 @@ std::filesystem::path PathManager::get_local_share() {
     exit(ArtifactsDirDoesNotExist);
   }
   return cpcli_data_dir;
+}
+
+std::filesystem::path PathManager::get_cpcli_cache() {
+  const char *xdg_cache_home = std::getenv("XDG_CACHE_HOME");
+  std::filesystem::path cache_base;
+  if (xdg_cache_home != nullptr && std::string(xdg_cache_home).size() > 0) {
+    cache_base = xdg_cache_home;
+  } else {
+    cache_base = std::filesystem::path(std::getenv("HOME")) / ".cache";
+  }
+
+  auto cpcli_cache_dir = cache_base / "cpcli";
+  std::filesystem::create_directories(cpcli_cache_dir);
+  return cpcli_cache_dir;
 }
 
 std::filesystem::path PathManager::get_template() { return PathManager::get("template"); }

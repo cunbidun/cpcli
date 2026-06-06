@@ -16,7 +16,6 @@ A modern replacement for the Java Swing Task Config Editor, built with Tauri 2 +
 Using Nix (recommended):
 
 ```bash
-cd default/task_editor/tauri_task_editor
 nix develop
 ```
 
@@ -40,10 +39,10 @@ npm run tauri dev -- -- --root /path/to/problem/directory
 ### Build for production
 
 ```bash
-npm run tauri build
+nix build .#tauri-task-editor
 ```
 
-The binary will be in `src-tauri/target/release/task-editor`.
+The binary will be in `result/bin/task-editor`.
 
 ## Usage
 
@@ -70,7 +69,6 @@ tauri_task_editor/
 │   ├── tauri.conf.json # Tauri configuration
 │   └── src/
 │       └── main.rs     # Rust backend
-├── flake.nix           # Nix flake for building
 ├── package.json        # Node.js dependencies
 └── vite.config.js      # Vite configuration
 ```

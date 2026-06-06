@@ -58,7 +58,7 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_solution_file) {
     spdlog::debug("the file is changed, not use cache");
     std::string compiler_flags;
     if (language_config["use_precompiled_header"]) {
-      std::filesystem::path precompiled_dir = path_manager.get_local_share() / "precompiled_headers";
+      std::filesystem::path precompiled_dir = path_manager.get_cpcli_cache() / "precompiled_headers";
       std::filesystem::path precompiled_path = precompiled_dir / "cpp_compile_flag" / "stdc++.h";
       check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch",
                  "precompiled header not found! Please try 'cpcli_app project -g'");

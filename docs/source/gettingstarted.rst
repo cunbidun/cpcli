@@ -46,13 +46,14 @@ Let's start by cloning the git repository
   $ cd </path/to/your/library/folder>
   $ git clone https://github.com/cunbidun/cpcli.git
 
-Install and move the newly compiled binaries to ``~/.local/bin``.
+Build the install tree and copy it to ``~/.local``.
 
 .. code-block:: bash 
 
-  $ bazel run //:install
+  $ nix build .#install
+  $ ./install.sh
 
-If the installation process finishes successfully, the binaries will be copy to ``~/.local/bin``.
+If the installation process finishes successfully, the binaries will be copied to ``~/.local/bin``.
 After reopen the terminal or source the shell rc file, you can see the version of ``cpcli_app`` by running
 
 .. code-block:: bash 
@@ -93,7 +94,7 @@ Put this inside the 	``project_config.json``
 .. code-block:: json 
 
   {
-    "task_editor_exec": "java -jar ~/.local/share/cpcli/frontend/TaskConfigEditor.jar",
+    "task_editor_exec": "cpcli_editor",
 
     "root": "</path/to/your/workspace/folder>",
 

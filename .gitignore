@@ -20,3 +20,5 @@ docs/build/*
 
 .cargo
 .npm
+result
+result-*

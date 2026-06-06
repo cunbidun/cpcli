@@ -60,7 +60,7 @@ int cpcli_process(int argc, char *argv[]) {
   }
 
   if (parser_result.operation == ParserOperations::GenHeader) {
-    std::filesystem::path precompiled_dir = local_share_dir / "precompiled_headers";
+    std::filesystem::path precompiled_dir = path_manager.get_cpcli_cache() / "precompiled_headers";
     auto cpp_config = project_conf["language_config"]["[cpp]"];
     spdlog::debug("Generating precompiled headers");
     spdlog::debug("precompiled_dir is: " + precompiled_dir.string());
