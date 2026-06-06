@@ -15,6 +15,7 @@ let inputEditor = null;
 let outputEditor = null;
 let deletedTest = null; // Store last deleted test for undo
 let deletedTestIndex = -1; // Store index where test was deleted
+let languageOptions = [];
 
 // Theme will be set after getting from Rust backend
 let isDarkMode = false;
@@ -206,7 +207,10 @@ async function init() {
   outputEditor = createEditor(elements.testOutputContainer, '');
   
   try {
-    config = await invoke('load_config');
+    [config, languageOptions] = await Promise.all([
+      invoke('load_config'),
+      invoke('load_language_options'),
+    ]);
     tests = config.tests || [];
     populateForm();
     renderTestList();
@@ -218,6 +222,24 @@ async function init() {
   }
 
   setupEventListeners();
+}
+
+function populateLanguageSelect(selectElement, selectedValue) {
+  selectElement.innerHTML = '';
+
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'project default';
+  selectElement.appendChild(defaultOption);
+
+  languageOptions.forEach((language) => {
+    const option = document.createElement('option');
+    option.value = language;
+    option.textContent = language;
+    selectElement.appendChild(option);
+  });
+
+  selectElement.value = languageOptions.includes(selectedValue) ? selectedValue : '';
 }
 
 function populateForm() {
@@ -239,9 +261,9 @@ function populateForm() {
   elements.genParameters.value = config.genParameters || '';
 
   const langConfig = config.languageConfig || {};
-  elements.overrideSolution.value = langConfig.solution || '';
-  elements.overrideSlow.value = langConfig.slow || '';
-  elements.overrideGen.value = langConfig.gen || '';
+  populateLanguageSelect(elements.overrideSolution, langConfig.solution || '');
+  populateLanguageSelect(elements.overrideSlow, langConfig.slow || '');
+  populateLanguageSelect(elements.overrideGen, langConfig.gen || '');
 }
 
 function renderTestList() {

@@ -18,6 +18,12 @@ bool check_file(std::filesystem::path path, const std::string &error_message);
 // TODO add docs
 nlohmann::json read_problem_config(std::filesystem::path path, std::filesystem::path temp_config_path);
 
+nlohmann::json parse_problem_config_file(std::filesystem::path path);
+
+std::filesystem::path resolve_problem_config_path(std::filesystem::path root_dir);
+
+void write_problem_config(std::filesystem::path path, const nlohmann::json &config);
+
 // TODO add docs
 nlohmann::json read_project_config(std::filesystem::path path);
 

@@ -21,6 +21,7 @@ public:
   std::filesystem::path get_problem_config();
   std::filesystem::path get_checker();
   std::filesystem::path get_interactor();
+  std::filesystem::path get_for_language(std::string str, std::string language);
   void render(std::filesystem::path template_file, std::filesystem::path location, bool overwrite);
   PathManager path_manager;
 
@@ -31,6 +32,7 @@ private:
   std::filesystem::path builtin_common_template_dir;
   std::filesystem::path customized_path;
   std::optional<std::filesystem::path> get(std::string str);
+  std::optional<std::filesystem::path> get(std::string str, std::optional<std::string> language_override);
   std::filesystem::path get_path(std::string str);
 };
 

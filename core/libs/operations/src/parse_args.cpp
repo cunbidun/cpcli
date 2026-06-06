@@ -22,10 +22,9 @@ ParserReturnValues parse_args(int argc, char *argv[]) {
         spdlog::debug("Debug cpcli (--debug) is set");
       },
       "Run cpcli_app with debug flags (this option will print debug logs)");
-  parser.add_option("-p,--project-config", return_value.project_config_path, "Path to the project config file, default to $PWD/project_config.json")
+  parser.add_option("-p,--project-config", return_value.project_config_path, "Path to the project config file, default to $PWD/project_config.toml or $PWD/project_config.json")
       ->default_val(std::filesystem::current_path() / "project_config.json")
-      ->check(CLI::ExistingFile)
-      ->transform(convert_to_canonical);
+      ->type_name("FILE");
 
   /**
    *  Project operations
@@ -92,7 +91,7 @@ ParserReturnValues parse_args(int argc, char *argv[]) {
         spdlog::debug("Build task with debug flags (--build-with-debug) is set");
         return_value.operation = ParserOperations::EditTaskConfig;
       },
-      "Edit the problem config file with frontend UI, updating the config.json");
+      "Edit the problem config file with frontend UI, updating config.toml or config.json");
   task_operations->require_option(1);
   project_subcommand->excludes(task_subcommand);
   parser.require_subcommand(1);

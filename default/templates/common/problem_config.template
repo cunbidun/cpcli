@@ -1,17 +1,22 @@
-{
-  "numTest": 0,
-  "genParameters": "",
-  "generatorSeed": "",
-  "interactive": false,
-  "useGeneration": false,
-  "checker": "token_checker",
-  "knowGenAns": false,
-  "url": null,
-  "timeLimit": 10000,
-  "tests": [],
-  "stopAtWrongAnswer": false,
-  "name": "",
-  "truncateLongTest": false,
-  "hideAcceptedTest": true,
-  "group": ""
-}
+tests = []
+
+[problem]
+name = ""
+group = ""
+
+[run]
+time_limit_ms = 10000
+checker = "token_checker"
+interactive = false
+stop_on_first_failure = false
+
+[display]
+hide_accepted_tests = true
+truncate_long_output = false
+
+[generation]
+enabled = false
+test_count = 0
+seed = ""
+args = ""
+expected_output_from_slow = false

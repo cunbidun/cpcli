@@ -8,6 +8,7 @@ cc_binary(
         "//core/libs/utils",
         "//core/libs/template_manager",
         "//core/libs/path_manager",
+        "//core/libs/operations",
         "@json",
         "@cli11",
         "@spdlog",

@@ -44,7 +44,7 @@ in rec {
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-0fsgaxEmK+p1Pi7IFysfKidLQ4HRfNLh8ZLnItrU+Xo=";
+    outputHash = "sha256-COnhWFVGcAz70OmmF9XLHZS+Tr5HQG/N8Fru9n99W9I=";
 
     dontConfigure = true;
     dontInstall = true;

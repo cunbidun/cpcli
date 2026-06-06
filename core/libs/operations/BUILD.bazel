@@ -17,5 +17,6 @@ cc_library(
         "@json",
         "@spdlog",
         "@inja",
+        "@toml11",
     ],
 )

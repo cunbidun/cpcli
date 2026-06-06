@@ -28,18 +28,27 @@ Nevertheless, it is mature enough for casual coding competition.
 
 #### Sample Configuration
 
-This file should named `project_config.json` and place directly on the top level the your workspace folder.
+This file should be named `project_config.toml` and placed directly at the top level of your workspace folder. `root` is optional; when omitted, cpcli uses the directory containing `project_config.toml`. `~` and relative paths are supported.
 
-```json
-{
-  "root": "/Users/cunbidun/competitive_programming", // your workspace folder
-  "task_editor_exec": "cpcli_editor",
-  "cpp_compiler": "g++",
-  "cpp_compile_flag": "-DLOCAL -O2 -std=c++17",
-  "cpp_debug_flag": "-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG",
-  "use_precompiled_header": false,
-  "use_cache": true
-}
+```toml
+task_editor_exec = "cpcli_editor"
+use_template_engine = false
+
+[language_config]
+default = "cpp"
+
+[language_config.override]
+
+[language_config.cpp]
+compiler = "g++"
+regular_flag = "-DLOCAL -O2 -std=c++17"
+debug_flag = "-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG"
+use_precompiled_header = false
+use_cache = true
+include_dir = "include"
+
+[language_config.py]
+interpreter = "python3"
 ```
 
 #### Sample folder structure
@@ -61,10 +70,10 @@ This file should named `project_config.json` and place directly on the top level
 │   └── testlib.h
 ├── output
 │   └── solution.cpp
-├── project_config.json
+├── project_config.toml
 ├── task
 │   └── F - Keep Connect
-│       ├── config.json
+│       ├── config.toml
 │       └── solution.cpp
 └── template
     ├── checker.template
@@ -79,7 +88,7 @@ Please take a look at the [archive](https://github.com/cunbidun/competitive_prog
 #### Sample invocation
 
 ```bash
-$ cpcli_app --project-config=project_config.json task --root-dir="/Users/cunbidun/competitive_programming/task/F - Keep Connect" --build
+$ cpcli_app --project-config=project_config.toml task --root-dir="/Users/cunbidun/competitive_programming/task/F - Keep Connect" --build
 ```
 
 | Num | Attribute                | Type     | Description                                                                                          | Default value                                                                                     |
@@ -89,7 +98,7 @@ $ cpcli_app --project-config=project_config.json task --root-dir="/Users/cunbidu
 | 3   | `template_dir`           | `string` | Directory for storing template (check the repo `template` folder for more info)                      | `""`                                                                                              |
 | 4   | `archive_dir`            | `string` | Directory for archiving completed task (check the repo `archive` folder for more info)               | `""`                                                                                              |
 | 6   | `include_dir`            | `string` | Store libs here                                                                                      |                                                                                                   |
-| 5   | `task_editor_exec`          | `string` | Executable frontend to edit task `config.json`                                                       | `cpcli_editor`                                                                                    |
+| 5   | `task_editor_exec`          | `string` | Executable frontend to edit task `config.toml` or `config.json`                                      | `cpcli_editor`                                                                                    |
 | 7   | `cpp_compile_flag`       | `string` | Cpp normal complier flag                                                                             | `"-DLOCAL -static -O2 -std=c++17"`                                                                |
 | 8   | `cpp_debug_flag`         | `string` | Cpp debug flag                                                                                       | `"-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG"` |
 | 9   | `use_precompiled_header` | `bool`   | use precompiled headers                                                                              | `true`                                                                                            |
@@ -97,64 +106,58 @@ $ cpcli_app --project-config=project_config.json task --root-dir="/Users/cunbidu
 
 ### Task Configuration
 
-Here is an example: problem [E. Trees of Tranquillity](https://codeforces.com/contest/1529/problem/E) has the following configuration:
+New task configs are written as `config.toml`. Existing flat `config.json` and old flat TOML keys are still accepted, but saving through the task editor writes the new sectioned TOML shape.
 
-```
-{
-  "timeLimit": 3000,
-  "tests": [
-    {
-      "output": "1",
-      "input": "1",
-      "index": 0,
-      "active": true
-    },
-    {
-      "output": "2",
-      "input": "2",
-      "index": 1,
-      "active": true
-    }
-  ],
-  "name": "E. Trees of Tranquillity",
-  "group": "Codeforces - Codeforces Round #722 (Div. 2)"
-  "truncateLongTest": false,
-  "checker": "custom",
+```toml
+tests = [
+  { enabled = true, has_expected_output = true, input = "1\n", output = "1\n" },
+]
 
-  "url": "https://codeforces.com/contest/1529/problem/E",
+[problem]
+name = "E. Trees of Tranquillity"
+group = "Codeforces - Codeforces Round #722 (Div. 2)"
+url = "https://codeforces.com/contest/1529/problem/E"
 
-  "useGeneration": true,
-  "numTest": 10,
-  "knowGenAns": true,
-  "genParameters": "",
-  "generatorSeed": "",
+[run]
+time_limit_ms = 3000
+checker = "custom"
+interactive = false
+stop_on_first_failure = false
 
-  "interactive": false,
-  "stopAtWrongAnswer": false,
+[display]
+hide_accepted_tests = false
+truncate_long_output = false
 
-  "hideAcceptedTest": false,
-}
+[generation]
+enabled = true
+test_count = 10
+seed = ""
+args = ""
+expected_output_from_slow = true
 ```
 
-There are 16 attributes:
+Canonical task config keys:
 
-| Num  | Attribute           | Type                    | Description                                                                                                                                                                                                                             | Default value   |
-| ---- | ------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
-| 1    | `timeLimit`         | `int`                   | Problem's time limit in millisecond (1000ms = 1s)                                                                                                                                                                                       | `10000`         |
-| 2    | `tests`             | `array of test objects` | An array to store test cases, each of them is a json object. For each test, the input field is required, but the output field is optional.                                                                                              | `[]`            |
-| 3    | `name`              | `string`                | The name of the problem, usually the task's name or id number.                                                                                                                                                                          | `""`            |
-| 4    | `group`             | `string`                | The name of the contest, used for archive.                                                                                                                                                                                              | `""`            |
-| 5    | `truncateLongTest`  | `boolean`               | Test cases could be really long, so there is high chance that they will cause performance problem. This option is for truncation the test's content when printing. Truncated test will only print the first and the last 35 characters. | `false`         |
-| 6 \* | `checker`           | `string`                | Name of the checker                                                                                                                                                                                                                     | `token_checker` |
-| 7    | `url`               | `string`                | The url of the problem. And be used for auto submit                                                                                                                                                                                     | `""`            |
-| 8    | `useGeneration`     | `boolean`               | For most of problems, sample cases are not enough. This is a tool for generating more test cases.                                                                                                                                       | `false`         |
-| 9    | `numTest`           | `number`                | Number of generated test cases.                                                                                                                                                                                                         | `0`             |
-| 10   | `knowGenAns`        | `boolean`               | If we have `slow.cpp` for generating test cases output                                                                                                                                                                                  | `false`         |
-| 11   | `genParameters`     | `string`                | Parameters for the generator. Currently unused.                                                                                                                                                                                         | `""`            |
-| 12   | `generatorSeed`     | `string`                | Generator seed.                                                                                                                                                                                                                         | `""`            |
-| 13   | `interactive`       | `boolean`               | For `interactive` problems.                                                                                                                                                                                                             | `false`         |
-| 14   | `stopAtWrongAnswer` | `boolean`               | If this option is set to true, the testing process will stop after encounter a `wrong answer`, `rte`, or `tle` test cases.                                                                                                              | `false`         |
-| 15   | `hideAcceptedTest`  | `boolean`               | Hide accepted test cases information                                                                                                                                                                                                    | `true`          |
+| Attribute | Type | Description | Default value |
+| --- | --- | --- | --- |
+| `problem.name` | `string` | Problem name or id. | `""` |
+| `problem.group` | `string` | Contest/group name used for archive. | `""` |
+| `problem.url` | `string` | Problem URL. | unset |
+| `run.time_limit_ms` | `int` | Time limit in milliseconds. | `10000` |
+| `run.checker` | `string` | Checker name. | `token_checker` |
+| `run.interactive` | `boolean` | Whether the task is interactive. | `false` |
+| `run.stop_on_first_failure` | `boolean` | Stop after WA, RTE, or TLE. | `false` |
+| `display.hide_accepted_tests` | `boolean` | Hide accepted test details. | `true` |
+| `display.truncate_long_output` | `boolean` | Truncate long input/output when printing. | `false` |
+| `generation.enabled` | `boolean` | Enable generated tests. | `false` |
+| `generation.test_count` | `int` | Number of generated tests. | `0` |
+| `generation.seed` | `string` | Generator seed. If empty, cpcli creates one. | `""` |
+| `generation.args` | `string` | Extra arguments passed to `gen` after seed and count. | `""` |
+| `generation.expected_output_from_slow` | `boolean` | Use `slow` to produce expected output for generated tests. | `false` |
+| `tests[].enabled` | `boolean` | Whether this sample test runs. | `true` |
+| `tests[].has_expected_output` | `boolean` | Whether `output` should be checked. | derived from `output` |
+| `tests[].input` | `string` | Test input. | required |
+| `tests[].output` | `string` | Expected output. | optional |
 
 Others `checker` included:
 

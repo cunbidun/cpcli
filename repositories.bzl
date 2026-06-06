@@ -85,6 +85,22 @@ cc_library(
         url = "https://github.com/pantor/inja/archive/refs/tags/v3.3.0.zip",
     )
 
+    # toml11
+    http_archive(
+        name = "toml11",
+        build_file_content = """
+cc_library(
+    name = "toml11",
+    hdrs = glob(["include/toml.hpp", "include/toml_fwd.hpp", "include/toml11/**/*.hpp"]),
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+)
+""",
+        sha256 = "815bfe6792aa11a13a133b86e7f0f45edc5d71eb78f5fb6686c49c7f792b9049",
+        strip_prefix = "toml11-4.4.0",
+        url = "https://github.com/ToruNiina/toml11/archive/refs/tags/v4.4.0.tar.gz",
+    )
+
     # glob
     http_archive(
         name = "glob",

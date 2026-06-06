@@ -61,6 +61,10 @@ TemplateManager::TemplateManager(PathManager &path_manager, json project_config)
  * @return std::optional<std::filesystem::path>
  */
 std::optional<std::filesystem::path> TemplateManager::get(std::string str) {
+  return TemplateManager::get(str, std::nullopt);
+}
+
+std::optional<std::filesystem::path> TemplateManager::get(std::string str, std::optional<std::string> language_override) {
   spdlog::debug("Getting the template file for {}", str);
   std::string filename = str + ".template";
   std::filesystem::path path;
@@ -71,6 +75,9 @@ std::optional<std::filesystem::path> TemplateManager::get(std::string str) {
     std::string language = project_config["language_config"]["default"].get<std::string>();
     if (project_config["language_config"]["override"].contains(str)) {
       language = project_config["language_config"]["override"][str].get<std::string>();
+    }
+    if (language_override) {
+      language = *language_override;
     }
     spdlog::debug("The language for {} is {}", str, language);
     if (TemplateManager::has_customized_template_dir) {
@@ -116,6 +123,15 @@ std::filesystem::path TemplateManager::get_path(std::string str) {
   exit(TemplateManagerRequiredTemplateNotFound);
 };
 
+std::filesystem::path TemplateManager::get_for_language(std::string str, std::string language) {
+  auto path = TemplateManager::get(str, language);
+  if (path) {
+    return *path;
+  }
+  spdlog::error("Required template for {} with language {} not found", str, language);
+  exit(TemplateManagerRequiredTemplateNotFound);
+};
+
 void TemplateManager::render(std::filesystem::path template_file, std::filesystem::path location, bool overwrite) {
   if (std::filesystem::status(location).type() != std::filesystem::file_type::directory) {
     spdlog::error("The location {} is not a directory ", location.c_str());
@@ -125,7 +141,7 @@ void TemplateManager::render(std::filesystem::path template_file, std::filesyste
   std::string filetype = template_file.stem();
   std::string filename;
   if (filetype == "problem_config") {
-    filename = "config.json";
+    filename = "config.toml";
   } else {
     std::string extension = template_file.parent_path().filename();
     filename = filetype + "." + extension;

@@ -2,6 +2,7 @@
 #include "color.hpp"
 #include "constant.hpp"
 #include "nlohmann/json.hpp"
+#include "operations.hpp"
 #include "path_manager.hpp"
 #include "spdlog/spdlog.h"
 #include "template_manager.hpp"
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]) {
   parser
       .add_option("-r,--root",
                   root_dir,
-                  "Path to the problem directory. Default to current working dir. There must be a config.json in this "
+                  "Path to the problem directory. Default to current working dir. There must be a config.toml or config.json in this "
                   "directory")
       ->default_val(std::filesystem::current_path())
       ->transform([](std::filesystem::path path) { return std::filesystem::canonical(path); })
@@ -72,10 +73,9 @@ int main(int argc, char *argv[]) {
   parser
       .add_option("-p,--project-config",
                   project_conf_path,
-                  "Path to the project config file, default to $PWD/project_config.json")
+                  "Path to the project config file, default to $PWD/project_config.toml or $PWD/project_config.json")
       ->default_val(std::filesystem::current_path() / "project_config.json")
-      ->check(CLI::ExistingFile)
-      ->transform([](std::filesystem::path path) { return std::filesystem::canonical(path); });
+      ->type_name("FILE");
 
   /**
    * operation on task's test cases
@@ -150,8 +150,7 @@ int main(int argc, char *argv[]) {
 
   // Reading project config
   spdlog::debug("Project config file is set to '{}'", project_conf_path.generic_string());
-  std::ifstream project_config_ifs(project_conf_path.generic_string());
-  json project_conf = json::parse(project_config_ifs);
+  json project_conf = read_project_config(project_conf_path);
   PathManager path_manager;
   auto status = path_manager.init(project_conf);
   if (status != PathManagerStatus::Success) {
@@ -161,14 +160,17 @@ int main(int argc, char *argv[]) {
   TemplateManager template_manager(path_manager, project_conf);
 
   // Reading problem config
-  problem_conf_path = root_dir / "config.json";
+  problem_conf_path = resolve_problem_config_path(root_dir);
   if (!std::filesystem::exists(problem_conf_path)) {
     spdlog::error("Root dir {} found. However a problem config file not found", root_dir.generic_string());
     exit(1);
   }
   spdlog::debug("Problem config file is set to '{}'", problem_conf_path.generic_string());
-  std::ifstream in_file(problem_conf_path.generic_string());
-  json problem_conf = json::parse(in_file);
+  json problem_conf = read_problem_config(problem_conf_path, template_manager.get_problem_config());
+  if (problem_conf_path.extension() == ".json") {
+    problem_conf_path = root_dir / "config.toml";
+    write_problem_config(problem_conf_path, problem_conf);
+  }
   spdlog::debug("Problem config file is parsed. Data is '{}'", problem_conf.dump(2));
 
   if (option->parsed()) {
@@ -213,7 +215,7 @@ int main(int argc, char *argv[]) {
       problem_conf["generatorSeed"] = generator_seed;
     }
     if (generator_params_option->count() > 0) {
-      problem_conf["generatorParams"] = generator_params;
+      problem_conf["genParameters"] = generator_params;
     }
     if (generator_know_ans_flag->count() > 0) {
       problem_conf["knowGenAns"] = !problem_conf["knowGenAns"].get<bool>();
@@ -343,8 +345,7 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
-  std::ofstream out_file(problem_conf_path.generic_string());
-  out_file << problem_conf.dump(2);
+  write_problem_config(problem_conf_path, problem_conf);
   if (name_changed) {
     std::filesystem::rename(root_dir, problem_conf["name"].get<string>());
   }

@@ -105,8 +105,7 @@ int main(int argc, char *argv[]) {
       data["timeLimit"] = 10000;
     }
 
-    std::ifstream ifs(template_manager.get_problem_config());
-    auto final_config = json::parse(ifs);
+    auto final_config = parse_problem_config_file(template_manager.get_problem_config());
     for (auto el : final_config.items()) {
       auto key = el.key();
       if (data.find(key) != data.end()) {
@@ -114,9 +113,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    auto config_path = task_dir / "config.json";
-    std::ofstream ofs(config_path);
-    ofs << final_config.dump(2);
+    auto config_path = task_dir / "config.toml";
+    write_problem_config(config_path, final_config);
 
     return crow::response(crow::status::OK);
   });

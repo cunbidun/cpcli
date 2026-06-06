@@ -72,7 +72,7 @@ Workspace is where you solve the problems.
   $ mkdir task  # where you solve the problems 
   $ mkdir output  # where you find the latest solution to submit
   $ mkdir archive  # where you put solved problems
-  $ touch project_config.json  # project configuration for this workspace
+  $ touch project_config.toml  # project configuration for this workspace
 
   $ mkdir include  # where you put your header files (optional)
   $ mkdir template  # where you put your template files (optional)
@@ -87,24 +87,30 @@ Make sure you create this file structure:
   ├── template
   ├── include
   ├── archive
-  └── project_config.json
+  └── project_config.toml
 
-Put this inside the 	``project_config.json``
+Put this inside the 	``project_config.toml``. ``root`` is optional; when omitted, cpcli uses the directory containing this file. ``~`` and relative paths are supported.
 
-.. code-block:: json 
+.. code-block:: toml 
 
-  {
-    "task_editor_exec": "cpcli_editor",
+  task_editor_exec = "cpcli_editor"
+  use_template_engine = false
 
-    "root": "</path/to/your/workspace/folder>",
+  [language_config]
+  default = "cpp"
 
-    "cpp_compiler": "g++",
-    "cpp_compile_flag": "-DLOCAL -O2 -std=c++17",
-    "cpp_debug_flag": "-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG",
+  [language_config.override]
 
-    "use_precompiled_header": false,
-    "use_cache": true
-  }
+  [language_config.cpp]
+  compiler = "g++"
+  regular_flag = "-DLOCAL -O2 -std=c++17"
+  debug_flag = "-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG"
+  use_precompiled_header = false
+  use_cache = true
+  include_dir = "include"
+
+  [language_config.py]
+  interpreter = "python3"
 
 
 An Example file structure:
@@ -127,10 +133,10 @@ An Example file structure:
 	│   └── testlib.h
 	├── output
 	│   └── solution.cpp
-	├── project_config.json
+	├── project_config.toml
 	├── task
 	│   └── F - Keep Connect
-	│       ├── config.json
+	│       ├── config.toml
 	│       └── solution.cpp
 	└── template
 		├── checker.template

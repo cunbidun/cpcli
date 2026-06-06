@@ -153,9 +153,6 @@ bool PathManager::check_task_path_exist(std::filesystem::path root_dir, std::str
 std::filesystem::path PathManager::get_full_path_with_file_type(std::filesystem::path root_dir, std::string filetype) {
   spdlog::debug("Getting task file for root_dir={}, filetype={}", root_dir.c_str(), filetype.c_str());
   std::vector<std::filesystem::path> path_list = PathManager::get_all_task_path_filetype(root_dir, filetype);
-  if (path_list.size() == 1) {
-    return path_list[0];
-  }
   if (path_list.size() == 0) {
     spdlog::error("No task file found for root_dir={}, filetype={}", root_dir.c_str(), filetype.c_str());
     exit(PathManagerTaskFileNotFound);
@@ -164,18 +161,25 @@ std::filesystem::path PathManager::get_full_path_with_file_type(std::filesystem:
   // If so, we return that one.
   auto language_config = PathManager::project_config["language_config"];
   auto ex = language_config["default"].get<std::string>();
+  bool has_explicit_override = false;
   spdlog::debug("Default extension is {}", ex);
 
   // project config override
   if (language_config.contains("override")) {
-    ex = language_config["override"].value(filetype, ex);
+    if (language_config["override"].contains(filetype)) {
+      ex = language_config["override"][filetype].get<std::string>();
+      has_explicit_override = true;
+    }
     spdlog::debug("Project config contains a override map, new extension {}", ex);
   }
 
   // problem config override
   if (!PathManager::problem_config.empty() && PathManager::problem_config.contains("languageConfig")) {
     language_config = PathManager::problem_config["languageConfig"];
-    ex = language_config.value(filetype, ex);
+    if (language_config.contains(filetype) && !language_config[filetype].is_null()) {
+      ex = language_config[filetype].get<std::string>();
+      has_explicit_override = true;
+    }
     spdlog::debug("Problem config contains a override map, new extension is '.{}'", ex);
   }
 
@@ -184,6 +188,9 @@ std::filesystem::path PathManager::get_full_path_with_file_type(std::filesystem:
     if (p.extension() == "." + ex) {
       return p;
     }
+  }
+  if (!has_explicit_override && path_list.size() == 1) {
+    return path_list[0];
   }
   spdlog::error("Multiple task files found but no match extension for root_dir={}, filetype={}",
                 root_dir.c_str(),

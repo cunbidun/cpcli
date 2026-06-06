@@ -32,4 +32,5 @@ use_repo(
     "inja",
     "json",
     "spdlog",
+    "toml11",
 )

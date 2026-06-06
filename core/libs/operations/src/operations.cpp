@@ -35,7 +35,8 @@ int create_new_task(std::filesystem::path project_conf_path) {
   edit_config(task_dir / new_task_name, project_conf_path, template_manager, task_editor_exec);
 
   // read and validate the project config file
-  nlohmann::json problem_conf = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
+  auto problem_config_path = resolve_problem_config_path(root_dir);
+  nlohmann::json problem_conf = read_problem_config(problem_config_path, template_manager.get_problem_config());
 
   std::string name = problem_conf["name"].get<std::string>();
   std::filesystem::current_path(root_dir.parent_path());
@@ -73,7 +74,8 @@ void edit_config(std::filesystem::path root_dir,
                  TemplateManager &template_manager,
                  std::string &task_editor_exec) {
   // read the project config into a nlohmann::json object
-  nlohmann::json config = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
+  auto problem_config_path = resolve_problem_config_path(root_dir);
+  nlohmann::json config = read_problem_config(problem_config_path, template_manager.get_problem_config());
   std::string old_name = config["name"].get<std::string>();
 
   std::string command_template = "{{ task_editor_exec }} --root '{{ root_dir }}' --project-config '{{ project_conf_path }}'";
@@ -87,16 +89,39 @@ void edit_config(std::filesystem::path root_dir,
 
   system_warper(command);
 
-  config = read_problem_config(root_dir / "config.json", template_manager.get_problem_config());
+  config = read_problem_config(problem_config_path, template_manager.get_problem_config());
+  template_manager.path_manager.init_problem_conf(config);
   std::string name = trim_copy(config["name"].get<std::string>());
-  if (config["useGeneration"] && !template_manager.path_manager.check_task_path_exist(root_dir, "gen")) {
-    template_manager.render(template_manager.get_gen(), root_dir, false);
+
+  auto render_language_override = [&](const std::string &filetype) {
+    if (!config.contains("languageConfig") || !config["languageConfig"].contains(filetype) ||
+        config["languageConfig"][filetype].is_null()) {
+      return;
+    }
+
+    std::string language = config["languageConfig"][filetype].get<std::string>();
+    if (language.empty()) {
+      return;
+    }
+
+    template_manager.render(template_manager.get_for_language(filetype, language), root_dir, false);
+  };
+
+  render_language_override("solution");
+  if (config["useGeneration"]) {
+    render_language_override("gen");
+    if (!template_manager.path_manager.check_task_path_exist(root_dir, "gen")) {
+      template_manager.render(template_manager.get_gen(), root_dir, false);
+    }
   }
   if (config["interactive"] && !template_manager.path_manager.check_task_path_exist(root_dir, "interactor")) {
     template_manager.render(template_manager.get_interactor(), root_dir, false);
   }
-  if (config["knowGenAns"] && !template_manager.path_manager.check_task_path_exist(root_dir, "slow")) {
-    template_manager.render(template_manager.get_slow(), root_dir, false);
+  if (config["knowGenAns"]) {
+    render_language_override("slow");
+    if (!template_manager.path_manager.check_task_path_exist(root_dir, "slow")) {
+      template_manager.render(template_manager.get_slow(), root_dir, false);
+    }
   }
   if (config["checker"].get<std::string>() == "custom" &&
       !template_manager.path_manager.check_task_path_exist(root_dir, "checker")) {

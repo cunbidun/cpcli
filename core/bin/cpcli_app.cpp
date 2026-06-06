@@ -85,7 +85,7 @@ int cpcli_process(int argc, char *argv[]) {
   }
 
   std::filesystem::path temp_config_path = template_manager.get_problem_config();
-  problem_conf_path = root_dir / "config.json";
+  problem_conf_path = resolve_problem_config_path(root_dir);
   problem_conf = read_problem_config(problem_conf_path, temp_config_path);
   path_manager.init_problem_conf(problem_conf);
 
@@ -210,6 +210,10 @@ int cpcli_process(int argc, char *argv[]) {
     if (problem_conf["useGeneration"]) {
       string command =
           "../gen " + generator_seed + " " + std::to_string(problem_conf["numTest"].get<int>()); // NOTE careful with ..
+      if (problem_conf.contains("genParameters") && problem_conf["genParameters"].is_string() &&
+          !problem_conf["genParameters"].get<string>().empty()) {
+        command += " " + problem_conf["genParameters"].get<string>();
+      }
       int status = system_warper(command);
       if (status != 0) {
         cout << termcolor::red << termcolor::bold << "generator run time error" << termcolor::reset << endl;
