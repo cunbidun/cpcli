@@ -230,24 +230,6 @@ std::filesystem::path expand_user_path(std::filesystem::path path) {
   return path;
 }
 
-std::filesystem::path resolve_existing_project_config(std::filesystem::path path) {
-  path = expand_user_path(path);
-  if (path.is_relative()) {
-    path = std::filesystem::current_path() / path;
-  }
-  if (std::filesystem::exists(path)) {
-    return std::filesystem::canonical(path);
-  }
-  if (path.extension() == ".json") {
-    auto toml_path = path;
-    toml_path.replace_extension(".toml");
-    if (std::filesystem::exists(toml_path)) {
-      return std::filesystem::canonical(toml_path);
-    }
-  }
-  return path;
-}
-
 std::string normalize_path_string(std::string value, const std::filesystem::path &base) {
   if (value.empty()) {
     return value;
@@ -291,6 +273,24 @@ void normalize_project_config(nlohmann::json &j, const std::filesystem::path &co
   }
 }
 } // namespace
+
+std::filesystem::path resolve_existing_project_config(std::filesystem::path path) {
+  path = expand_user_path(path);
+  if (path.is_relative()) {
+    path = std::filesystem::current_path() / path;
+  }
+  if (std::filesystem::exists(path)) {
+    return std::filesystem::canonical(path);
+  }
+  if (path.extension() == ".json") {
+    auto toml_path = path;
+    toml_path.replace_extension(".toml");
+    if (std::filesystem::exists(toml_path)) {
+      return std::filesystem::canonical(toml_path);
+    }
+  }
+  return path;
+}
 
 bool validate_problem_config(const nlohmann::json &obj) { return true; }
 

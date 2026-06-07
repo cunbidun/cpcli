@@ -27,6 +27,8 @@ void write_problem_config(std::filesystem::path path, const nlohmann::json &conf
 // TODO add docs
 nlohmann::json read_project_config(std::filesystem::path path);
 
+std::filesystem::path resolve_existing_project_config(std::filesystem::path path);
+
 int create_new_task(std::filesystem::path project_conf_path);
 
 void print_duration(std::chrono::high_resolution_clock::time_point t_start);

@@ -98,6 +98,7 @@ ParserReturnValues parse_args(int argc, char *argv[]) {
 
   try {
     parser.parse(argc, argv);
+    return_value.project_config_path = resolve_existing_project_config(return_value.project_config_path);
     spdlog::debug("Parsing command line arguments done");
     spdlog::debug("Project config path: {}", return_value.project_config_path.generic_string());
     if (return_value.root_dir) {

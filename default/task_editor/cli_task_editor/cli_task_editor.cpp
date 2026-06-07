@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
 
   try {
     parser.parse(argc, argv);
+    project_conf_path = resolve_existing_project_config(project_conf_path);
   } catch (const CLI::ParseError &e) {
     parser.exit(e);
     exit(1);

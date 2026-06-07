@@ -23,8 +23,7 @@ int main(int argc, char *argv[]) {
 
   parser.add_option("-p,--project-config", project_config_path, "Path to the project config file")
       ->required(true)
-      ->check(CLI::ExistingFile)
-      ->transform([](std::filesystem::path path) { return std::filesystem::canonical(path); });
+      ->type_name("FILE");
 
   parser.add_flag("-o,--overwrite", overwrite, "Overwrite existing task");
 
@@ -41,6 +40,7 @@ int main(int argc, char *argv[]) {
     if (overwrite) {
       spdlog::warn("cpcli_cc will overwrite existing tasks");
     }
+    project_config_path = resolve_existing_project_config(project_config_path);
   } catch (const CLI::ParseError &e) {
     parser.exit(e);
     exit(1);
