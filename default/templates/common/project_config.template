@@ -14,6 +14,12 @@ use_precompiled_header = true
 use_cache = true
 include_dir = "lib/cpp"
 
+[language_config.cu]
+compiler = "cpcli_cuda_compile"
+runtime = "cpcli_cuda_run"
+regular_flag = "-std=c++17 -O2 -lineinfo -Wno-deprecated-gpu-targets -gencode arch=compute_70,code=compute_70"
+debug_flag = "-std=c++17 -O0 -g -lineinfo -Wno-deprecated-gpu-targets -gencode arch=compute_70,code=compute_70"
+
 [language_config.py]
 interpreter = "python"
 

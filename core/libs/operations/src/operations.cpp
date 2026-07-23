@@ -4,7 +4,7 @@
 #include "path_manager.hpp"
 #include "spdlog/spdlog.h"
 #include "utils.hpp"
-#include "inja.hpp"
+#include <inja/inja.hpp>
 
 using std::cout;
 using std::endl;

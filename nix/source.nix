@@ -9,8 +9,6 @@ pkgs.lib.cleanSourceWith {
       base = baseNameOf path;
     in
       !(base == ".git"
-        || base == "result"
-        || base == "flake.nix"
-        || base == "flake.lock"
-        || pkgs.lib.hasPrefix "bazel-" base);
+        || base == "build"
+        || base == "result");
 }

@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <fstream>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
@@ -86,6 +87,46 @@ TEST(TestPathManager, TestInitConfigRootOnlyIncludeOnly) {
   PathManager manager;
   EXPECT_EQ(manager.init(project_config), PathManagerStatus::Success);
   EXPECT_EQ(manager.has_customize_template_dir(), false);
+  std::filesystem::remove_all(test_dir);
+}
+
+TEST(TestPathManager, SelectsCudaSolutionFromProblemOverride) {
+  auto test_dir = std::filesystem::temp_directory_path() / gen_string_length_20();
+  auto root = test_dir / "cpcli_test" / "path_manager";
+  auto task_dir = root / "task" / "cuda_task";
+  std::filesystem::create_directories(task_dir);
+  std::filesystem::create_directory(root / "archive");
+  std::filesystem::create_directory(root / "output");
+
+  std::ofstream(task_dir / "solution.cpp") << "int main() {}\n";
+  std::ofstream(task_dir / "solution.cu") << "__global__ void kernel() {}\n";
+
+  json project_config = {
+      {"root", root}, {"language_config", {{"default", "cpp"}, {"override", json::object()}}}};
+  json problem_config = {{"languageConfig", {{"solution", "cu"}}}};
+
+  PathManager manager;
+  ASSERT_EQ(manager.init(project_config, problem_config), PathManagerStatus::Success);
+  EXPECT_EQ(manager.get_solution_path(task_dir), std::filesystem::canonical(task_dir / "solution.cu"));
+
+  std::filesystem::remove_all(test_dir);
+}
+
+TEST(TestPathManager, FindsSupportedMultiDotTaskFile) {
+  auto test_dir = std::filesystem::temp_directory_path() / gen_string_length_20();
+  auto task_dir = test_dir / "task";
+  std::filesystem::create_directories(task_dir);
+  std::filesystem::create_directory(test_dir / "archive");
+  std::filesystem::create_directory(test_dir / "output");
+  auto solution_path = task_dir / "solution.reference.cpp";
+  std::ofstream(solution_path) << "int main() {}\n";
+
+  json project_config = {
+      {"root", test_dir}, {"language_config", {{"default", "cpp"}, {"override", json::object()}}}};
+  PathManager manager;
+  ASSERT_EQ(manager.init(project_config), PathManagerStatus::Success);
+
+  EXPECT_EQ(manager.get_solution_path(task_dir), solution_path);
   std::filesystem::remove_all(test_dir);
 }
 

@@ -1,5 +1,5 @@
 #include "template_manager.hpp"
-#include "inja.hpp"
+#include <inja/inja.hpp>
 #include "spdlog/spdlog.h"
 
 #include <fstream>

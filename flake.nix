@@ -26,17 +26,25 @@
       tauriTaskEditor = import ./nix/tauri-task-editor.nix {
         inherit pkgs root;
       };
-      bazel = import ./nix/bazel.nix {inherit pkgs cpcliSrc;};
+      cpcli = import ./nix/cpcli.nix {
+        inherit pkgs cpcliSrc tauriTaskEditor;
+      };
     in {
       packages = {
-        inherit (bazel) bazel-deps;
+        default = cpcli;
+        inherit cpcli;
         tauri-task-editor = tauriTaskEditor;
-        install = import ./nix/install.nix {
-          inherit pkgs cpcliSrc tauriTaskEditor;
-          inherit (bazel) bazel-deps bazelCommandFlags bazelNativeBuildInputs bazelStartupFlags;
-        };
+        install = cpcli;
       };
 
-      devShell = import ./nix/dev-shell.nix {inherit pkgs;};
+      apps.default = {
+        type = "app";
+        program = "${cpcli}/bin/cpcli_app";
+        meta.description = "Competitive programming task runner";
+      };
+
+      checks.cpcli = cpcli;
+
+      devShells.default = import ./nix/dev-shell.nix {inherit pkgs;};
     });
 }

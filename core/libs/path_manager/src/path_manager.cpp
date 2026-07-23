@@ -1,7 +1,7 @@
 #include "path_manager.hpp"
 #include "constant.hpp"
-#include "glob.hpp"
 #include "spdlog/spdlog.h"
+#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
@@ -88,6 +88,14 @@ std::filesystem::path PathManager::get_output() { return PathManager::path_mp["o
 std::filesystem::path PathManager::get_archive() { return PathManager::path_mp["archive"]; }
 
 std::filesystem::path PathManager::get_local_share() {
+  if (const char *data_dir = std::getenv("CPCLI_DATA_DIR"); data_dir != nullptr && data_dir[0] != '\0') {
+    auto configured_dir = std::filesystem::path(data_dir);
+    if (std::filesystem::is_directory(configured_dir)) {
+      return configured_dir;
+    }
+    spdlog::error("CPCLI_DATA_DIR '{}' does not exist or is not a directory", configured_dir.c_str());
+    exit(ArtifactsDirDoesNotExist);
+  }
   auto home_path = std::filesystem::path(std::getenv("HOME"));
   auto cpcli_data_dir = home_path / ".local" / "share" / "cpcli";
   if (!std::filesystem::exists(cpcli_data_dir) || !std::filesystem::is_directory(cpcli_data_dir)) {
@@ -131,15 +139,19 @@ std::vector<std::filesystem::path> PathManager::get_all_task_path_filetype(std::
                                                                            std::string filetype) {
   spdlog::debug("Getting all task files for root_dir={}, filetype={}", root_dir.c_str(), filetype.c_str());
   std::vector<std::filesystem::path> to_return;
-  for (auto p : glob::glob((root_dir / filetype).generic_string() + ".*")) {
-    if (SUPPORTED_EXTENSIONS.find(p.extension()) != SUPPORTED_EXTENSIONS.end()) {
-      to_return.push_back(p);
+  std::string capitalized_filetype = filetype;
+  capitalized_filetype[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(capitalized_filetype[0])));
+  for (const auto &entry : std::filesystem::directory_iterator(root_dir)) {
+    if (!entry.is_regular_file()) {
+      continue;
     }
-  }
-  filetype[0] = toupper(filetype[0]);
-  for (auto p : glob::glob((root_dir / filetype).generic_string() + ".*")) {
-    if (SUPPORTED_EXTENSIONS.find(p.extension()) != SUPPORTED_EXTENSIONS.end()) {
-      to_return.push_back(p);
+    const auto &path = entry.path();
+    const auto filename = path.filename().string();
+    const bool matches_filetype = filename.rfind(filetype + ".", 0) == 0 ||
+                                  filename.rfind(capitalized_filetype + ".", 0) == 0;
+    if (matches_filetype &&
+        SUPPORTED_EXTENSIONS.find(path.extension()) != SUPPORTED_EXTENSIONS.end()) {
+      to_return.push_back(path);
     }
   }
   return to_return;

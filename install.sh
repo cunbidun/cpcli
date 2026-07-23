@@ -8,7 +8,7 @@ prefix="${CPCLI_INSTALL_PREFIX:-$HOME/.local}"
 
 if [ ! -d "$build_result" ]; then
 	echo "Missing build result at $build_result" >&2
-	echo "Run: nix build .#install" >&2
+	echo "Run: nix build" >&2
 	exit 1
 fi
 

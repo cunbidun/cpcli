@@ -1,5 +1,5 @@
 #include "compiler.hpp"
-#include "inja.hpp"
+#include <inja/inja.hpp>
 #include "path_manager.hpp"
 #include "spdlog/spdlog.h"
 #include "utils.hpp"

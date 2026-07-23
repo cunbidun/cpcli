@@ -17,12 +17,18 @@ Nevertheless, it is mature enough for casual coding competition.
 
 ### Step by step installation
 
-1. Clone the repo, run `nix build .#install`, then run `./install.sh`.
+1. Clone the repo, run `nix build`, then run `./install.sh`.
 2. Create your workspace directory with sub directories:
    - task
    - archive
    - output
 3. Create new task and solve problem
+
+You can also run cpcli directly from the checkout without installing it:
+
+```bash
+nix run . -- --project-config=/path/to/project_config.toml --help
+```
 
 ### Workspace Configuration
 
@@ -47,9 +53,23 @@ use_precompiled_header = false
 use_cache = true
 include_dir = "include"
 
+[language_config.cu]
+compiler = "cpcli_cuda_compile"
+runtime = "cpcli_cuda_run"
+regular_flag = "-std=c++17 -O2 -lineinfo -Wno-deprecated-gpu-targets -gencode arch=compute_70,code=compute_70"
+debug_flag = "-std=c++17 -O0 -g -lineinfo -Wno-deprecated-gpu-targets -gencode arch=compute_70,code=compute_70"
+
 [language_config.py]
 interpreter = "python3"
 ```
+
+CUDA tasks use `solution.cu`. When `runtime` is set, cpcli compiles a
+`solution.cuda-bin` and creates `./solution` as a launcher that passes the CUDA
+binary to that runtime. This allows simulator or container backends without
+changing the task runner.
+
+The bundled `cpcli_cuda_setup` command extracts the matching CUDA headers and
+`libdevice` into `~/.cache/cpcli/cuda-toolkit-12.8` for clangd/editor support.
 
 #### Sample folder structure
 
@@ -173,17 +193,26 @@ Others `checker` included:
 
 The recommend text editor for developing this project is [vscode](https://code.visualstudio.com/)
 
-1. Build the project
-   ```bash
-   nix build .#install
-   ```
-2. Build `compile_commands.json` for autocomplete
+1. Enter the development environment and configure the project:
 
    ```bash
-   bazel run @hedron_compile_commands//:refresh_all
+   nix develop
+   cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
    ```
 
-3. `.vscode` setup
+2. Build the project. CMake writes `build/compile_commands.json` for editor tooling.
+
+   ```bash
+   cmake --build build
+   ```
+
+3. Run the tests:
+
+   ```bash
+   ctest --test-dir build --output-on-failure
+   ```
+
+4. `.vscode` setup
 
    Create a `.vscode` at the top level directory of the repository
 
@@ -200,7 +229,7 @@ The recommend text editor for developing this project is [vscode](https://code.v
      "configurations": [
        {
          "name": "cpcli_app",
-         "compileCommands": "${workspaceFolder}/compile_commands.json"
+        "compileCommands": "${workspaceFolder}/build/compile_commands.json"
        }
      ],
      "version": 4
@@ -210,7 +239,7 @@ The recommend text editor for developing this project is [vscode](https://code.v
 ### Build and Run Task Editor
 
 ```bash
-nix build .#install
+nix build
 ./install.sh
 result/share/cpcli/task-editor/task-editor --root ~/competitive_programming/task/<task>
 ```
@@ -218,16 +247,22 @@ result/share/cpcli/task-editor/task-editor --root ~/competitive_programming/task
 ### Build and run GTest
 
 ```bash
-bazel test --test_output=all //core/test:cpcli_test
+cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
 ### Build code coverage report
 
-Make sure you have `lcov` installed
+Build with coverage instrumentation, then run the tests and generate the report:
 
 ```bash
-bazel coverage //core/test:cpcli_test --coverage_report_generator="@bazel_tools//tools/test/CoverageOutputGenerator/java/com/google/devtools/coverageoutputgenerator:Main" --instrumentation_filter="//..."
-genhtml --output coverage "$(bazel info output_path)/_coverage/_coverage_report.dat"
+cmake -S . -B build-coverage -G Ninja -DBUILD_TESTING=ON \
+  -DCMAKE_CXX_FLAGS="--coverage" -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+cmake --build build-coverage
+ctest --test-dir build-coverage
+lcov --capture --directory build-coverage --output-file coverage.info
+genhtml coverage.info --output-directory coverage
 open coverage/index.html
 ```
 

@@ -1,0 +1,12 @@
+#include <cuda_runtime.h>
+
+#include <cstdio>
+
+__global__ void solve() {}
+
+int main() {
+  solve<<<1, 1>>>();
+  if (cudaDeviceSynchronize() != cudaSuccess) return 1;
+  std::printf("CPCLI_RESULT OK\n");
+  return 0;
+}

@@ -7,12 +7,7 @@ Requirements
 --------------
 Make sure you have the following installed:
 
-1. `Bazel <https://bazel.build/>`_
-    * Ubuntu: `Installing Bazel on Ubuntu <https://bazel.build/install/ubuntu>`_
-    * Mac OS X: `brew install bazel`
-    * ArchLinux: `pacman -S bazel`
-
-2. `Java11+ JKD <https://www.java.com/en/>`_
+1. `Nix <https://nixos.org/>`_
 
 Environment Set-up
 -------------------
@@ -50,7 +45,7 @@ Build the install tree and copy it to ``~/.local``.
 
 .. code-block:: bash 
 
-  $ nix build .#install
+  $ nix build
   $ ./install.sh
 
 If the installation process finishes successfully, the binaries will be copied to ``~/.local/bin``.

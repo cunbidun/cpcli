@@ -262,6 +262,14 @@ void normalize_project_config(nlohmann::json &j, const std::filesystem::path &co
       if (language_config.is_object() && language_config.contains("include_dir") && language_config["include_dir"].is_string()) {
         language_config["include_dir"] = normalize_path_string(language_config["include_dir"].get<std::string>(), j["root"].get<std::string>());
       }
+      for (const auto &key : {"compiler", "runtime"}) {
+        if (language_config.is_object() && language_config.contains(key) && language_config[key].is_string()) {
+          const auto value = language_config[key].get<std::string>();
+          if (value.rfind("./", 0) == 0 || value.find('/') != std::string::npos) {
+            language_config[key] = normalize_path_string(value, j["root"].get<std::string>());
+          }
+        }
+      }
     }
   }
 
