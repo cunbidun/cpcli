@@ -40,8 +40,10 @@ pkgs.stdenv.mkDerivation {
     ln -s ../share/cpcli/task-editor/tauri_task_editor "$out/bin/cpcli_editor"
 
     wrapProgram "$out/bin/cpcli_app" \
-      --set CPCLI_DATA_DIR "$out/share/cpcli"
+      --set CPCLI_DATA_DIR "$out/share/cpcli" \
+      --prefix PATH : "$out/bin"
     wrapProgram "$out/bin/cpcli_cc" \
-      --set CPCLI_DATA_DIR "$out/share/cpcli"
+      --set CPCLI_DATA_DIR "$out/share/cpcli" \
+      --prefix PATH : "$out/bin"
   '';
 }

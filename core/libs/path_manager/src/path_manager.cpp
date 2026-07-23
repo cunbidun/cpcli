@@ -7,6 +7,45 @@
 #include <iostream>
 
 #include <map>
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
+
+namespace {
+std::filesystem::path find_installed_data_dir() {
+  std::filesystem::path executable;
+#if defined(__linux__)
+  std::error_code error;
+  executable = std::filesystem::read_symlink("/proc/self/exe", error);
+  if (error) {
+    return {};
+  }
+#elif defined(__APPLE__)
+  uint32_t size = 0;
+  _NSGetExecutablePath(nullptr, &size);
+  std::vector<char> buffer(size);
+  if (_NSGetExecutablePath(buffer.data(), &size) != 0) {
+    return {};
+  }
+  executable = std::filesystem::weakly_canonical(buffer.data());
+#else
+  return {};
+#endif
+  auto directory = executable.parent_path();
+  for (int i = 0; i < 4 && !directory.empty(); ++i) {
+    if (std::filesystem::is_directory(directory / "templates") &&
+        std::filesystem::is_directory(directory / "checkers")) {
+      return directory;
+    }
+    auto data_dir = directory / "share" / "cpcli";
+    if (std::filesystem::is_directory(data_dir)) {
+      return data_dir;
+    }
+    directory = directory.parent_path();
+  }
+  return {};
+}
+} // namespace
 
 PathManagerStatus PathManager::init(json project_config, json problem_config) {
   std::filesystem::path root_path;
@@ -95,6 +134,9 @@ std::filesystem::path PathManager::get_local_share() {
     }
     spdlog::error("CPCLI_DATA_DIR '{}' does not exist or is not a directory", configured_dir.c_str());
     exit(ArtifactsDirDoesNotExist);
+  }
+  if (auto installed_data_dir = find_installed_data_dir(); !installed_data_dir.empty()) {
+    return installed_data_dir;
   }
   auto home_path = std::filesystem::path(std::getenv("HOME"));
   auto cpcli_data_dir = home_path / ".local" / "share" / "cpcli";
