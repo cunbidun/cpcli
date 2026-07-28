@@ -452,7 +452,9 @@ int cpcli_process(int argc, char *argv[]) {
       earned_points += points;
     }
   }
-  if (has_points) {
+  if (has_points && parser_result.subtask) {
+    cout << "Score: not calculated for --subtask runs\n";
+  } else if (has_points) {
     cout << "Score: " << earned_points << "/" << available_points << '\n';
   }
 

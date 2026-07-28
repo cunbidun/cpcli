@@ -177,7 +177,7 @@ input = "1\n"
 output = "1\n"
 ```
 
-When `[[subtasks]]` is absent, cpcli treats the existing run, generation, and tests as one implicit subtask. Subtask generators and tests use `___test_case/<subtask-index>/`, so subtask names are never interpolated into shell paths. `depends_on` affects scoring only; it does not rerun dependency tests. Scored runs should normally leave `run.stop_on_first_failure = false`, because that option still aborts the entire run on the first failure.
+When `[[subtasks]]` is absent, cpcli treats the existing run, generation, and tests as one implicit subtask. Subtask generators and tests use `___test_case/<subtask-index>/`, so subtask names are never interpolated into shell paths. `depends_on` affects scoring only; it does not rerun dependency tests. Focused `--subtask` runs report the selected verdict but do not calculate a score because dependencies are intentionally not run. Scored runs should normally leave `run.stop_on_first_failure = false`, because that option still aborts the entire run on the first failure.
 
 Canonical task config keys:
 
