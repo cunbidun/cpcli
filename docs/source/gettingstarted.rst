@@ -100,12 +100,14 @@ Put this inside the 	``project_config.toml``. ``root`` is optional; when omitted
   compiler = "g++"
   regular_flag = "-DLOCAL -O2 -std=c++17"
   debug_flag = "-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG"
-  use_precompiled_header = false
-  use_cache = true
-  include_dir = "include"
 
   [language_config.py]
   interpreter = "python3"
+
+cpcli passes the configured C++ flags directly to the compiler. Configure include paths,
+precompiled headers, and compiler caching explicitly in those flags or in a compiler wrapper.
+Compilation runs from the task directory, so repository-level paths should be absolute or
+provided through environment variables.
 
 
 An Example file structure:

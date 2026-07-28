@@ -43,13 +43,6 @@ public:
    * @return std::filesystem::path to $HOME/.local/share/cpcli on Linux and Mac
    */
   std::filesystem::path get_local_share();
-  /**
-   * @brief Get the cpcli cache path.
-   *
-   * Uses $XDG_CACHE_HOME/cpcli when XDG_CACHE_HOME is set, otherwise
-   * $HOME/.cache/cpcli.
-   */
-  std::filesystem::path get_cpcli_cache();
   std::filesystem::path get_task();
   std::filesystem::path get_output();
   std::filesystem::path get_archive();
@@ -57,7 +50,6 @@ public:
   // Required optional dir
   std::filesystem::path get_template();
 
-  std::filesystem::path get_cache_dir(std::filesystem::path path);
   std::filesystem::path get_solution_path(std::filesystem::path root_dir);
   std::filesystem::path get_slow_path(std::filesystem::path root_dir);
   std::filesystem::path get_task_gen_path(std::filesystem::path root_dir);

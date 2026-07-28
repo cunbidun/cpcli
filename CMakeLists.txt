@@ -40,7 +40,6 @@ target_link_libraries(cpcli_template_manager
 )
 
 add_library(cpcli_operations
-  core/libs/operations/src/compile_headers.cpp
   core/libs/operations/src/operations.cpp
   core/libs/operations/src/parse_args.cpp
   core/libs/operations/src/parse_config.cpp
@@ -92,10 +91,11 @@ endforeach()
 if(BUILD_TESTING)
   find_package(GTest CONFIG REQUIRED)
   add_executable(cpcli_test
+    core/test/src/test_compiler.cpp
     core/test/src/test_path_manager.cpp
     core/test/src/test_util.cpp
   )
-  target_link_libraries(cpcli_test PRIVATE cpcli_operations GTest::gtest_main)
+  target_link_libraries(cpcli_test PRIVATE cpcli_compiler GTest::gtest_main)
   include(GoogleTest)
   gtest_discover_tests(cpcli_test)
 endif()

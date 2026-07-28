@@ -9,13 +9,12 @@
 const int static CompilerError = 120000;
 const int static CompilerLanguageNotSuported = 120001;
 const int static CompilerRequestedFileIsNotRegular = 120002;
-const int static CompilerCppIncludeDirMissing = 120003;
 
 class Compiler {
   using json = nlohmann::json;
 
 public:
-  Compiler(json project_conf, PathManager &path_manager, std::filesystem::path root_dir, bool is_debug);
+  Compiler(json project_conf, PathManager &path_manager, bool is_debug);
   int compile(std::filesystem::path path);
 
   // methods to compile specific languages
@@ -28,7 +27,6 @@ public:
 
 private:
   json project_config;
-  std::filesystem::path root_dir;
   PathManager path_manager;
   bool is_debug;
 };

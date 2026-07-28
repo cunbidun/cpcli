@@ -1,13 +1,13 @@
 #include "compiler.hpp"
-#include <inja/inja.hpp>
 #include "path_manager.hpp"
 #include "spdlog/spdlog.h"
 #include "utils.hpp"
+#include <inja/inja.hpp>
 
 #include <filesystem>
 
-Compiler::Compiler(json project_conf, PathManager &path_manager, std::filesystem::path root_dir, bool is_debug)
-    : project_config(project_conf), root_dir(root_dir), path_manager(path_manager), is_debug(is_debug) {}
+Compiler::Compiler(json project_conf, PathManager &path_manager, bool is_debug)
+    : project_config(project_conf), path_manager(path_manager), is_debug(is_debug) {}
 
 int Compiler::compile_cpp(std::filesystem::path path, bool is_solution_file) {
   /*
@@ -17,8 +17,6 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_solution_file) {
    *    "compiler": "clang++",
    *    "regular_flag": "-DLOCAL -O2 -std=c++17",
    *    "debug_flag": "-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG",
-   *    "use_precompiled_header": false,
-   *    "use_cache": true,
    *  },
    */
   spdlog::debug(
@@ -29,93 +27,43 @@ int Compiler::compile_cpp(std::filesystem::path path, bool is_solution_file) {
 
   auto cpp_compiler = language_config["compiler"].get<std::string>();
   spdlog::debug("cpp compiler is: {}", cpp_compiler);
-  auto cache_dir = path_manager.get_cache_dir(root_dir);
-  spdlog::debug("cache dir is: {}", cache_dir.generic_string());
-  bool use_cache = language_config["use_cache"].get<bool>();
 
-  std::filesystem::path include_dir;
-  if (language_config.contains("include_dir")) {
-    include_dir = language_config["include_dir"].get<std::string>();
-    if (!std::filesystem::exists(include_dir)) {
-      spdlog::error("include_dir at {} does not exist", include_dir.c_str());
-      return (CompilerCppIncludeDirMissing);
-    }
-    spdlog::debug("include dir is: {}", include_dir.generic_string());
-  } else {
-    spdlog::debug("include dir for cpp is not set");
-  }
-
+  // Keep compilation policy in project_config.toml and the compiler wrapper.
+  // The separate object step lets wrappers such as ccache cache compilation.
   std::string binary_name = path.stem();
-  std::filesystem::path binary_cache_dir = cache_dir / binary_name;
-  std::filesystem::path file_cache_dir = cache_dir / path.filename();
-  if (use_cache && compare_files(path, file_cache_dir) && (!is_debug || !is_solution_file)) {
-    // Use cache when when use_cache is true and the content are the same.
-    // However, if the filetype is solution and we are debugging, cache will be disable
-    spdlog::debug("the file is not changed, use cache");
-    std::filesystem::copy_file(
-        binary_cache_dir, path.parent_path() / binary_name, std::filesystem::copy_options::overwrite_existing);
-  } else {
-    spdlog::debug("the file is changed, not use cache");
-    std::string compiler_flags;
-    if (language_config["use_precompiled_header"]) {
-      std::filesystem::path precompiled_dir = path_manager.get_cpcli_cache() / "precompiled_headers";
-      std::filesystem::path precompiled_path = precompiled_dir / "cpp_compile_flag" / "stdc++.h";
-      check_file(precompiled_dir / "cpp_compile_flag" / "stdc++.h.gch",
-                 "precompiled header not found! Please try 'cpcli_app project -g'");
+  std::string object_name = "." + binary_name + ".cpcli.o";
+  std::string compiler_flags = (is_debug && is_solution_file) ? language_config["debug_flag"].get<std::string>()
+                                                              : language_config["regular_flag"].get<std::string>();
 
-      std::filesystem::path precompiled_debug_path = precompiled_dir / "cpp_debug_flag" / "stdc++.h";
-      check_file(precompiled_dir / "cpp_debug_flag" / "stdc++.h.gch",
-                 "precompiled debug header not found! Please try 'cpcli_app project -g'");
-
-      language_config["regular_flag"] =
-          language_config["regular_flag"].get<string>() + " " + "-include" + " \"" + precompiled_path.string() + "\"";
-      language_config["debug_flag"] = language_config["debug_flag"].get<string>() + " " + "-include" + " \"" +
-                                      precompiled_debug_path.string() + "\"";
-    }
-    if (is_debug && is_solution_file) {
-      compiler_flags = language_config["debug_flag"].get<std::string>();
-      use_cache = false;
-    } else {
-      compiler_flags = language_config["regular_flag"].get<std::string>();
+  std::filesystem::current_path(path.parent_path());
+  {
+    inja::Environment env;
+    json command_data = {{"cpp_compiler", cpp_compiler},
+                         {"compiler_flags", compiler_flags},
+                         {"binary_name", binary_name},
+                         {"object_name", object_name},
+                         {"path", path.generic_string()}};
+    std::string compile_command =
+        env.render("{{ cpp_compiler }} {{ compiler_flags }} -c \"{{ path }}\" -o \"{{ object_name }}\"", command_data);
+    if (system_warper(compile_command) != 0) {
+      std::filesystem::remove(object_name);
+      clean_up();
+      exit(CompilerError);
     }
 
-    if (!is_solution_file && !include_dir.empty()) {
-      // do not add include dir for solution filetype
-      string include_dir_str = "\"" + include_dir.generic_string() + "\"";
-      std::vector<string> command{compiler_flags, "-I", include_dir_str};
-      compiler_flags = join(command);
-    }
-
-    std::filesystem::current_path(path.parent_path());
-
-    {
-      // compile and run the binary
-      std::string command_template = "{{ cpp_compiler }} {{ compiler_flags }} -o {{ binary_name }} \"{{ path }}\"";
-      inja::Environment env;
-      std::string command = env.render(command_template,
-                                       {{"cpp_compiler", cpp_compiler},
-                                        {"compiler_flags", compiler_flags},
-                                        {"binary_name", binary_name},
-                                        {"path", path.generic_string()}});
-
-      int status = system_warper(command);
-
-      if (status != 0) {
-        clean_up();
-        exit(CompilerError);
-      }
+    std::string link_command = env.render(
+        "{{ cpp_compiler }} {{ compiler_flags }} \"{{ object_name }}\" -o \"{{ binary_name }}\"", command_data);
+    int link_status = system_warper(link_command);
+    std::filesystem::remove(object_name);
+    if (link_status != 0) {
+      clean_up();
+      exit(CompilerError);
     }
   }
 
   if (is_solution_file) {
     std::filesystem::copy_file(
         path, path_manager.get_output() / "solution.cpp", std::filesystem::copy_options::overwrite_existing);
-  }
-
-  if (use_cache) {
-    std::filesystem::copy_file(
-        path.parent_path() / binary_name, binary_cache_dir, std::filesystem::copy_options::overwrite_existing);
-    std::filesystem::copy_file(path, file_cache_dir, std::filesystem::copy_options::overwrite_existing);
   }
 
   return 0;
@@ -128,9 +76,8 @@ int Compiler::compile_cuda(std::filesystem::path path, bool is_solution_file) {
   auto language_config = project_config["language_config"]["[cu]"];
   auto compiler = language_config["compiler"].get<std::string>();
   auto runtime = language_config.value("runtime", std::string());
-  auto compiler_flags =
-      is_debug && is_solution_file ? language_config["debug_flag"].get<std::string>()
-                                   : language_config["regular_flag"].get<std::string>();
+  auto compiler_flags = is_debug && is_solution_file ? language_config["debug_flag"].get<std::string>()
+                                                     : language_config["regular_flag"].get<std::string>();
 
   auto executable_path = path.parent_path() / path.stem();
   auto cuda_binary_path = executable_path;

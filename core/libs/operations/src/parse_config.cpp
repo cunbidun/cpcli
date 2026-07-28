@@ -110,11 +110,12 @@ nlohmann::json parse_problem_toml(const std::filesystem::path &path) {
   return toml_value_to_json(toml::parse(path.string()));
 }
 
-bool has_object(const nlohmann::json &j, const std::string &key) {
-  return j.contains(key) && j[key].is_object();
-}
+bool has_object(const nlohmann::json &j, const std::string &key) { return j.contains(key) && j[key].is_object(); }
 
-void copy_if_present(nlohmann::json &dst, const nlohmann::json &src, const std::string &src_key, const std::string &dst_key) {
+void copy_if_present(nlohmann::json &dst,
+                     const nlohmann::json &src,
+                     const std::string &src_key,
+                     const std::string &dst_key) {
   if (src.contains(src_key) && !src[src_key].is_null()) {
     dst[dst_key] = src[src_key];
   }
@@ -259,9 +260,6 @@ void normalize_project_config(nlohmann::json &j, const std::filesystem::path &co
 
   if (j.contains("language_config") && j["language_config"].is_object()) {
     for (auto &[_, language_config] : j["language_config"].items()) {
-      if (language_config.is_object() && language_config.contains("include_dir") && language_config["include_dir"].is_string()) {
-        language_config["include_dir"] = normalize_path_string(language_config["include_dir"].get<std::string>(), j["root"].get<std::string>());
-      }
       for (const auto &key : {"compiler", "runtime"}) {
         if (language_config.is_object() && language_config.contains(key) && language_config[key].is_string()) {
           const auto value = language_config[key].get<std::string>();

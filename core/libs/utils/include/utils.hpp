@@ -78,9 +78,6 @@ string read_file_to_str(const std::filesystem::path &path);
 void print_file(string path, bool truncate);
 
 // TODO add docs
-bool compare_files(const std::filesystem::path &filename1, const std::filesystem::path &filename2);
-
-// TODO add docs
 int system_warper(const string &command);
 
 #endif

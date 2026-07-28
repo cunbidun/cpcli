@@ -49,9 +49,6 @@ default = "cpp"
 compiler = "g++"
 regular_flag = "-DLOCAL -O2 -std=c++17"
 debug_flag = "-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG"
-use_precompiled_header = false
-use_cache = true
-include_dir = "include"
 
 [language_config.cu]
 compiler = "cpcli_cuda_compile"
@@ -117,12 +114,12 @@ $ cpcli_app --project-config=project_config.toml task --root-dir="/Users/cunbidu
 | 2   | `output_dir`             | `string` | Compiled solution will be copy to this directory (so you know where to look for file for submission) | `""`                                                                                              |
 | 3   | `template_dir`           | `string` | Directory for storing template (check the repo `template` folder for more info)                      | `""`                                                                                              |
 | 4   | `archive_dir`            | `string` | Directory for archiving completed task (check the repo `archive` folder for more info)               | `""`                                                                                              |
-| 6   | `include_dir`            | `string` | Store libs here                                                                                      |                                                                                                   |
-| 5   | `task_editor_exec`          | `string` | Executable frontend to edit task `config.toml` or `config.json`                                      | `cpcli_editor`                                                                                    |
-| 7   | `cpp_compile_flag`       | `string` | Cpp normal complier flag                                                                             | `"-DLOCAL -static -O2 -std=c++17"`                                                                |
-| 8   | `cpp_debug_flag`         | `string` | Cpp debug flag                                                                                       | `"-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG"` |
-| 9   | `use_precompiled_header` | `bool`   | use precompiled headers                                                                              | `true`                                                                                            |
-| 10  | `use_cache`              | `bool`   | Enable cache                                                                                         | `true`                                                                                            |
+| 5   | `task_editor_exec`       | `string` | Executable frontend to edit task `config.toml` or `config.json`                                      | `cpcli_editor`                                                                                    |
+| 6   | `compiler`               | `string` | C++ compiler command or wrapper                                                                      | `g++`                                                                                             |
+| 7   | `regular_flag`           | `string` | C++ regular compilation and link flags                                                               | `"-DLOCAL -O2 -std=c++17"`                                                                        |
+| 8   | `debug_flag`             | `string` | C++ debug compilation and link flags                                                                 | `"-DLOCAL -Wall -Wshadow -std=c++17 -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG"` |
+
+cpcli passes `regular_flag` and `debug_flag` directly to the configured compiler. Include paths, precompiled headers, and compiler caching should therefore be expressed explicitly in those flags or in the compiler wrapper. Compilation runs from the task directory, so use absolute paths or environment variables for repository-level files.
 
 ### Task Configuration
 

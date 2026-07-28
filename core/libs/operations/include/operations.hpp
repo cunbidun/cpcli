@@ -42,18 +42,12 @@ void edit_config(std::filesystem::path root_dir,
                  TemplateManager &template_manager,
                  std::string &task_editor_exec);
 
-bool compile_headers(std::filesystem::path precompiled_dir,
-                     const std::string &cc,
-                     const std::string &flag,
-                     const std::string &debug);
-
 enum class ParserOperations {
   Archive,
   Build,
   BuildWithTerm,
   BuildWithDebug,
   NewTask,
-  GenHeader,
   EditTaskConfig,
 };
 

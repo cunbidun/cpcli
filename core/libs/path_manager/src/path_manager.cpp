@@ -114,9 +114,7 @@ PathManagerStatus PathManager::init(json project_config, json problem_config) {
   return PathManagerStatus::Success;
 }
 
-void PathManager::init_problem_conf(json problem_config) {
-  PathManager::problem_config = problem_config;
-}
+void PathManager::init_problem_conf(json problem_config) { PathManager::problem_config = problem_config; }
 
 bool PathManager::has_customize_template_dir() {
   return PathManager::path_mp.find("template") != PathManager::path_mp.end();
@@ -147,20 +145,6 @@ std::filesystem::path PathManager::get_local_share() {
   return cpcli_data_dir;
 }
 
-std::filesystem::path PathManager::get_cpcli_cache() {
-  const char *xdg_cache_home = std::getenv("XDG_CACHE_HOME");
-  std::filesystem::path cache_base;
-  if (xdg_cache_home != nullptr && std::string(xdg_cache_home).size() > 0) {
-    cache_base = xdg_cache_home;
-  } else {
-    cache_base = std::filesystem::path(std::getenv("HOME")) / ".cache";
-  }
-
-  auto cpcli_cache_dir = cache_base / "cpcli";
-  std::filesystem::create_directories(cpcli_cache_dir);
-  return cpcli_cache_dir;
-}
-
 std::filesystem::path PathManager::get_template() { return PathManager::get("template"); }
 std::filesystem::path PathManager::get(std::string str) {
   if (path_mp.find(str) == path_mp.end()) {
@@ -168,13 +152,6 @@ std::filesystem::path PathManager::get(std::string str) {
     exit(PathManagerKeyNotFound);
   }
   return PathManager::path_mp[str];
-}
-
-std::filesystem::path PathManager::get_cache_dir(std::filesystem::path root_dir) {
-  auto cache_dir =
-      std::filesystem::temp_directory_path() / "cpcli" / std::to_string(std::hash<std::string>()(root_dir));
-  std::filesystem::create_directories(cache_dir);
-  return cache_dir;
 }
 
 std::vector<std::filesystem::path> PathManager::get_all_task_path_filetype(std::filesystem::path root_dir,
@@ -189,10 +166,9 @@ std::vector<std::filesystem::path> PathManager::get_all_task_path_filetype(std::
     }
     const auto &path = entry.path();
     const auto filename = path.filename().string();
-    const bool matches_filetype = filename.rfind(filetype + ".", 0) == 0 ||
-                                  filename.rfind(capitalized_filetype + ".", 0) == 0;
-    if (matches_filetype &&
-        SUPPORTED_EXTENSIONS.find(path.extension()) != SUPPORTED_EXTENSIONS.end()) {
+    const bool matches_filetype =
+        filename.rfind(filetype + ".", 0) == 0 || filename.rfind(capitalized_filetype + ".", 0) == 0;
+    if (matches_filetype && SUPPORTED_EXTENSIONS.find(path.extension()) != SUPPORTED_EXTENSIONS.end()) {
       to_return.push_back(path);
     }
   }

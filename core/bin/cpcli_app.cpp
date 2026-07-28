@@ -59,21 +59,6 @@ int cpcli_process(int argc, char *argv[]) {
     return 0;
   }
 
-  if (parser_result.operation == ParserOperations::GenHeader) {
-    std::filesystem::path precompiled_dir = path_manager.get_cpcli_cache() / "precompiled_headers";
-    auto cpp_config = project_conf["language_config"]["[cpp]"];
-    spdlog::debug("Generating precompiled headers");
-    spdlog::debug("precompiled_dir is: " + precompiled_dir.string());
-    spdlog::debug("cpp_compiler is: " + cpp_config["compiler"].get<string>());
-    spdlog::debug("cpp_compile_flag is: " + cpp_config["regular_flag"].get<string>());
-    spdlog::debug("cpp_debug_flag is: " + cpp_config["debug_flag"].get<string>());
-    compile_headers(precompiled_dir,
-                    cpp_config["compiler"].get<string>(),
-                    cpp_config["regular_flag"].get<string>(),
-                    cpp_config["debug_flag"].get<string>());
-    return 0;
-  }
-
   root_dir = *parser_result.root_dir;
   std::filesystem::current_path(root_dir); // change directory to root_dir
   clean_up();                              // clean up the root directory for the first time
@@ -99,7 +84,7 @@ int cpcli_process(int argc, char *argv[]) {
   } else if (parser_result.operation == ParserOperations::BuildWithTerm) {
     // Run with terminal. This option only uses the project config file for
     // compiler flags. No problem config will be used.
-    Compiler compiler(project_conf, path_manager, root_dir, false);
+    Compiler compiler(project_conf, path_manager, false);
     compiler.compile(path_manager.get_solution_path(root_dir));
     int status = system_warper("./solution");
     cout << '\n'; // add an empty line before printing the status
@@ -139,7 +124,7 @@ int cpcli_process(int argc, char *argv[]) {
   cout << problem_conf["name"].get<string>() << '\n';
 
   // ----------------------------- COMPILE START ----------------------------
-  Compiler compiler(project_conf, path_manager, root_dir, is_debug);
+  Compiler compiler(project_conf, path_manager, is_debug);
   {
     auto t0 = std::chrono::high_resolution_clock::now();
     std::filesystem::path cache_dir = "";

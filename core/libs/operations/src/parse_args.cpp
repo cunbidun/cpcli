@@ -22,7 +22,10 @@ ParserReturnValues parse_args(int argc, char *argv[]) {
         spdlog::debug("Debug cpcli (--debug) is set");
       },
       "Run cpcli_app with debug flags (this option will print debug logs)");
-  parser.add_option("-p,--project-config", return_value.project_config_path, "Path to the project config file, default to $PWD/project_config.toml or $PWD/project_config.json")
+  parser
+      .add_option("-p,--project-config",
+                  return_value.project_config_path,
+                  "Path to the project config file, default to $PWD/project_config.toml or $PWD/project_config.json")
       ->default_val(std::filesystem::current_path() / "project_config.json")
       ->type_name("FILE");
 
@@ -31,13 +34,6 @@ ParserReturnValues parse_args(int argc, char *argv[]) {
    */
   auto project_subcommand = parser.add_subcommand("project", "Operation on project");
   auto project_operations = project_subcommand->add_option_group("project", "Operation on project");
-  project_operations->add_flag_function(
-      "-g,--gen-headers",
-      [&return_value](int count) {
-        spdlog::debug("Generate headers (--gen-headers) is set");
-        return_value.operation = ParserOperations::GenHeader;
-      },
-      "Precompile headers file. This needs to be done before using the precompiled headers (only works on Linux)");
   project_operations->add_flag_function(
       "-n,--new-task",
       [&return_value](int count) {
