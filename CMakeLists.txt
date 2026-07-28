@@ -92,12 +92,18 @@ if(BUILD_TESTING)
   find_package(GTest CONFIG REQUIRED)
   add_executable(cpcli_test
     core/test/src/test_compiler.cpp
+    core/test/src/test_parse_config.cpp
     core/test/src/test_path_manager.cpp
     core/test/src/test_util.cpp
   )
   target_link_libraries(cpcli_test PRIVATE cpcli_compiler GTest::gtest_main)
   include(GoogleTest)
   gtest_discover_tests(cpcli_test)
+  add_test(
+    NAME cpcli_subtask_integration
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/core/test/test_subtasks.sh
+            $<TARGET_FILE:cpcli_app> $<TARGET_FILE:token_checker>
+  )
 endif()
 
 install(TARGETS cpcli_app cpcli_cc RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

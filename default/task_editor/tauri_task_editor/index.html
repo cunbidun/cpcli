@@ -55,6 +55,10 @@
               <input type="checkbox" id="knowAnswer" />
               <label for="knowAnswer"><u>E</u>xpected answer?</label>
             </div>
+            <div class="field hidden" id="testSubtaskField">
+              <label for="testSubtask">Subtask:</label>
+              <select id="testSubtask"></select>
+            </div>
             <div id="outputContainer">
               <label><u>O</u>utput:</label>
               <div id="testOutput" class="editor-container"></div>
@@ -99,6 +103,11 @@
 
       <!-- Bottom Panel -->
       <div class="bottom-panel">
+        <div class="subtask-panel hidden" id="subtaskPanel">
+          <label>Subtasks</label>
+          <div class="subtask-list" id="subtaskList"></div>
+        </div>
+
         <!-- Generator Panel -->
         <div class="generator-panel">
           <div class="field checkbox-field">

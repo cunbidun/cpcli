@@ -101,14 +101,31 @@ TEST(TestPathManager, SelectsCudaSolutionFromProblemOverride) {
   std::ofstream(task_dir / "solution.cpp") << "int main() {}\n";
   std::ofstream(task_dir / "solution.cu") << "__global__ void kernel() {}\n";
 
-  json project_config = {
-      {"root", root}, {"language_config", {{"default", "cpp"}, {"override", json::object()}}}};
+  json project_config = {{"root", root}, {"language_config", {{"default", "cpp"}, {"override", json::object()}}}};
   json problem_config = {{"languageConfig", {{"solution", "cu"}}}};
 
   PathManager manager;
   ASSERT_EQ(manager.init(project_config, problem_config), PathManagerStatus::Success);
   EXPECT_EQ(manager.get_solution_path(task_dir), std::filesystem::canonical(task_dir / "solution.cu"));
 
+  std::filesystem::remove_all(test_dir);
+}
+
+TEST(TestPathManager, SelectsTaskDefaultLanguage) {
+  auto test_dir = std::filesystem::temp_directory_path() / gen_string_length_20();
+  auto task_dir = test_dir / "task" / "python_task";
+  std::filesystem::create_directories(task_dir);
+  std::filesystem::create_directory(test_dir / "archive");
+  std::filesystem::create_directory(test_dir / "output");
+  std::ofstream(task_dir / "solution.cpp") << "int main() {}\n";
+  std::ofstream(task_dir / "solution.py") << "print()\n";
+
+  json project_config = {{"root", test_dir}, {"language_config", {{"default", "cpp"}, {"override", json::object()}}}};
+  json problem_config = {{"languageConfig", {{"default", "py"}}}};
+
+  PathManager manager;
+  ASSERT_EQ(manager.init(project_config, problem_config), PathManagerStatus::Success);
+  EXPECT_EQ(manager.get_solution_path(task_dir), task_dir / "solution.py");
   std::filesystem::remove_all(test_dir);
 }
 
@@ -121,12 +138,32 @@ TEST(TestPathManager, FindsSupportedMultiDotTaskFile) {
   auto solution_path = task_dir / "solution.reference.cpp";
   std::ofstream(solution_path) << "int main() {}\n";
 
-  json project_config = {
-      {"root", test_dir}, {"language_config", {{"default", "cpp"}, {"override", json::object()}}}};
+  json project_config = {{"root", test_dir}, {"language_config", {{"default", "cpp"}, {"override", json::object()}}}};
   PathManager manager;
   ASSERT_EQ(manager.init(project_config), PathManagerStatus::Success);
 
   EXPECT_EQ(manager.get_solution_path(task_dir), solution_path);
+  std::filesystem::remove_all(test_dir);
+}
+
+TEST(TestPathManager, ResolvesNamedSubtaskFiles) {
+  auto test_dir = std::filesystem::temp_directory_path() / gen_string_length_20();
+  auto task_dir = test_dir / "task";
+  std::filesystem::create_directories(task_dir);
+  std::filesystem::create_directory(test_dir / "archive");
+  std::filesystem::create_directory(test_dir / "output");
+  std::ofstream(task_dir / "gen.py") << "print()\n";
+  std::ofstream(task_dir / "gen_base.py") << "print()\n";
+  std::ofstream(task_dir / "slow_full.cpp") << "int main() {}\n";
+
+  json project_config = {{"root", test_dir}, {"language_config", {{"default", "cpp"}, {"override", json::object()}}}};
+  json problem_config = {{"languageConfig", {{"default", "py"}, {"slow", "cpp"}}}};
+  PathManager manager;
+  ASSERT_EQ(manager.init(project_config, problem_config), PathManagerStatus::Success);
+
+  EXPECT_EQ(manager.get_task_gen_path(task_dir, "gen_base"), task_dir / "gen_base.py");
+  EXPECT_EQ(manager.get_slow_path(task_dir, "slow_full"), task_dir / "slow_full.cpp");
+  EXPECT_EQ(manager.get_task_gen_path(task_dir), task_dir / "gen.py");
   std::filesystem::remove_all(test_dir);
 }
 

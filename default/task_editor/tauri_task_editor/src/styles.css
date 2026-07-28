@@ -230,6 +230,24 @@ textarea {
   border-radius: 4px;
 }
 
+.subtask-panel {
+  flex: 1;
+  min-width: 160px;
+}
+
+.subtask-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .generator-panel {
   flex: 2;
 }
@@ -240,6 +258,10 @@ textarea {
 
 .gen-options.hidden {
   display: none;
+}
+
+.hidden {
+  display: none !important;
 }
 
 .gen-row {

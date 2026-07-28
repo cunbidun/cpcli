@@ -10,6 +10,7 @@ import { vim } from '@replit/codemirror-vim';
 // State
 let config = null;
 let tests = [];
+let subtasks = [];
 let currentTestIndex = -1;
 let inputEditor = null;
 let outputEditor = null;
@@ -174,6 +175,8 @@ const elements = {
   testInputContainer: document.getElementById('testInput'),
   testOutputContainer: document.getElementById('testOutput'),
   knowAnswer: document.getElementById('knowAnswer'),
+  testSubtask: document.getElementById('testSubtask'),
+  testSubtaskField: document.getElementById('testSubtaskField'),
   outputContainer: document.getElementById('outputContainer'),
 
   // Options
@@ -195,6 +198,10 @@ const elements = {
   overrideSolution: document.getElementById('overrideSolution'),
   overrideSlow: document.getElementById('overrideSlow'),
   overrideGen: document.getElementById('overrideGen'),
+
+  // Subtasks
+  subtaskPanel: document.getElementById('subtaskPanel'),
+  subtaskList: document.getElementById('subtaskList'),
 };
 
 // Initialize the app
@@ -212,7 +219,9 @@ async function init() {
       invoke('load_language_options'),
     ]);
     tests = config.tests || [];
+    subtasks = config.subtasks || [];
     populateForm();
+    renderSubtasks();
     renderTestList();
     if (tests.length > 0) {
       selectTest(0);
@@ -264,6 +273,34 @@ function populateForm() {
   populateLanguageSelect(elements.overrideSolution, langConfig.solution || '');
   populateLanguageSelect(elements.overrideSlow, langConfig.slow || '');
   populateLanguageSelect(elements.overrideGen, langConfig.gen || '');
+
+  const hasSubtasks = config.explicitSubtasks === true;
+  elements.subtaskPanel.classList.toggle('hidden', !hasSubtasks);
+  elements.testSubtaskField.classList.toggle('hidden', !hasSubtasks);
+  elements.testSubtask.innerHTML = '';
+  subtasks.forEach((subtask) => {
+    const option = document.createElement('option');
+    option.value = subtask.name;
+    option.textContent = subtask.name || 'default';
+    elements.testSubtask.appendChild(option);
+  });
+}
+
+function renderSubtasks() {
+  elements.subtaskList.innerHTML = '';
+  subtasks.forEach((subtask) => {
+    const row = document.createElement('label');
+    row.className = 'subtask-item';
+    const points = subtask.points == null ? '' : ` (${subtask.points} pts)`;
+    row.innerHTML = `
+      <input type="checkbox" ${subtask.enabled !== false ? 'checked' : ''} />
+      <span>${subtask.name || 'default'}${points}</span>
+    `;
+    row.querySelector('input').addEventListener('change', (event) => {
+      subtask.enabled = event.target.checked;
+    });
+    elements.subtaskList.appendChild(row);
+  });
 }
 
 function renderTestList() {
@@ -303,6 +340,7 @@ function selectTest(index) {
     setEditorContent(inputEditor, test.input || '');
     setEditorContent(outputEditor, test.output || '');
     elements.knowAnswer.checked = test.answer !== false;
+    elements.testSubtask.value = test.subtask || subtasks[0]?.name || '';
     elements.outputContainer.classList.toggle('hidden', !elements.knowAnswer.checked);
   }
   renderTestList();
@@ -315,6 +353,7 @@ function saveCurrentTest() {
       input: getEditorContent(inputEditor),
       output: getEditorContent(outputEditor),
       answer: elements.knowAnswer.checked,
+      subtask: elements.testSubtask.value,
     };
   }
 }
@@ -335,6 +374,7 @@ function setupEventListeners() {
       index: tests.length,
       active: true,
       answer: true,
+      subtask: subtasks[0]?.name || '',
     };
     tests.push(newTest);
     selectTest(tests.length - 1);
@@ -553,6 +593,7 @@ async function saveConfig() {
   saveCurrentTest();
 
   const updatedConfig = {
+    ...config,
     name: elements.taskName.value,
     group: elements.groupName.value,
     interactive: elements.interactive.checked,
@@ -567,7 +608,9 @@ async function saveConfig() {
     generatorSeed: elements.generatorSeed.value,
     genParameters: elements.genParameters.value,
     tests: tests,
+    subtasks: subtasks,
     languageConfig: {
+      ...(config.languageConfig || {}),
       solution: elements.overrideSolution.value || null,
       slow: elements.overrideSlow.value || null,
       gen: elements.overrideGen.value || null,

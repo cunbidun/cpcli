@@ -50,11 +50,11 @@ public:
   // Required optional dir
   std::filesystem::path get_template();
 
-  std::filesystem::path get_solution_path(std::filesystem::path root_dir);
-  std::filesystem::path get_slow_path(std::filesystem::path root_dir);
-  std::filesystem::path get_task_gen_path(std::filesystem::path root_dir);
-  std::filesystem::path get_checker_path(std::filesystem::path root_dir);
-  std::filesystem::path get_interactor_path(std::filesystem::path root_dir);
+  std::filesystem::path get_solution_path(std::filesystem::path root_dir, std::string name = "solution");
+  std::filesystem::path get_slow_path(std::filesystem::path root_dir, std::string name = "slow");
+  std::filesystem::path get_task_gen_path(std::filesystem::path root_dir, std::string name = "gen");
+  std::filesystem::path get_checker_path(std::filesystem::path root_dir, std::string name = "checker");
+  std::filesystem::path get_interactor_path(std::filesystem::path root_dir, std::string name = "interactor");
 
   bool check_task_path_exist(std::filesystem::path root_dir, std::string filetype);
 
@@ -63,7 +63,8 @@ private:
   json problem_config;
   std::map<std::string, std::filesystem::path> path_mp;
   std::filesystem::path get(std::string key);
-  std::filesystem::path get_full_path_with_file_type(std::filesystem::path root_dir, std::string filetype);
+  std::filesystem::path
+  get_full_path_with_file_type(std::filesystem::path root_dir, std::string filetype, std::string override_key);
   std::vector<std::filesystem::path> get_all_task_path_filetype(std::filesystem::path root_dir, std::string filetype);
 };
 
