@@ -150,8 +150,60 @@ nlohmann::json normalize_problem_config(nlohmann::json j) {
   copy_if_present(normalized, j, "hideAcceptedTestCases", "hideAcceptedTest");
   copy_if_present(normalized, j, "stopOnFirstFail", "stopAtWrongAnswer");
   copy_if_present(normalized, j, "generatorParams", "genParameters");
+  copy_if_present(normalized, j, "language_config", "languageConfig");
+
+  const bool explicit_subtasks = j.contains("explicitSubtasks") ? j.value("explicitSubtasks", false)
+                                                                : j.contains("subtasks") && j["subtasks"].is_array();
+  normalized["explicitSubtasks"] = explicit_subtasks;
+  nlohmann::json subtasks = explicit_subtasks ? j["subtasks"] : nlohmann::json::array({nlohmann::json::object()});
+  for (size_t i = 0; i < subtasks.size(); ++i) {
+    auto &subtask = subtasks[i];
+    subtask["index"] = i;
+    if (!subtask.contains("name") || subtask["name"].is_null()) {
+      subtask["name"] = "";
+    }
+    if (!subtask.contains("enabled") || subtask["enabled"].is_null()) {
+      subtask["enabled"] = true;
+    }
+    if (subtask.contains("depends_on")) {
+      subtask["dependsOn"] = subtask["depends_on"];
+    }
+    if (!subtask.contains("dependsOn") || !subtask["dependsOn"].is_array()) {
+      subtask["dependsOn"] = nlohmann::json::array();
+    }
+    if (!subtask.contains("gen") || subtask["gen"].is_null()) {
+      subtask["gen"] = "gen";
+    }
+    if (!subtask.contains("slow") || subtask["slow"].is_null()) {
+      subtask["slow"] = "slow";
+    }
+    if (!subtask.contains("checker") || subtask["checker"].is_null()) {
+      subtask["checker"] = normalized.value("checker", "token_checker");
+    }
+    if (subtask.contains("time_limit_ms")) {
+      subtask["timeLimit"] = subtask["time_limit_ms"];
+    }
+    if (!subtask.contains("timeLimit") || subtask["timeLimit"].is_null()) {
+      subtask["timeLimit"] = normalized.value("timeLimit", 10000LL);
+    }
+
+    nlohmann::json generation = nlohmann::json::object();
+    if (subtask.contains("generation") && subtask["generation"].is_object()) {
+      generation = subtask["generation"];
+    }
+    subtask["useGeneration"] = generation.value("enabled", normalized.value("useGeneration", false));
+    subtask["numTest"] = generation.value("test_count", normalized.value("numTest", 0));
+    subtask["generatorSeed"] = generation.value("seed", normalized.value("generatorSeed", std::string()));
+    subtask["genParameters"] = generation.value("args", normalized.value("genParameters", std::string()));
+    subtask["knowGenAns"] = generation.value("expected_output_from_slow", normalized.value("knowGenAns", false));
+  }
+  normalized["subtasks"] = subtasks;
 
   if (normalized.contains("tests") && normalized["tests"].is_array()) {
+    std::map<std::string, size_t> subtask_indices;
+    for (size_t i = 0; i < subtasks.size(); ++i) {
+      subtask_indices[subtasks[i].value("name", std::string())] = i;
+    }
     for (size_t i = 0; i < normalized["tests"].size(); ++i) {
       auto &test = normalized["tests"][i];
       if (test.contains("enabled")) {
@@ -169,34 +221,44 @@ nlohmann::json normalize_problem_config(nlohmann::json j) {
       if (!test.contains("answer")) {
         test["answer"] = test.contains("output") && !test["output"].is_null();
       }
+      if (!test.contains("subtask") || test["subtask"].is_null()) {
+        test["subtask"] = subtasks[0]["name"];
+      }
+      const auto subtask_name = test["subtask"].get<std::string>();
+      const auto subtask_it = subtask_indices.find(subtask_name);
+      test["subtaskIndex"] = subtask_it != subtask_indices.end() ? static_cast<long long>(subtask_it->second) : -1;
     }
   }
 
-  normalized.erase("problem");
-  normalized.erase("run");
-  normalized.erase("display");
-  normalized.erase("generation");
   return normalized;
 }
 
 nlohmann::json problem_config_to_toml_schema(const nlohmann::json &config) {
-  nlohmann::json out;
-  out["problem"] = nlohmann::json::object();
+  nlohmann::json out = config;
+  if (!has_object(out, "problem")) {
+    out["problem"] = nlohmann::json::object();
+  }
   copy_if_present(out["problem"], config, "name", "name");
   copy_if_present(out["problem"], config, "group", "group");
   copy_if_present(out["problem"], config, "url", "url");
 
-  out["run"] = nlohmann::json::object();
+  if (!has_object(out, "run")) {
+    out["run"] = nlohmann::json::object();
+  }
   copy_if_present(out["run"], config, "timeLimit", "time_limit_ms");
   copy_if_present(out["run"], config, "checker", "checker");
   copy_if_present(out["run"], config, "interactive", "interactive");
   copy_if_present(out["run"], config, "stopAtWrongAnswer", "stop_on_first_failure");
 
-  out["display"] = nlohmann::json::object();
+  if (!has_object(out, "display")) {
+    out["display"] = nlohmann::json::object();
+  }
   copy_if_present(out["display"], config, "hideAcceptedTest", "hide_accepted_tests");
   copy_if_present(out["display"], config, "truncateLongTest", "truncate_long_output");
 
-  out["generation"] = nlohmann::json::object();
+  if (!has_object(out, "generation")) {
+    out["generation"] = nlohmann::json::object();
+  }
   copy_if_present(out["generation"], config, "useGeneration", "enabled");
   copy_if_present(out["generation"], config, "numTest", "test_count");
   copy_if_present(out["generation"], config, "generatorSeed", "seed");
@@ -206,17 +268,79 @@ nlohmann::json problem_config_to_toml_schema(const nlohmann::json &config) {
   out["tests"] = nlohmann::json::array();
   if (config.contains("tests") && config["tests"].is_array()) {
     for (const auto &test : config["tests"]) {
-      nlohmann::json out_test;
+      nlohmann::json out_test = test;
       copy_if_present(out_test, test, "active", "enabled");
       copy_if_present(out_test, test, "answer", "has_expected_output");
-      copy_if_present(out_test, test, "input", "input");
-      copy_if_present(out_test, test, "output", "output");
+      if (config.value("explicitSubtasks", false)) {
+        copy_if_present(out_test, test, "subtask", "subtask");
+      } else {
+        out_test.erase("subtask");
+      }
+      out_test.erase("active");
+      out_test.erase("answer");
+      out_test.erase("index");
+      out_test.erase("subtaskIndex");
       out["tests"].push_back(out_test);
     }
   }
 
+  if (config.value("explicitSubtasks", false) && config.contains("subtasks") && config["subtasks"].is_array()) {
+    out["subtasks"] = nlohmann::json::array();
+    for (const auto &subtask : config["subtasks"]) {
+      nlohmann::json out_subtask = subtask;
+      copy_if_present(out_subtask, subtask, "name", "name");
+      copy_if_present(out_subtask, subtask, "enabled", "enabled");
+      copy_if_present(out_subtask, subtask, "points", "points");
+      copy_if_present(out_subtask, subtask, "dependsOn", "depends_on");
+      copy_if_present(out_subtask, subtask, "timeLimit", "time_limit_ms");
+
+      nlohmann::json subtask_generation =
+          has_object(subtask, "generation") ? subtask["generation"] : nlohmann::json::object();
+      copy_if_present(subtask_generation, subtask, "useGeneration", "enabled");
+      copy_if_present(subtask_generation, subtask, "numTest", "test_count");
+      copy_if_present(subtask_generation, subtask, "generatorSeed", "seed");
+      copy_if_present(subtask_generation, subtask, "genParameters", "args");
+      copy_if_present(subtask_generation, subtask, "knowGenAns", "expected_output_from_slow");
+      out_subtask["generation"] = subtask_generation;
+      for (const auto &key : {"index",
+                              "dependsOn",
+                              "timeLimit",
+                              "useGeneration",
+                              "numTest",
+                              "generatorSeed",
+                              "genParameters",
+                              "knowGenAns"}) {
+        out_subtask.erase(key);
+      }
+      out["subtasks"].push_back(out_subtask);
+    }
+  } else {
+    out.erase("subtasks");
+  }
+
   if (config.contains("languageConfig") && config["languageConfig"].is_object()) {
     out["language_config"] = config["languageConfig"];
+  }
+  for (const auto &key : {"name",
+                          "group",
+                          "url",
+                          "timeLimit",
+                          "checker",
+                          "interactive",
+                          "stopAtWrongAnswer",
+                          "hideAcceptedTest",
+                          "truncateLongTest",
+                          "useGeneration",
+                          "numTest",
+                          "generatorSeed",
+                          "genParameters",
+                          "knowGenAns",
+                          "languageConfig",
+                          "explicitSubtasks",
+                          "hideAcceptedTestCases",
+                          "stopOnFirstFail",
+                          "generatorParams"}) {
+    out.erase(key);
   }
   return out;
 }

@@ -54,6 +54,7 @@ enum class ParserOperations {
 class ParserReturnValues {
 public:
   std::optional<std::filesystem::path> root_dir;
+  std::optional<std::string> subtask;
   std::filesystem::path project_config_path;
   ParserOperations operation;
 };

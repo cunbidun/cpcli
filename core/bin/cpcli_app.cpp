@@ -8,39 +8,68 @@
 #include "template_manager.hpp"
 #include "utils.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <filesystem>
-#include <getopt.h>
+#include <fstream>
 #include <iostream>
+#include <map>
+#include <set>
 #include <signal.h>
-#include <stdlib.h>
+#include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 using std::cout;
 using std::endl;
 using std::string;
 using json = nlohmann::json;
 
+namespace {
+struct TestResult {
+  bool passed = true;
+  bool rte = false;
+  bool tle = false;
+  bool wa = false;
+  long long runtime = 0;
+};
+
+void merge_result(TestResult &total, const TestResult &test) {
+  total.passed &= test.passed;
+  total.rte |= test.rte;
+  total.tle |= test.tle;
+  total.wa |= test.wa;
+  total.runtime = std::max(total.runtime, test.runtime);
+}
+
+string shell_quote(const std::filesystem::path &path) {
+  string value = path.string();
+  string quoted = "'";
+  for (const char ch : value) {
+    if (ch == '\'') {
+      quoted += "'\\''";
+    } else {
+      quoted += ch;
+    }
+  }
+  return quoted + "'";
+}
+
+string subtask_label(const json &subtask) {
+  const auto name = subtask.value("name", string());
+  return name.empty() ? "default" : name;
+}
+} // namespace
+
 int cpcli_process(int argc, char *argv[]) {
-  signal(SIGINT, [](int) { handle_sigint(); }); // implement SIGINT
+  signal(SIGINT, [](int) { handle_sigint(); });
   auto parser_result = parse_args(argc, argv);
-  std::chrono::high_resolution_clock::time_point t_start = std::chrono::high_resolution_clock::now();
+  auto t_start = std::chrono::high_resolution_clock::now();
 
-  // project_config's path and project_config json object
-  std::filesystem::path project_conf_path = parser_result.project_config_path;
+  const std::filesystem::path project_conf_path = parser_result.project_config_path;
   json project_conf = read_project_config(project_conf_path);
-
-  std::filesystem::path root_dir;   // where source files and problem_config file located
-  std::filesystem::path output_dir; // where source will be put for submission
-
-  // problem's config path and config json object
-  std::filesystem::path problem_conf_path;
-  json problem_conf;
-
-  std::filesystem::path solution_file_path;
-
-  string generator_seed;
 
   PathManager path_manager;
   auto status = path_manager.init(project_conf);
@@ -50,60 +79,51 @@ int cpcli_process(int argc, char *argv[]) {
   }
   TemplateManager template_manager(path_manager, project_conf);
 
-  std::filesystem::path local_share_dir = path_manager.get_local_share();
+  const auto local_share_dir = path_manager.get_local_share();
   spdlog::debug("local_share_dir directory is: " + local_share_dir.string());
-  std::filesystem::path checker_dir = local_share_dir / "checkers";
+  const auto checker_dir = local_share_dir / "checkers";
 
   if (parser_result.operation == ParserOperations::NewTask) {
     create_new_task(project_conf_path);
     return 0;
   }
 
-  root_dir = *parser_result.root_dir;
-  std::filesystem::current_path(root_dir); // change directory to root_dir
-  clean_up();                              // clean up the root directory for the first time
+  const std::filesystem::path root_dir = *parser_result.root_dir;
+  std::filesystem::current_path(root_dir);
+  clean_up();
 
-  if (parser_result.operation == ParserOperations::EditTaskConfig) { // edit config
+  if (parser_result.operation == ParserOperations::EditTaskConfig) {
     string task_editor_exec = project_conf["task_editor_exec"].get<string>();
     edit_config(root_dir, project_conf_path, template_manager, task_editor_exec);
     return 0;
   }
 
-  std::filesystem::path temp_config_path = template_manager.get_problem_config();
-  problem_conf_path = resolve_problem_config_path(root_dir);
-  problem_conf = read_problem_config(problem_conf_path, temp_config_path);
+  const auto problem_conf_path = resolve_problem_config_path(root_dir);
+  json problem_conf = read_problem_config(problem_conf_path, template_manager.get_problem_config());
   path_manager.init_problem_conf(problem_conf);
-
-  output_dir = path_manager.get_output();
 
   bool is_debug = false;
   if (parser_result.operation == ParserOperations::Build) {
-    // do nothing
-  } else if (parser_result.operation == ParserOperations::BuildWithDebug) { // run with debug flags
+  } else if (parser_result.operation == ParserOperations::BuildWithDebug) {
     is_debug = true;
   } else if (parser_result.operation == ParserOperations::BuildWithTerm) {
-    // Run with terminal. This option only uses the project config file for
-    // compiler flags. No problem config will be used.
     Compiler compiler(project_conf, path_manager, false);
     compiler.compile(path_manager.get_solution_path(root_dir));
-    int status = system_warper("./solution");
-    cout << '\n'; // add an empty line before printing the status
-    if (status != 0) {
-      cout << termcolor::red << "[Process exited " << status << "]" << termcolor::reset << "\n";
+    int process_status = system_warper("./solution");
+    cout << '\n';
+    if (process_status != 0) {
+      cout << termcolor::red << "[Process exited " << process_status << "]" << termcolor::reset << "\n";
     } else {
       cout << "[Process exited 0]\n";
     }
     clean_up();
     print_duration(t_start);
     return 0;
-  } else if (parser_result.operation == ParserOperations::Archive) { // archive
+  } else if (parser_result.operation == ParserOperations::Archive) {
     string name = problem_conf["name"].get<string>();
     string group = problem_conf["group"].get<string>();
-
-    // We move back to the parent directory of current task in order to copy it
     std::filesystem::current_path(root_dir.parent_path());
-
-    auto archive_dir = path_manager.get_archive();
+    const auto archive_dir = path_manager.get_archive();
     if (group.empty()) {
       group = "Unsorted";
     }
@@ -118,255 +138,326 @@ int cpcli_process(int argc, char *argv[]) {
     return OPERATION_ERR;
   }
 
-  if (problem_conf["group"] != nullptr && problem_conf["group"].get<string>().size() != 0) {
+  if (problem_conf["group"] != nullptr && !problem_conf["group"].get<string>().empty()) {
     cout << problem_conf["group"].get<string>() << '\n';
   }
   cout << problem_conf["name"].get<string>() << '\n';
 
-  // ----------------------------- COMPILE START ----------------------------
+  std::vector<json> subtasks;
+  std::set<string> names;
+  bool selected_subtask_found = false;
+  for (const auto &subtask : problem_conf["subtasks"]) {
+    const auto name = subtask.value("name", string());
+    if (!names.insert(name).second) {
+      cout << termcolor::red << "Duplicate subtask name: " << name << termcolor::reset << '\n';
+      return INVALID_CONFIG_ERROR;
+    }
+    if (parser_result.subtask) {
+      if (name == *parser_result.subtask) {
+        subtasks.push_back(subtask);
+        selected_subtask_found = true;
+      }
+    } else if (subtask.value("enabled", true)) {
+      subtasks.push_back(subtask);
+    }
+  }
+  if (parser_result.subtask && !selected_subtask_found) {
+    cout << termcolor::red << "Unknown subtask: " << *parser_result.subtask << termcolor::reset << '\n';
+    return INVALID_CONFIG_ERROR;
+  }
+  if (subtasks.empty()) {
+    cout << termcolor::yellow << "No subtasks are enabled" << termcolor::reset << '\n';
+    return 0;
+  }
+  for (const auto &subtask : problem_conf["subtasks"]) {
+    for (const auto &dependency : subtask.value("dependsOn", json::array())) {
+      const auto dependency_name = dependency.get<string>();
+      if (names.find(dependency_name) == names.end()) {
+        cout << termcolor::red << "Subtask " << subtask_label(subtask) << " depends on unknown subtask '"
+             << dependency_name << "'" << termcolor::reset << '\n';
+        return INVALID_CONFIG_ERROR;
+      }
+    }
+  }
+  for (const auto &test : problem_conf["tests"]) {
+    if (test.value("subtaskIndex", -1) < 0) {
+      cout << termcolor::red << "Test #" << test.value("index", -1) << " refers to unknown subtask '"
+           << test.value("subtask", string()) << "'" << termcolor::reset << '\n';
+      return INVALID_CONFIG_ERROR;
+    }
+  }
+
+  std::map<size_t, std::filesystem::path> generator_executables;
+  std::map<size_t, std::filesystem::path> slow_executables;
+  std::map<size_t, std::filesystem::path> checker_executables;
+  std::map<size_t, string> generator_seeds;
+  std::set<std::filesystem::path> compiled_artifacts;
+  auto cleanup_task = [&]() {
+    std::filesystem::current_path(root_dir);
+    for (const auto &artifact : compiled_artifacts) {
+      std::filesystem::remove(artifact);
+    }
+    clean_up();
+  };
+
   Compiler compiler(project_conf, path_manager, is_debug);
   {
     auto t0 = std::chrono::high_resolution_clock::now();
-    std::filesystem::path cache_dir = "";
+    std::set<std::filesystem::path> compiled_sources;
+    auto compile_once = [&](const std::filesystem::path &source) {
+      const auto resolved = std::filesystem::weakly_canonical(source);
+      if (compiled_sources.insert(resolved).second) {
+        compiler.compile(source);
+      }
+      const auto executable = root_dir / source.stem();
+      compiled_artifacts.insert(executable);
+      return executable;
+    };
 
     if (problem_conf["interactive"]) {
-      problem_conf["knowGenAns"] = false;
-      compiler.compile(path_manager.get_interactor_path(root_dir));
+      compile_once(path_manager.get_interactor_path(root_dir));
       cout << termcolor::cyan << termcolor::bold << "Interactive task" << termcolor::reset << '\n';
-    } else {
-      if (problem_conf["checker"] != "custom") {
-        std::filesystem::path checker_bin_path = checker_dir / problem_conf["checker"];
-        check_file(checker_bin_path, "checker binary not found!");
-        copy_file(checker_bin_path, root_dir / "checker", std::filesystem::copy_options::overwrite_existing);
-      } else {
-        compiler.compile(path_manager.get_checker_path(root_dir));
+    }
+
+    for (const auto &subtask : subtasks) {
+      const auto index = subtask["index"].get<size_t>();
+      if (!problem_conf["interactive"]) {
+        const auto checker = subtask.value("checker", string("token_checker"));
+        if (checker == "custom") {
+          checker_executables[index] = compile_once(path_manager.get_checker_path(root_dir));
+        } else {
+          const auto checker_path = checker_dir / checker;
+          check_file(checker_path, "checker binary not found!");
+          checker_executables[index] = checker_path;
+        }
+        cout << termcolor::cyan << termcolor::bold << "Subtask " << subtask_label(subtask) << ": using " << checker
+             << " checker" << termcolor::reset << '\n';
       }
-      cout << termcolor::cyan << termcolor::bold << "Using " << problem_conf["checker"].get<string>() << " checker!"
-           << termcolor::reset << '\n';
-    }
-
-    // use slow solution for generate correct output
-    if (problem_conf["knowGenAns"]) {
-      compiler.compile(path_manager.get_slow_path(root_dir));
-    }
-
-    if (problem_conf["useGeneration"]) {
-      compiler.compile(path_manager.get_task_gen_path(root_dir));
-      generator_seed = problem_conf["generatorSeed"];
-      if (problem_conf["generatorSeed"].get<string>().size() == 0) {
-        generator_seed = gen_string_length_20();
+      if (!problem_conf["interactive"] && subtask.value("knowGenAns", false)) {
+        const auto source = path_manager.get_slow_path(root_dir, subtask.value("slow", string("slow")));
+        slow_executables[index] = compile_once(source);
       }
-      cout << termcolor::yellow << termcolor::bold << "Stress testing with seed \'" << generator_seed << "\'"
-           << termcolor::reset << '\n';
+      if (subtask.value("useGeneration", false)) {
+        const auto source = path_manager.get_task_gen_path(root_dir, subtask.value("gen", string("gen")));
+        generator_executables[index] = compile_once(source);
+        auto seed = subtask.value("generatorSeed", string());
+        if (seed.empty()) {
+          seed = gen_string_length_20();
+        }
+        generator_seeds[index] = seed;
+        cout << termcolor::yellow << termcolor::bold << "Subtask " << subtask_label(subtask)
+             << ": stress testing with seed '" << seed << "'" << termcolor::reset << '\n';
+      }
     }
 
-    // compile solution file
     compiler.compile(path_manager.get_solution_path(root_dir));
-
     auto t1 = std::chrono::high_resolution_clock::now();
-    long long time = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+    const auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
     cout << termcolor::magenta << termcolor::bold << "Compilation finished in " << time << " ms" << endl;
-
     cout << DASH_SEPERATOR << '\n';
   }
-  // ------------------------------ COMPILE END -----------------------------
 
-  // ------------------------ GENERATING TESTS START ------------------------
   {
     std::filesystem::current_path(root_dir);
-    std::filesystem::create_directory("___test_case");
-    std::filesystem::current_path("___test_case");
-    for (json test : problem_conf["tests"]) {
-      if (test["active"]) {
-        spdlog::debug("Generating test {}", test["index"].get<long long>());
-        if (test["input"] != nullptr) {
-          std::ofstream inf(std::to_string(test["index"].get<long long>()) + ".in");
-          inf << test["input"].get<string>();
-          inf.close();
-        }
-        if (test["answer"].get<bool>()) {
-          std::ofstream ouf(std::to_string(test["index"].get<long long>()) + ".out");
-          ouf << test["output"].get<string>();
-          ouf.close();
-        }
+    std::filesystem::create_directories("___test_case");
+    std::set<size_t> selected_indices;
+    for (const auto &subtask : subtasks) {
+      selected_indices.insert(subtask["index"].get<size_t>());
+    }
+    for (const auto &test : problem_conf["tests"]) {
+      const auto subtask_index = test["subtaskIndex"].get<size_t>();
+      if (!test["active"] || selected_indices.find(subtask_index) == selected_indices.end()) {
+        continue;
+      }
+      const auto test_dir = std::filesystem::path("___test_case") / std::to_string(subtask_index);
+      std::filesystem::create_directories(test_dir);
+      if (test["input"] != nullptr) {
+        std::ofstream(test_dir / (std::to_string(test["index"].get<long long>()) + ".in"))
+            << test["input"].get<string>();
+      }
+      if (test["answer"].get<bool>()) {
+        std::ofstream(test_dir / (std::to_string(test["index"].get<long long>()) + ".out"))
+            << test["output"].get<string>();
       }
     }
 
-    if (problem_conf["useGeneration"]) {
-      string command =
-          "../gen " + generator_seed + " " + std::to_string(problem_conf["numTest"].get<int>()); // NOTE careful with ..
-      if (problem_conf.contains("genParameters") && problem_conf["genParameters"].is_string() &&
-          !problem_conf["genParameters"].get<string>().empty()) {
-        command += " " + problem_conf["genParameters"].get<string>();
+    for (const auto &subtask : subtasks) {
+      if (!subtask.value("useGeneration", false)) {
+        continue;
       }
-      int status = system_warper(command);
-      if (status != 0) {
-        cout << termcolor::red << termcolor::bold << "generator run time error" << termcolor::reset << endl;
-        clean_up();
-        exit(1);
+      const auto index = subtask["index"].get<size_t>();
+      const auto test_dir = root_dir / "___test_case" / std::to_string(index);
+      std::filesystem::create_directories(test_dir);
+      std::filesystem::current_path(test_dir);
+      string command = shell_quote(std::filesystem::path("../..") / generator_executables[index].filename()) + " " +
+                       generator_seeds[index] + " " + std::to_string(subtask.value("numTest", 0));
+      const auto parameters = subtask.value("genParameters", string());
+      if (!parameters.empty()) {
+        command += " " + parameters;
+      }
+      if (system_warper(command) != 0) {
+        cout << termcolor::red << termcolor::bold << "Subtask " << subtask_label(subtask) << " generator run time error"
+             << termcolor::reset << endl;
+        cleanup_task();
+        return 1;
       }
     }
   }
-  // ------------------------ GENERATING TESTS END --------------------------
 
-  bool all_passed = 1, all_rte = 0, all_tle = 0, all_wa = 0;
-  long long all_runtime = 0;
-
-  // ----------------------------- TESTS START ------------------------------
-  {
-    spdlog::debug("Start testing");
-    std::filesystem::current_path(root_dir);
-    long long time_limit = problem_conf["timeLimit"].get<long long>();
-    spdlog::debug("time limit is {} ms", time_limit);
-    auto tests_folder_dir = std::filesystem::path("___test_case"); // set the root directory to argv[1]
+  TestResult all_results;
+  std::vector<TestResult> subtask_results;
+  std::filesystem::current_path(root_dir);
+  for (const auto &subtask : subtasks) {
+    TestResult subtask_result;
+    const auto subtask_index = subtask["index"].get<size_t>();
+    const auto time_limit = subtask.value("timeLimit", 10000LL);
+    const auto tests_folder_dir = std::filesystem::path("___test_case") / std::to_string(subtask_index);
+    std::filesystem::create_directories(tests_folder_dir);
+    cout << termcolor::cyan << termcolor::bold << "Subtask " << subtask_label(subtask) << termcolor::reset << '\n';
 
     std::vector<std::pair<int, std::filesystem::path>> sorted_by_name;
-    for (auto &entry : std::filesystem::directory_iterator(tests_folder_dir)) {
-      if (entry.path().extension() == ".in") {
-        const auto test_id = entry.path().stem().string();
-        int num = 0;
-        if (test_id[0] == 'S') {
-          num = 1000000000 + std::stoi(test_id.substr(1)); // funny trick to ensure stress tests come after
-        } else {
-          num = std::stoi(test_id);
-        }
-        sorted_by_name.push_back({num, entry.path()});
+    for (const auto &entry : std::filesystem::directory_iterator(tests_folder_dir)) {
+      if (entry.path().extension() != ".in") {
+        continue;
       }
+      const auto test_id = entry.path().stem().string();
+      const auto order = test_id[0] == 'S' ? 1000000000 + std::stoi(test_id.substr(1)) : std::stoi(test_id);
+      sorted_by_name.push_back({order, entry.path()});
     }
-    sort(sorted_by_name.begin(), sorted_by_name.end());
-    spdlog::debug("Found {} tests", sorted_by_name.size());
+    std::sort(sorted_by_name.begin(), sorted_by_name.end());
 
-    for (const auto &set_entry : sorted_by_name) {
-      auto entry = set_entry.second;
-      bool passed = 1, undecided = 0, rte = 0, tle = 0, wa = 0;
-      long long runtime = 0;
+    for (const auto &[_, entry] : sorted_by_name) {
+      TestResult test_result;
+      bool undecided = false;
       const auto test_id = entry.stem().string();
       const auto actual_file = tests_folder_dir / (test_id + ".actual");
       const auto out_file = tests_folder_dir / (test_id + ".out");
       const auto res_file = tests_folder_dir / (test_id + ".res");
-      bool truncate = problem_conf["truncateLongTest"].get<bool>();
-
+      const bool truncate = problem_conf["truncateLongTest"].get<bool>();
       create_empty_file(res_file);
 
-      // --------- test id ------------
-      if (test_id[0] != 'S') {
-        cout << termcolor::cyan << termcolor::bold << "Test #" << test_id << ": " << termcolor::reset;
-      } else {
+      if (test_id[0] == 'S') {
         cout << termcolor::yellow << termcolor::bold << "Test #" << test_id << ": " << termcolor::reset;
+      } else {
+        cout << termcolor::cyan << termcolor::bold << "Test #" << test_id << ": " << termcolor::reset;
       }
 
       if (problem_conf["interactive"]) {
-        string command = "./interactor " + entry.string() + " " + actual_file.string() + " " + res_file.string();
-        int status = system_warper(command);
-        if (status != 0) {
-          passed = 0;
-          if (status != 1) {
-            rte = 1;
-          }
+        const string command =
+            "./interactor " + shell_quote(entry) + " " + shell_quote(actual_file) + " " + shell_quote(res_file);
+        const int process_status = system_warper(command);
+        if (process_status != 0) {
+          test_result.passed = false;
+          test_result.rte = process_status != 1;
         }
-        wa = !passed && !undecided;
+        test_result.wa = !test_result.passed && !test_result.rte;
       } else {
-        {
-          string command = "./solution < " + entry.string() + " > " + actual_file.string();
+        const string solution_command = "./solution < " + shell_quote(entry) + " > " + shell_quote(actual_file);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        const int solution_status = system_warper(solution_command);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        test_result.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+        if (test_result.runtime > time_limit) {
+          test_result.tle = true;
+          test_result.passed = false;
+        }
+        if (solution_status != 0) {
+          test_result.rte = true;
+          test_result.passed = false;
+        }
 
-          auto t0 = std::chrono::high_resolution_clock::now();
-          int status = system_warper(command);
-          auto t1 = std::chrono::high_resolution_clock::now();
-          runtime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-          if (runtime > time_limit) {
-            tle = 1;
-            passed = 0;
-          }
-          if (status != 0) {
-            rte = 1;
-            passed = 0;
+        if (subtask.value("knowGenAns", false)) {
+          const string slow_command =
+              shell_quote(slow_executables[subtask_index]) + " < " + shell_quote(entry) + " > " + shell_quote(out_file);
+          if (system_warper(slow_command) != 0) {
+            cout << termcolor::red << termcolor::bold << "slow solution run time error" << termcolor::reset << endl;
+            cleanup_task();
+            return 1;
           }
         }
 
-        {
-          if (problem_conf["knowGenAns"]) {
-            string command = "./slow < " + entry.string() + " > " + out_file.string();
-            int status = system_warper(command);
-            if (status != 0) {
-              cout << "Input:" << '\n';
-              print_file(entry.string(), truncate);
-              cout.flush();
-              cout << DASH_SEPERATOR << '\n';
-              cout << termcolor::red << termcolor::bold << "slow solution run time error" << termcolor::reset << endl;
-              clean_up();
-              exit(1);
-            }
-          }
+        if (!check_file(out_file, "")) {
+          undecided = true;
+          test_result.passed = false;
+        } else {
+          const string checker_command = shell_quote(checker_executables[subtask_index]) + " " + shell_quote(entry) +
+                                         " " + shell_quote(actual_file) + " " + shell_quote(out_file) + " " +
+                                         shell_quote(res_file) + " > /dev/null 2>&1";
+          test_result.passed = system_warper(checker_command) == 0;
         }
-
-        {
-          if (!check_file(out_file, "")) {
-            undecided = 1;
-            passed = 0;
-          } else {
-            string jans_file = out_file.string();
-            // ./checker <input> <pout> <jans_file> <res>
-            string command = "./checker " + entry.string() + "  " + actual_file.string() + " " + jans_file + " " +
-                             res_file.string() + " > /dev/null 2>&1";
-            passed = system_warper(command) == 0;
-          }
-          wa = !passed && !undecided && !tle && !rte;
-        }
+        test_result.wa = !test_result.passed && !undecided && !test_result.tle && !test_result.rte;
       }
-      all_passed &= passed;
-      all_rte |= rte;
-      all_tle |= tle;
-      all_wa |= wa;
-      all_runtime = std::max(all_runtime, runtime);
-      if (passed && problem_conf["hideAcceptedTest"]) {
+
+      merge_result(subtask_result, test_result);
+      merge_result(all_results, test_result);
+      if (test_result.passed && problem_conf["hideAcceptedTest"]) {
         cout << termcolor::green << termcolor::bold << "accepted" << termcolor::reset << '\n';
       } else {
-        cout << '\n';
-        // --------- input --------------
-        cout << "Input:" << '\n';
+        cout << '\n' << "Input:" << '\n';
         print_file(entry.string(), truncate);
-        cout.flush();
-
-        // --------- expected output --------------
         if (check_file(out_file, "")) {
           cout << "Expected output:" << '\n';
           print_file(out_file, truncate);
         }
-
-        // --------- exe output --------------
-        {
-          cout << "Execution output:" << '\n';
-          cout.flush();
-          print_file(actual_file, truncate);
-        }
-
-        // --------- Verdict --------------
-        print_report("Verdict", passed, rte, tle, wa, runtime);
+        cout << "Execution output:" << '\n';
+        print_file(actual_file, truncate);
+        print_report(
+            "Verdict", test_result.passed, test_result.rte, test_result.tle, test_result.wa, test_result.runtime);
         if (!is_empty_file(res_file.string())) {
           print_file(res_file, false);
         }
       }
       cout << DASH_SEPERATOR << '\n';
-      std::filesystem::current_path(root_dir);
 
-      if (problem_conf["stopAtWrongAnswer"] && (wa || rte || tle)) {
-        print_report("Fail detected", all_passed, all_rte, all_tle, all_wa, all_runtime);
-        clean_up();
+      if (problem_conf["stopAtWrongAnswer"] && (test_result.wa || test_result.rte || test_result.tle)) {
+        print_report(
+            "Fail detected", all_results.passed, all_results.rte, all_results.tle, all_results.wa, all_results.runtime);
+        cleanup_task();
         print_duration(t_start);
         return 0;
       }
     }
+    subtask_results.push_back(subtask_result);
   }
-  // ------------------------------ TESTS END -------------------------------
 
-  // ------------------------------ PRINT REPORT START -------------------------------
-  {
-    cout << EQUA_SEPERATOR << '\n';
-    print_report("Results", all_passed, all_rte, all_tle, all_wa, all_runtime);
-    clean_up();
-    print_duration(t_start);
+  cout << EQUA_SEPERATOR << '\n';
+  std::map<string, bool> passed_by_name;
+  for (size_t i = 0; i < subtasks.size(); ++i) {
+    passed_by_name[subtasks[i].value("name", string())] = subtask_results[i].passed;
+    print_report("Subtask " + subtask_label(subtasks[i]),
+                 subtask_results[i].passed,
+                 subtask_results[i].rte,
+                 subtask_results[i].tle,
+                 subtask_results[i].wa,
+                 subtask_results[i].runtime);
   }
-  // ------------------------------ PRINT REPORT END -------------------------------
+  print_report("Results", all_results.passed, all_results.rte, all_results.tle, all_results.wa, all_results.runtime);
+
+  long long earned_points = 0;
+  long long available_points = 0;
+  bool has_points = false;
+  for (size_t i = 0; i < subtasks.size(); ++i) {
+    if (!subtasks[i].contains("points") || subtasks[i]["points"].is_null()) {
+      continue;
+    }
+    has_points = true;
+    const auto points = subtasks[i]["points"].get<long long>();
+    available_points += points;
+    bool dependencies_passed = true;
+    for (const auto &dependency : subtasks[i].value("dependsOn", json::array())) {
+      const auto dependency_result = passed_by_name.find(dependency.get<string>());
+      dependencies_passed &= dependency_result != passed_by_name.end() && dependency_result->second;
+    }
+    if (subtask_results[i].passed && dependencies_passed) {
+      earned_points += points;
+    }
+  }
+  if (has_points) {
+    cout << "Score: " << earned_points << "/" << available_points << '\n';
+  }
+
+  cleanup_task();
+  print_duration(t_start);
   return 0;
 }
 

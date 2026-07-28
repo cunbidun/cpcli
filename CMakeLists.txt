@@ -92,6 +92,7 @@ if(BUILD_TESTING)
   find_package(GTest CONFIG REQUIRED)
   add_executable(cpcli_test
     core/test/src/test_compiler.cpp
+    core/test/src/test_parse_config.cpp
     core/test/src/test_path_manager.cpp
     core/test/src/test_util.cpp
   )

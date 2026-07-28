@@ -2,7 +2,7 @@
 
 use serde::Deserialize;
 use serde_json::{Map, Value};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -136,10 +136,148 @@ fn normalize_problem_config_value(value: Value) -> Value {
     copy_if_present(&mut normalized, root, "generatorParams", "genParameters");
     copy_if_present(&mut normalized, root, "language_config", "languageConfig");
 
+    let explicit_subtasks = root
+        .get("explicitSubtasks")
+        .and_then(Value::as_bool)
+        .unwrap_or_else(|| root.get("subtasks").is_some_and(Value::is_array));
+    normalized.insert(
+        "explicitSubtasks".to_string(),
+        Value::Bool(explicit_subtasks),
+    );
+
+    let default_checker = normalized
+        .get("checker")
+        .and_then(Value::as_str)
+        .unwrap_or("token_checker")
+        .to_string();
+    let default_time_limit = normalized
+        .get("timeLimit")
+        .and_then(Value::as_i64)
+        .unwrap_or(10_000);
+    let default_use_generation = normalized
+        .get("useGeneration")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let default_num_test = normalized
+        .get("numTest")
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
+    let default_generator_seed = normalized
+        .get("generatorSeed")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let default_gen_parameters = normalized
+        .get("genParameters")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let default_know_gen_ans = normalized
+        .get("knowGenAns")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+
+    let mut subtasks = if explicit_subtasks {
+        root.get("subtasks")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default()
+    } else {
+        vec![Value::Object(Map::new())]
+    };
+    for (index, subtask) in subtasks.iter_mut().enumerate() {
+        let Some(subtask) = subtask.as_object_mut() else {
+            continue;
+        };
+        subtask.insert("index".to_string(), Value::from(index as i64));
+        subtask
+            .entry("name".to_string())
+            .or_insert_with(|| Value::String(String::new()));
+        subtask
+            .entry("enabled".to_string())
+            .or_insert(Value::Bool(true));
+        if let Some(depends_on) = subtask.get("depends_on").cloned() {
+            subtask.insert("dependsOn".to_string(), depends_on);
+        }
+        subtask
+            .entry("dependsOn".to_string())
+            .or_insert_with(|| Value::Array(Vec::new()));
+        subtask
+            .entry("gen".to_string())
+            .or_insert_with(|| Value::String("gen".to_string()));
+        subtask
+            .entry("slow".to_string())
+            .or_insert_with(|| Value::String("slow".to_string()));
+        subtask
+            .entry("checker".to_string())
+            .or_insert_with(|| Value::String(default_checker.clone()));
+        if let Some(time_limit) = subtask.get("time_limit_ms").cloned() {
+            subtask.insert("timeLimit".to_string(), time_limit);
+        }
+        subtask
+            .entry("timeLimit".to_string())
+            .or_insert(Value::from(default_time_limit));
+
+        let generation = subtask
+            .get("generation")
+            .and_then(Value::as_object)
+            .cloned()
+            .unwrap_or_default();
+        subtask.insert(
+            "useGeneration".to_string(),
+            generation
+                .get("enabled")
+                .cloned()
+                .unwrap_or(Value::Bool(default_use_generation)),
+        );
+        subtask.insert(
+            "numTest".to_string(),
+            generation
+                .get("test_count")
+                .cloned()
+                .unwrap_or(Value::from(default_num_test)),
+        );
+        subtask.insert(
+            "generatorSeed".to_string(),
+            generation
+                .get("seed")
+                .cloned()
+                .unwrap_or_else(|| Value::String(default_generator_seed.clone())),
+        );
+        subtask.insert(
+            "genParameters".to_string(),
+            generation
+                .get("args")
+                .cloned()
+                .unwrap_or_else(|| Value::String(default_gen_parameters.clone())),
+        );
+        subtask.insert(
+            "knowGenAns".to_string(),
+            generation
+                .get("expected_output_from_slow")
+                .cloned()
+                .unwrap_or(Value::Bool(default_know_gen_ans)),
+        );
+    }
+    normalized.insert("subtasks".to_string(), Value::Array(subtasks.clone()));
+
     if let Some(tests) = normalized
         .get_mut("tests")
         .and_then(|value| value.as_array_mut())
     {
+        let subtask_indices: BTreeMap<String, usize> = subtasks
+            .iter()
+            .enumerate()
+            .filter_map(|(index, subtask)| {
+                Some((subtask.get("name")?.as_str()?.to_string(), index))
+            })
+            .collect();
+        let first_subtask_name = subtasks
+            .first()
+            .and_then(|subtask| subtask.get("name"))
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
         for (index, test) in tests.iter_mut().enumerate() {
             let Some(test_obj) = test.as_object_mut() else {
                 continue;
@@ -160,6 +298,17 @@ fn normalize_problem_config_value(value: Value) -> Value {
             test_obj
                 .entry("answer".to_string())
                 .or_insert(Value::Bool(has_output));
+            let subtask_name = test_obj
+                .entry("subtask".to_string())
+                .or_insert_with(|| Value::String(first_subtask_name.clone()))
+                .as_str()
+                .unwrap_or_default()
+                .to_string();
+            let subtask_index = subtask_indices
+                .get(&subtask_name)
+                .map(|index| *index as i64)
+                .unwrap_or(-1);
+            test_obj.insert("subtaskIndex".to_string(), Value::from(subtask_index));
         }
     }
 
@@ -242,6 +391,14 @@ fn problem_config_to_toml_value(config: &Value) -> Result<Value, String> {
             out_test.remove("active");
             out_test.remove("answer");
             out_test.remove("index");
+            out_test.remove("subtaskIndex");
+            if !root
+                .get("explicitSubtasks")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+            {
+                out_test.remove("subtask");
+            }
             tests.push(Value::Object(out_test));
         }
     }
@@ -249,6 +406,58 @@ fn problem_config_to_toml_value(config: &Value) -> Result<Value, String> {
 
     if let Some(language_config) = root.get("languageConfig") {
         out.insert("language_config".to_string(), language_config.clone());
+    }
+
+    if root
+        .get("explicitSubtasks")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+    {
+        let mut out_subtasks = Vec::new();
+        if let Some(subtasks) = root.get("subtasks").and_then(Value::as_array) {
+            for subtask in subtasks {
+                let Some(subtask) = subtask.as_object() else {
+                    continue;
+                };
+                let mut out_subtask = subtask.clone();
+                copy_if_present(&mut out_subtask, subtask, "dependsOn", "depends_on");
+                copy_if_present(&mut out_subtask, subtask, "timeLimit", "time_limit_ms");
+
+                let mut generation = subtask
+                    .get("generation")
+                    .and_then(Value::as_object)
+                    .cloned()
+                    .unwrap_or_default();
+                copy_if_present(&mut generation, subtask, "useGeneration", "enabled");
+                copy_if_present(&mut generation, subtask, "numTest", "test_count");
+                copy_if_present(&mut generation, subtask, "generatorSeed", "seed");
+                copy_if_present(&mut generation, subtask, "genParameters", "args");
+                copy_if_present(
+                    &mut generation,
+                    subtask,
+                    "knowGenAns",
+                    "expected_output_from_slow",
+                );
+                out_subtask.insert("generation".to_string(), Value::Object(generation));
+
+                for key in [
+                    "index",
+                    "dependsOn",
+                    "timeLimit",
+                    "useGeneration",
+                    "numTest",
+                    "generatorSeed",
+                    "genParameters",
+                    "knowGenAns",
+                ] {
+                    out_subtask.remove(key);
+                }
+                out_subtasks.push(Value::Object(out_subtask));
+            }
+        }
+        out.insert("subtasks".to_string(), Value::Array(out_subtasks));
+    } else {
+        out.remove("subtasks");
     }
 
     for key in [
@@ -270,6 +479,7 @@ fn problem_config_to_toml_value(config: &Value) -> Result<Value, String> {
         "hideAcceptedTestCases",
         "stopOnFirstFail",
         "generatorParams",
+        "explicitSubtasks",
     ] {
         out.remove(key);
     }
@@ -523,5 +733,65 @@ custom_test_key = 42
             Some("still here")
         );
         assert_eq!(value["tests"][0]["custom_test_key"].as_integer(), Some(42));
+    }
+
+    #[test]
+    fn editor_normalizes_and_writes_subtasks() {
+        let input = r#"
+[problem]
+name = "Subtasks"
+
+[run]
+checker = "token_checker"
+time_limit_ms = 3000
+
+[generation]
+enabled = false
+test_count = 0
+seed = "root"
+expected_output_from_slow = false
+
+[[subtasks]]
+name = "base"
+points = 30
+gen = "gen_base"
+
+[subtasks.generation]
+enabled = true
+test_count = 4
+seed = "base"
+expected_output_from_slow = true
+
+[[subtasks]]
+name = "full"
+enabled = false
+points = 70
+depends_on = ["base"]
+
+[[tests]]
+subtask = "full"
+enabled = true
+input = "1\n"
+output = "1\n"
+has_expected_output = true
+"#;
+        let path = PathBuf::from("config.toml");
+
+        let config = parse_problem_config(&path, input).expect("config parses");
+        assert_eq!(config["explicitSubtasks"], true);
+        assert_eq!(config["subtasks"][0]["index"], 0);
+        assert_eq!(config["subtasks"][0]["numTest"], 4);
+        assert_eq!(config["subtasks"][1]["checker"], "token_checker");
+        assert_eq!(config["tests"][0]["subtaskIndex"], 1);
+
+        let serialized = serialize_problem_config(&config).expect("config serializes");
+        let value: toml::Value = toml::from_str(&serialized).expect("serialized TOML parses");
+        assert_eq!(value["subtasks"][0]["gen"].as_str(), Some("gen_base"));
+        assert_eq!(
+            value["subtasks"][0]["generation"]["test_count"].as_integer(),
+            Some(4)
+        );
+        assert_eq!(value["subtasks"][1]["depends_on"][0].as_str(), Some("base"));
+        assert_eq!(value["tests"][0]["subtask"].as_str(), Some("full"));
     }
 }

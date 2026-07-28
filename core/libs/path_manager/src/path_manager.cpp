@@ -180,7 +180,9 @@ bool PathManager::check_task_path_exist(std::filesystem::path root_dir, std::str
   return PathManager::get_all_task_path_filetype(root_dir, filetype).size() > 0;
 }
 
-std::filesystem::path PathManager::get_full_path_with_file_type(std::filesystem::path root_dir, std::string filetype) {
+std::filesystem::path PathManager::get_full_path_with_file_type(std::filesystem::path root_dir,
+                                                                std::string filetype,
+                                                                std::string override_key) {
   spdlog::debug("Getting task file for root_dir={}, filetype={}", root_dir.c_str(), filetype.c_str());
   std::vector<std::filesystem::path> path_list = PathManager::get_all_task_path_filetype(root_dir, filetype);
   if (path_list.size() == 0) {
@@ -196,8 +198,8 @@ std::filesystem::path PathManager::get_full_path_with_file_type(std::filesystem:
 
   // project config override
   if (language_config.contains("override")) {
-    if (language_config["override"].contains(filetype)) {
-      ex = language_config["override"][filetype].get<std::string>();
+    if (language_config["override"].contains(override_key)) {
+      ex = language_config["override"][override_key].get<std::string>();
       has_explicit_override = true;
     }
     spdlog::debug("Project config contains a override map, new extension {}", ex);
@@ -206,8 +208,12 @@ std::filesystem::path PathManager::get_full_path_with_file_type(std::filesystem:
   // problem config override
   if (!PathManager::problem_config.empty() && PathManager::problem_config.contains("languageConfig")) {
     language_config = PathManager::problem_config["languageConfig"];
-    if (language_config.contains(filetype) && !language_config[filetype].is_null()) {
-      ex = language_config[filetype].get<std::string>();
+    if (language_config.contains("default") && language_config["default"].is_string()) {
+      ex = language_config["default"].get<std::string>();
+      has_explicit_override = true;
+    }
+    if (language_config.contains(override_key) && !language_config[override_key].is_null()) {
+      ex = language_config[override_key].get<std::string>();
       has_explicit_override = true;
     }
     spdlog::debug("Problem config contains a override map, new extension is '.{}'", ex);
@@ -228,18 +234,18 @@ std::filesystem::path PathManager::get_full_path_with_file_type(std::filesystem:
   exit(PathManagerMultipleTaskFilesFound);
 }
 
-std::filesystem::path PathManager::get_solution_path(std::filesystem::path root_dir) {
-  return PathManager::get_full_path_with_file_type(root_dir, "solution");
+std::filesystem::path PathManager::get_solution_path(std::filesystem::path root_dir, std::string name) {
+  return PathManager::get_full_path_with_file_type(root_dir, name, "solution");
 }
-std::filesystem::path PathManager::get_slow_path(std::filesystem::path root_dir) {
-  return PathManager::get_full_path_with_file_type(root_dir, "slow");
+std::filesystem::path PathManager::get_slow_path(std::filesystem::path root_dir, std::string name) {
+  return PathManager::get_full_path_with_file_type(root_dir, name, "slow");
 }
-std::filesystem::path PathManager::get_task_gen_path(std::filesystem::path root_dir) {
-  return PathManager::get_full_path_with_file_type(root_dir, "gen");
+std::filesystem::path PathManager::get_task_gen_path(std::filesystem::path root_dir, std::string name) {
+  return PathManager::get_full_path_with_file_type(root_dir, name, "gen");
 }
-std::filesystem::path PathManager::get_checker_path(std::filesystem::path root_dir) {
-  return PathManager::get_full_path_with_file_type(root_dir, "checker");
+std::filesystem::path PathManager::get_checker_path(std::filesystem::path root_dir, std::string name) {
+  return PathManager::get_full_path_with_file_type(root_dir, name, "checker");
 }
-std::filesystem::path PathManager::get_interactor_path(std::filesystem::path root_dir) {
-  return PathManager::get_full_path_with_file_type(root_dir, "interactor");
+std::filesystem::path PathManager::get_interactor_path(std::filesystem::path root_dir, std::string name) {
+  return PathManager::get_full_path_with_file_type(root_dir, name, "interactor");
 }

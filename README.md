@@ -106,6 +106,7 @@ Please take a look at the [archive](https://github.com/cunbidun/competitive_prog
 
 ```bash
 $ cpcli_app --project-config=project_config.toml task --root-dir="/Users/cunbidun/competitive_programming/task/F - Keep Connect" --build
+$ cpcli_app --project-config=project_config.toml task --root-dir="task/F - Keep Connect" --build --subtask full
 ```
 
 | Num | Attribute                | Type     | Description                                                                                          | Default value                                                                                     |
@@ -126,10 +127,6 @@ cpcli passes `regular_flag` and `debug_flag` directly to the configured compiler
 New task configs are written as `config.toml`. Existing flat `config.json` and old flat TOML keys are still accepted, but saving through the task editor writes the new sectioned TOML shape.
 
 ```toml
-tests = [
-  { enabled = true, has_expected_output = true, input = "1\n", output = "1\n" },
-]
-
 [problem]
 name = "E. Trees of Tranquillity"
 group = "Codeforces - Codeforces Round #722 (Div. 2)"
@@ -151,7 +148,36 @@ test_count = 10
 seed = ""
 args = ""
 expected_output_from_slow = true
+
+[[subtasks]]
+name = "base"
+enabled = true
+points = 30
+gen = "gen_base"
+
+[subtasks.generation]
+enabled = true
+test_count = 20
+seed = "20260726"
+expected_output_from_slow = true
+
+[[subtasks]]
+name = "full"
+enabled = true
+points = 70
+depends_on = ["base"]
+checker = "double_6"
+time_limit_ms = 5000
+
+[[tests]]
+subtask = "base"
+enabled = true
+has_expected_output = true
+input = "1\n"
+output = "1\n"
 ```
+
+When `[[subtasks]]` is absent, cpcli treats the existing run, generation, and tests as one implicit subtask. Subtask generators and tests use `___test_case/<subtask-index>/`, so subtask names are never interpolated into shell paths. `depends_on` affects scoring only; it does not rerun dependency tests. Scored runs should normally leave `run.stop_on_first_failure = false`, because that option still aborts the entire run on the first failure.
 
 Canonical task config keys:
 
@@ -171,7 +197,17 @@ Canonical task config keys:
 | `generation.seed` | `string` | Generator seed. If empty, cpcli creates one. | `""` |
 | `generation.args` | `string` | Extra arguments passed to `gen` after seed and count. | `""` |
 | `generation.expected_output_from_slow` | `boolean` | Use `slow` to produce expected output for generated tests. | `false` |
+| `subtasks[].name` | `string` | Unique subtask name used by tests and `--subtask`. | `""` for the implicit subtask |
+| `subtasks[].enabled` | `boolean` | Include the subtask in a normal run. An explicit `--subtask` selection can still run it. | `true` |
+| `subtasks[].points` | `int` | Optional all-or-nothing score. | unset |
+| `subtasks[].depends_on` | `string[]` | Scoring dependencies that must also pass. | `[]` |
+| `subtasks[].gen` | `string` | Generator source stem. | `gen` |
+| `subtasks[].slow` | `string` | Slow-solution source stem. | `slow` |
+| `subtasks[].checker` | `string` | Checker override. | `run.checker` |
+| `subtasks[].time_limit_ms` | `int` | Time-limit override. | `run.time_limit_ms` |
+| `subtasks[].generation` | `table` | Per-subtask generation settings, with the same fields as `generation`. | inherited from `generation` |
 | `tests[].enabled` | `boolean` | Whether this sample test runs. | `true` |
+| `tests[].subtask` | `string` | Owning subtask name. | first subtask |
 | `tests[].has_expected_output` | `boolean` | Whether `output` should be checked. | derived from `output` |
 | `tests[].input` | `string` | Test input. | required |
 | `tests[].output` | `string` | Expected output. | optional |

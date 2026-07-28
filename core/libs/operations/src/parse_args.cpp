@@ -51,6 +51,7 @@ ParserReturnValues parse_args(int argc, char *argv[]) {
       ->required(true)
       ->check(CLI::ExistingDirectory)
       ->transform(convert_to_canonical);
+  task_subcommand->add_option("--subtask", return_value.subtask, "Run only the named subtask")->type_name("NAME");
   auto task_operations = task_subcommand->add_option_group("task", "Operation on task");
   task_operations->add_flag_function(
       "-a,--archive",
