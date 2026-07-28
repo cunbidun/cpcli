@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::collections::BTreeSet;
 use std::env;
@@ -9,68 +9,6 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Mutex;
 use tauri::State;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Test {
-    input: String,
-    output: String,
-    index: i32,
-    active: bool,
-    answer: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-struct LanguageConfig {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    solution: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    slow: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    gen: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    checker: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    interactor: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-struct ProblemConfig {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    gen_parameters: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    group: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    url: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    checker: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    num_test: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    time_limit: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    generator_seed: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    use_generation: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    know_gen_ans: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    hide_accepted_test: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    truncate_long_test: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    stop_at_wrong_answer: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    interactive: Option<bool>,
-    #[serde(default)]
-    tests: Vec<Test>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    language_config: Option<LanguageConfig>,
-}
 
 struct AppState {
     config_read_path: Mutex<PathBuf>,
@@ -121,7 +59,12 @@ fn problem_config_write_path(read_path: &PathBuf) -> PathBuf {
     write_path
 }
 
-fn copy_if_present(dst: &mut Map<String, Value>, src: &Map<String, Value>, src_key: &str, dst_key: &str) {
+fn copy_if_present(
+    dst: &mut Map<String, Value>,
+    src: &Map<String, Value>,
+    src_key: &str,
+    dst_key: &str,
+) {
     if let Some(value) = src.get(src_key) {
         if !value.is_null() {
             dst.insert(dst_key.to_string(), value.clone());
@@ -144,11 +87,26 @@ fn normalize_problem_config_value(value: Value) -> Value {
         copy_if_present(&mut normalized, run, "checker", "checker");
         copy_if_present(&mut normalized, run, "interactive", "interactive");
         copy_if_present(&mut normalized, run, "time_limit_ms", "timeLimit");
-        copy_if_present(&mut normalized, run, "stop_on_first_failure", "stopAtWrongAnswer");
+        copy_if_present(
+            &mut normalized,
+            run,
+            "stop_on_first_failure",
+            "stopAtWrongAnswer",
+        );
     }
     if let Some(display) = root.get("display").and_then(|value| value.as_object()) {
-        copy_if_present(&mut normalized, display, "hide_accepted_tests", "hideAcceptedTest");
-        copy_if_present(&mut normalized, display, "truncate_long_output", "truncateLongTest");
+        copy_if_present(
+            &mut normalized,
+            display,
+            "hide_accepted_tests",
+            "hideAcceptedTest",
+        );
+        copy_if_present(
+            &mut normalized,
+            display,
+            "truncate_long_output",
+            "truncateLongTest",
+        );
     }
     if let Some(generation) = root.get("generation").and_then(|value| value.as_object()) {
         copy_if_present(&mut normalized, generation, "enabled", "useGeneration");
@@ -163,11 +121,25 @@ fn normalize_problem_config_value(value: Value) -> Value {
         );
     }
 
-    copy_if_present(&mut normalized, root, "hideAcceptedTestCases", "hideAcceptedTest");
-    copy_if_present(&mut normalized, root, "stopOnFirstFail", "stopAtWrongAnswer");
+    copy_if_present(
+        &mut normalized,
+        root,
+        "hideAcceptedTestCases",
+        "hideAcceptedTest",
+    );
+    copy_if_present(
+        &mut normalized,
+        root,
+        "stopOnFirstFail",
+        "stopAtWrongAnswer",
+    );
     copy_if_present(&mut normalized, root, "generatorParams", "genParameters");
+    copy_if_present(&mut normalized, root, "language_config", "languageConfig");
 
-    if let Some(tests) = normalized.get_mut("tests").and_then(|value| value.as_array_mut()) {
+    if let Some(tests) = normalized
+        .get_mut("tests")
+        .and_then(|value| value.as_array_mut())
+    {
         for (index, test) in tests.iter_mut().enumerate() {
             let Some(test_obj) = test.as_object_mut() else {
                 continue;
@@ -178,53 +150,84 @@ fn normalize_problem_config_value(value: Value) -> Value {
             if let Some(has_expected_output) = test_obj.get("has_expected_output").cloned() {
                 test_obj.insert("answer".to_string(), has_expected_output);
             }
-            test_obj.entry("index".to_string()).or_insert(Value::from(index as i64));
-            test_obj.entry("active".to_string()).or_insert(Value::Bool(true));
+            test_obj
+                .entry("index".to_string())
+                .or_insert(Value::from(index as i64));
+            test_obj
+                .entry("active".to_string())
+                .or_insert(Value::Bool(true));
             let has_output = test_obj.get("output").is_some_and(|value| !value.is_null());
-            test_obj.entry("answer".to_string()).or_insert(Value::Bool(has_output));
+            test_obj
+                .entry("answer".to_string())
+                .or_insert(Value::Bool(has_output));
         }
     }
 
-    normalized.remove("problem");
-    normalized.remove("run");
-    normalized.remove("display");
-    normalized.remove("generation");
     Value::Object(normalized)
 }
 
-fn problem_config_to_toml_value(config: &ProblemConfig) -> Result<Value, String> {
-    let old = serde_json::to_value(config)
-        .map_err(|e| format!("Failed to convert problem config: {}", e))?;
-    let old = normalize_problem_config_value(old);
+fn problem_config_to_toml_value(config: &Value) -> Result<Value, String> {
+    let old = normalize_problem_config_value(config.clone());
     let root = old
         .as_object()
         .ok_or_else(|| "Problem config is not an object".to_string())?;
 
-    let mut out = Map::new();
-    let mut problem = Map::new();
+    let mut out = root.clone();
+    let mut problem = root
+        .get("problem")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
     copy_if_present(&mut problem, root, "name", "name");
     copy_if_present(&mut problem, root, "group", "group");
     copy_if_present(&mut problem, root, "url", "url");
     out.insert("problem".to_string(), Value::Object(problem));
 
-    let mut run = Map::new();
+    let mut run = root
+        .get("run")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
     copy_if_present(&mut run, root, "timeLimit", "time_limit_ms");
     copy_if_present(&mut run, root, "checker", "checker");
     copy_if_present(&mut run, root, "interactive", "interactive");
     copy_if_present(&mut run, root, "stopAtWrongAnswer", "stop_on_first_failure");
     out.insert("run".to_string(), Value::Object(run));
 
-    let mut display = Map::new();
-    copy_if_present(&mut display, root, "hideAcceptedTest", "hide_accepted_tests");
-    copy_if_present(&mut display, root, "truncateLongTest", "truncate_long_output");
+    let mut display = root
+        .get("display")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
+    copy_if_present(
+        &mut display,
+        root,
+        "hideAcceptedTest",
+        "hide_accepted_tests",
+    );
+    copy_if_present(
+        &mut display,
+        root,
+        "truncateLongTest",
+        "truncate_long_output",
+    );
     out.insert("display".to_string(), Value::Object(display));
 
-    let mut generation = Map::new();
+    let mut generation = root
+        .get("generation")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
     copy_if_present(&mut generation, root, "useGeneration", "enabled");
     copy_if_present(&mut generation, root, "numTest", "test_count");
     copy_if_present(&mut generation, root, "generatorSeed", "seed");
     copy_if_present(&mut generation, root, "genParameters", "args");
-    copy_if_present(&mut generation, root, "knowGenAns", "expected_output_from_slow");
+    copy_if_present(
+        &mut generation,
+        root,
+        "knowGenAns",
+        "expected_output_from_slow",
+    );
     out.insert("generation".to_string(), Value::Object(generation));
 
     let mut tests = Vec::new();
@@ -233,11 +236,12 @@ fn problem_config_to_toml_value(config: &ProblemConfig) -> Result<Value, String>
             let Some(test_obj) = test.as_object() else {
                 continue;
             };
-            let mut out_test = Map::new();
+            let mut out_test = test_obj.clone();
             copy_if_present(&mut out_test, test_obj, "active", "enabled");
             copy_if_present(&mut out_test, test_obj, "answer", "has_expected_output");
-            copy_if_present(&mut out_test, test_obj, "input", "input");
-            copy_if_present(&mut out_test, test_obj, "output", "output");
+            out_test.remove("active");
+            out_test.remove("answer");
+            out_test.remove("index");
             tests.push(Value::Object(out_test));
         }
     }
@@ -247,10 +251,33 @@ fn problem_config_to_toml_value(config: &ProblemConfig) -> Result<Value, String>
         out.insert("language_config".to_string(), language_config.clone());
     }
 
+    for key in [
+        "name",
+        "group",
+        "url",
+        "timeLimit",
+        "checker",
+        "interactive",
+        "stopAtWrongAnswer",
+        "hideAcceptedTest",
+        "truncateLongTest",
+        "useGeneration",
+        "numTest",
+        "generatorSeed",
+        "genParameters",
+        "knowGenAns",
+        "languageConfig",
+        "hideAcceptedTestCases",
+        "stopOnFirstFail",
+        "generatorParams",
+    ] {
+        out.remove(key);
+    }
+
     Ok(Value::Object(out))
 }
 
-fn parse_problem_config(path: &PathBuf, content: &str) -> Result<ProblemConfig, String> {
+fn parse_problem_config(path: &PathBuf, content: &str) -> Result<Value, String> {
     let value = match path.extension().and_then(|ext| ext.to_str()) {
         Some("toml") => {
             let value: toml::Value = toml::from_str(content)
@@ -261,18 +288,17 @@ fn parse_problem_config(path: &PathBuf, content: &str) -> Result<ProblemConfig, 
         _ => serde_json::from_str(content)
             .map_err(|e| format!("Failed to parse problem JSON config: {}", e))?,
     };
-    serde_json::from_value(normalize_problem_config_value(value))
-        .map_err(|e| format!("Failed to normalize problem config: {}", e))
+    Ok(normalize_problem_config_value(value))
 }
 
-fn serialize_problem_config(config: &ProblemConfig) -> Result<String, String> {
+fn serialize_problem_config(config: &Value) -> Result<String, String> {
     let value = problem_config_to_toml_value(config)?;
     toml::to_string_pretty(&value)
         .map_err(|e| format!("Failed to serialize problem TOML config: {}", e))
 }
 
 #[tauri::command]
-fn load_config(state: State<AppState>) -> Result<ProblemConfig, String> {
+fn load_config(state: State<AppState>) -> Result<Value, String> {
     let config_path = state.config_read_path.lock().unwrap();
     let content = fs::read_to_string(&*config_path)
         .map_err(|e| format!("Failed to read config file: {}", e))?;
@@ -281,7 +307,7 @@ fn load_config(state: State<AppState>) -> Result<ProblemConfig, String> {
 }
 
 #[tauri::command]
-fn save_config(state: State<AppState>, config: ProblemConfig) -> Result<(), String> {
+fn save_config(state: State<AppState>, config: Value) -> Result<(), String> {
     let config_path = state.config_write_path.lock().unwrap();
     let content = serialize_problem_config(&config)?;
     fs::write(&*config_path, content).map_err(|e| format!("Failed to write config file: {}", e))?;
@@ -446,4 +472,56 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn editor_round_trip_preserves_unrecognized_config_data() {
+        let input = r#"
+custom_top_level = "keep me"
+
+[problem]
+name = "Python task"
+group = "Tests"
+custom_problem_key = 17
+
+[run]
+checker = "token_checker"
+time_limit_ms = 3000
+custom_run_key = "keep me too"
+
+[language_config]
+default = "py"
+solution = "py"
+custom_language_key = "still here"
+
+[[tests]]
+enabled = true
+has_expected_output = true
+input = "1\n"
+output = "1\n"
+custom_test_key = 42
+"#;
+        let path = PathBuf::from("config.toml");
+
+        let config = parse_problem_config(&path, input).expect("config parses");
+        let serialized = serialize_problem_config(&config).expect("config serializes");
+        let value: toml::Value = toml::from_str(&serialized).expect("serialized TOML parses");
+
+        assert_eq!(value["custom_top_level"].as_str(), Some("keep me"));
+        assert_eq!(
+            value["problem"]["custom_problem_key"].as_integer(),
+            Some(17)
+        );
+        assert_eq!(value["run"]["custom_run_key"].as_str(), Some("keep me too"));
+        assert_eq!(value["language_config"]["default"].as_str(), Some("py"));
+        assert_eq!(
+            value["language_config"]["custom_language_key"].as_str(),
+            Some("still here")
+        );
+        assert_eq!(value["tests"][0]["custom_test_key"].as_integer(), Some(42));
+    }
 }

@@ -553,6 +553,7 @@ async function saveConfig() {
   saveCurrentTest();
 
   const updatedConfig = {
+    ...config,
     name: elements.taskName.value,
     group: elements.groupName.value,
     interactive: elements.interactive.checked,
@@ -568,6 +569,7 @@ async function saveConfig() {
     genParameters: elements.genParameters.value,
     tests: tests,
     languageConfig: {
+      ...(config.languageConfig || {}),
       solution: elements.overrideSolution.value || null,
       slow: elements.overrideSlow.value || null,
       gen: elements.overrideGen.value || null,
